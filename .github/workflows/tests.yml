@@ -9,19 +9,29 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Validate PHP syntax
-        uses: php-actions/php-lint@v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          extensions: mbstring, intl, pdo_pgsql
+          coverage: none
+
+      - name: Validate PHP syntax
+        run: |
+          set -e
+          find app config database routes bootstrap public -type f -name '*.php' -print0 |
+            xargs -0 -n1 php -l
 
       - name: Validate composer
-        uses: php-actions/composer@v6
-        with:
-          php_version: '8.3'
-          args: --no-interaction --prefer-dist
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Run tests
         run: php artisan test
