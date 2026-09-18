@@ -14,12 +14,12 @@ final class EntityResolverTest extends TestCase
 
     public function test_ambiguous_tasks_are_returned_as_candidates(): void
     {
-        Task::create(['title' => 'Prepare Haman report']);
+        Task::create(['title' => 'Prepare Haman']);
         Task::create(['title' => 'Prepare Haman report today']);
 
         $result = app(EntityResolver::class)->resolveWithStatus('task', ['title' => 'Prepare Haman report']);
 
-        $this->assertSame('resolved', $result['status']);
+        $this->assertSame('ambiguous', $result['status']);
     }
 
     public function test_missing_entity_is_reported_without_guessing(): void
