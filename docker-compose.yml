@@ -3,6 +3,12 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-haman_planner}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
     ports:
       - "8000:8000"
     depends_on:
@@ -14,6 +20,12 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-haman_planner}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
     depends_on:
       db:
         condition: service_healthy
@@ -23,6 +35,12 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-haman_planner}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
     depends_on:
       db:
         condition: service_healthy
@@ -32,13 +50,13 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: haman_planner
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: ${DB_DATABASE:-haman_planner}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d haman_planner"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-haman_planner}"]
       interval: 5s
       timeout: 5s
       retries: 10
