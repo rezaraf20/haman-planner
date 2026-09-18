@@ -7,6 +7,7 @@ use App\Models\PendingAction;
 use App\Models\Task;
 use App\Services\Planner\ConfirmationService;
 use App\Services\Planner\PlannerService;
+use App\Services\Planner\PlannerQueryService;
 use App\Services\Telegram\TelegramService;
 use RuntimeException;
 
@@ -15,6 +16,7 @@ final class PlannerIntentService
     public function __construct(
         private readonly AIProviderFactory $factory,
         private readonly PlannerService $planner,
+        private readonly PlannerQueryService $queries,
         private readonly ConfirmationService $confirmations,
         private readonly TelegramService $telegram,
     ) {}
@@ -37,11 +39,69 @@ final class PlannerIntentService
 
         return match ($name) {
             'CREATE_TASK', 'COMPLETE_TASK', 'DEFER_TASK' => $this->requestConfirmation($name, $args, $chatId),
-            'QUERY_PLAN' => ['intent' => $name, 'requires_query' => true],
-            'QUERY_PROGRESS' => ['intent' => $name, 'requires_query' => true],
-            'DAILY_REVIEW', 'WEEKLY_REVIEW' => ['intent' => $name, 'requires_review' => true],
+            'QUERY_PLAN' => $this->queryPlan($args, $chatId),
+            'QUERY_PROGRESS' => $this->queryProgress($args, $chatId),
+            'QUERY_REPORT' => $this->queryReport($args, $chatId),
+            'QUERY_GOAL' => $this->queryProgress($args, $chatId),
+            'DAILY_REVIEW', 'WEEKLY_REVIEW' => $this->queryReview($name, $chatId),
             default => ['intent' => 'UNKNOWN', 'message' => 'I could not safely map this request to a planner action.'],
         };
+    }
+
+    private function queryPlan(array $args, string|int|null $chatId): array
+    {
+        $result = $this->queries->today(max(1, (int) ($args['available_minutes'] ?? 480)));
+        $message = $this->formatPlan($result);
+        if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_PLAN', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryProgress(array $args, string|int|null $chatId): array
+    {
+        $result = $this->queries->progress(
+            isset($args['goal_id']) ? (int) $args['goal_id'] : null,
+            isset($args['project_id']) ? (int) $args['project_id'] : null,
+        );
+        $message = $this->formatProgress($result);
+        if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_PROGRESS', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryReport(array $args, string|int|null $chatId): array
+    {
+        $result = $this->queries->report((string) ($args['period'] ?? 'month'));
+        $message = sprintf("گزارش: %s کار ایجاد شد، %s کار تکمیل شد، نرخ تکمیل %s%%، %s دقیقه اجرا.",
+            $result['tasks_created'] ?? 0, $result['tasks_completed'] ?? 0,
+            $result['completion_rate'] ?? 0, $result['execution_minutes'] ?? 0);
+        if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_REPORT', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryReview(string $intent, string|int|null $chatId): array
+    {
+        $result = $this->queries->report($intent === 'DAILY_REVIEW' ? 'day' : 'week');
+        $message = sprintf("مرور %s: %s کار تکمیل شد، نرخ تکمیل %s%%، %s دقیقه اجرا.",
+            $intent === 'DAILY_REVIEW' ? 'روزانه' : 'هفتگی',
+            $result['tasks_completed'] ?? 0, $result['completion_rate'] ?? 0,
+            $result['execution_minutes'] ?? 0);
+        if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => $intent, 'result' => $result, 'message' => $message];
+    }
+
+    private function formatPlan(array $result): string
+    {
+        $lines = ["برنامه امروز — {$result['planned_minutes']} دقیقه"];
+        foreach ($result['tasks'] as $task) $lines[] = "• [{$task['priority']}] {$task['title']} ({$task['estimated_minutes']} دقیقه)";
+        if (!$result['tasks']) $lines[] = 'کار قابل برنامه‌ریزی پیدا نشد.';
+        return implode("\n", $lines);
+    }
+
+    private function formatProgress(array $result): string
+    {
+        if (($result['found'] ?? false) === false) return (string) ($result['message'] ?? 'یافت نشد.');
+        if (($result['type'] ?? '') === 'overview') return 'نمای کلی پیشرفت: '.count($result['goals']).' هدف و '.count($result['projects']).' پروژه فعال.';
+        return sprintf("%s: %s%% — وضعیت: %s — سلامت: %s",
+            $result['title'], $result['progress'], $result['status'] ?? '-', $result['health'] ?? '-');
     }
 
     private function requestConfirmation(string $intent, array $args, string|int|null $chatId): array
