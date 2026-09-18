@@ -130,7 +130,7 @@ final class PlannerIntentService
             return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'مایلستون موردنظر پیدا نشد یا نام آن مبهم است.'];
         }
 
-        $payload = ['arguments' => $args];
+        $payload = ['arguments' => $args, 'resolved' => $this->resolvedReference($intent, $args)];
         $action = $this->confirmations->create($chatId, $intent, $payload);
         $summary = $this->summarize($intent, $args);
 
@@ -177,6 +177,8 @@ final class PlannerIntentService
     private function execute(PendingAction $action): array
     {
         $args = (array) ($action->payload['arguments'] ?? []);
+        $resolved = (array) ($action->payload['resolved'] ?? []);
+        if ($resolved !== []) $args['task_id'] = $resolved['type'] === Task::class ? $resolved['id'] : ($args['task_id'] ?? null);
 
         return match ($action->intent) {
             'CREATE_GOAL' => ['goal' => $this->createGoal($args)->toArray()],
@@ -276,23 +278,16 @@ final class PlannerIntentService
         return $model->refresh();
     }
 
-    private function deferTask(array $args): Task
+    private function resolvedReference(string $intent, array $args): array
     {
-        return $this->planner->defer($this->resolveTaskOrFail($args));
-    }
-
-    private function resolveTaskOrFail(array $args): Task
-    {
-        $task = $this->resolveTask($args);
-        if (! $task) throw new RuntimeException('Task could not be resolved.');
-        return $task;
-    }
-
-    private function resolveTask(array $args): ?Task
-    {
-        if (! empty($args['task_id'])) return Task::find((int) $args['task_id']);
-        $title = trim((string) ($args['title'] ?? ''));
-        return $title !== '' ? Task::where('title', $title)->latest('id')->first() : null;
+        $map = [
+            'UPDATE_TASK'=>'resolveTask','COMPLETE_TASK'=>'resolveTask','DEFER_TASK'=>'resolveTask',
+            'CANCEL_TASK'=>'resolveTask','LOG_PROGRESS'=>'resolveTask',
+            'UPDATE_GOAL'=>'resolveGoal','UPDATE_PROJECT'=>'resolveProject','UPDATE_MILESTONE'=>'resolveMilestone',
+        ];
+        if (!isset($map[$intent])) return [];
+        $model = $this->resolver->{$map[$intent]}($args);
+        return $model ? ['type' => $model::class, 'id' => $model->id, 'title' => $model->title] : [];
     }
 
     private function summarize(string $intent, array $args): string
