@@ -23,7 +23,7 @@ Route::get('/health', fn (): array => ['status'=>'ok','app'=>'haman-planner','au
 Route::get('/ready', function () { try { DB::connection()->getPdo(); return response()->json(['status'=>'ready','database'=>'ok']); } catch (\\Throwable) { return response()->json(['status'=>'not_ready','database'=>'unavailable'],503); } });
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1');
 
-Route::middleware([ApiTokenMiddleware::class, 'throttle:120,1'])->group(function (): void {
+Route::middleware([RequestIdMiddleware::class, ApiTokenMiddleware::class, IdempotencyMiddleware::class, 'throttle:120,1'])->group(function (): void {
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
