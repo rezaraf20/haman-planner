@@ -17,10 +17,22 @@ final class AnalyticsService
         $actual = (int) $tasks->sum('actual_minutes');
         $logs = ExecutionLog::query()->whereBetween('started_at', [$from, $to])->get();
 
-        $overdue = Task::query()->where('deadline', '<', $to)->whereNotIn('status', ['completed','cancelled'])->count();
-        $failed = Task::query()->whereBetween('updated_at', [$from, $to])->whereNotNull('failure_reason')->count();
-        $scheduled = Task::query()->whereBetween('planned_start', [$from, $to])->whereNotNull('planned_start')->count();
-        $scheduleVariance = collect();
+        $overdue = Task::query()
+            ->where('deadline', '<', $to)
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+        $failed = Task::query()
+            ->whereBetween('updated_at', [$from, $to])
+            ->whereNotNull('failure_reason')
+            ->count();
+        $scheduled = Task::query()
+            ->whereBetween('planned_start', [$from, $to])
+            ->whereNotNull('planned_start')
+            ->count();
+
+        $variances = $tasks
+            ->filter(fn (Task $task): bool => $task->completed_at !== null && $task->planned_end !== null)
+            ->map(fn (Task $task): float => $task->completed_at->diffInMinutes($task->planned_end));
 
         return [
             'period' => ['from' => $from->toIso8601String(), 'to' => $to->toIso8601String()],
@@ -35,7 +47,8 @@ final class AnalyticsService
             'overdue_open_tasks' => $overdue,
             'tasks_with_failures' => $failed,
             'scheduled_tasks' => $scheduled,
-            'average_schedule_variance_minutes' => $scheduleVariance->count() ? round($scheduleVariance->avg(), 2) : 0,
+            'average_schedule_variance_minutes' => $variances->count() ? round($variances->avg(), 2) : null,
+            'schedule_variance_sample_size' => $variances->count(),
         ];
     }
 }
