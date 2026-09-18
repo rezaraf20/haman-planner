@@ -6,6 +6,7 @@ namespace App\Services\Planner;
 use App\Models\Reminder;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 final class ReminderService
 {
@@ -74,7 +75,7 @@ final class ReminderService
             $current?->update([
                 'status' => 'failed',
                 'payload' => array_merge((array) ($current?->payload ?? $payload), [
-                    'error' => $e->getMessage(),
+                    'error' => 'delivery_failed',
                 ]),
             ]);
 
