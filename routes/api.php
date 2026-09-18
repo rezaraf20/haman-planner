@@ -14,7 +14,13 @@ use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
 
-Route::get('/health', function (): array {\n    return ['status' => 'ok', 'app' => 'haman-planner', 'author' => 'Reza Rafiei'];\n});\nRoute::get('/ready', function () {\n    try { DB::connection()->getPdo(); return response()->json(['status' => 'ready', 'database' => 'ok']); }\n    catch (\\Throwable $e) { return response()->json(['status' => 'not_ready', 'database' => 'unavailable'], 503); }\n});
+Route::get('/health', function (): array {
+    return ['status' => 'ok', 'app' => 'haman-planner', 'author' => 'Reza Rafiei'];
+});
+Route::get('/ready', function () {
+    try { DB::connection()->getPdo(); return response()->json(['status' => 'ready', 'database' => 'ok']); }
+    catch (\Throwable $e) { return response()->json(['status' => 'not_ready', 'database' => 'unavailable'], 503); }
+});
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1');
 
 Route::middleware([ApiTokenMiddleware::class, 'throttle:120,1'])->group(function (): void {
