@@ -21,6 +21,12 @@ jobs:
           extensions: mbstring, intl, pdo_pgsql
           coverage: none
 
+      - name: Prepare Laravel runtime directories
+        run: |
+          mkdir -p bootstrap/cache
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+          chmod -R ug+rw bootstrap/cache storage
+
       - name: Validate PHP syntax
         run: |
           set -e
