@@ -5,9 +5,13 @@ use App\Http\Controllers\Api\GoalController;
 use App\Http\Controllers\Api\PlannerController;
 use App\Http\Controllers\Api\DependencyController;
 use App\Http\Controllers\Api\ExecutionLogController;
+use App\Http\Controllers\Api\CommandController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
 
 Route::get('/health', fn () => ['status'=>'ok','app'=>'haman-planner','author'=>'Reza Rafiei']);
+Route::post('/telegram/webhook', TelegramWebhookController::class);
 
 Route::middleware(ApiTokenMiddleware::class)->group(function (): void {
     Route::apiResource('tasks', TaskController::class);
@@ -17,4 +21,7 @@ Route::middleware(ApiTokenMiddleware::class)->group(function (): void {
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);
     Route::delete('/tasks/{task}/dependencies/{dependency}', [DependencyController::class, 'destroy']);
     Route::post('/tasks/{task}/execution-logs', [ExecutionLogController::class, 'store']);
+    Route::post('/commands', [CommandController::class, 'handle']);
+    Route::get('/reviews', [ReviewController::class, 'index']);
+    Route::post('/reviews/generate', [ReviewController::class, 'generate']);
 });
