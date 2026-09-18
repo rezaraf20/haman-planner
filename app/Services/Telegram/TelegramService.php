@@ -27,7 +27,7 @@ final class TelegramService
     {
         $response = Http::post($this->api('sendMessage'), [
             'chat_id' => $chatId,
-            'text' => $text,
+            'text' => mb_substr($text, 0, 4096),
         ]);
 
         if ($response->failed()) {
