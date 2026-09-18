@@ -74,3 +74,6 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/phpunit
+
+      - name: Validate Docker build
+        run: docker build --tag haman-planner:test .
