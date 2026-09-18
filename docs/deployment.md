@@ -4,10 +4,12 @@ Copyright (c) 2026 Reza Rafiei. All rights reserved.
 
 ## Docker
 
-1. Copy .env.example to .env.
-2. Set APP_KEY, APP_URL, database credentials, and a strong APP_API_TOKEN.
-3. Set AI_API_KEY only if AI features are enabled.
-4. Run: docker compose up -d --build
+1. Copy `.env.example` to `.env`.
+2. Generate a real `APP_KEY` and set a strong `APP_API_TOKEN`.
+3. Set Telegram/AI/STT credentials only for features you enable.
+4. Docker Compose forces `DB_HOST=db` and uses the same `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` values for the app and PostgreSQL service.
+5. Run: `docker compose up -d --build`.
+6. Verify: `curl http://127.0.0.1:8000/api/health` and `curl http://127.0.0.1:8000/api/ready`.
 
 The container runs migrations and seeders before starting Laravel.
 
