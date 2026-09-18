@@ -123,6 +123,7 @@ final class PlannerIntentService
             $args['task_id'] = $resolved->id;
         }
         if ($intent === 'ADD_REMINDER') {
+            $args['chat_id'] = $args['chat_id'] ?? $chatId;
             if (empty($args['scheduled_at']) && empty($args['remind_at'])) {
                 return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
             }
