@@ -13,9 +13,9 @@ use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
 
 Route::get('/health', fn () => ['status'=>'ok','app'=>'haman-planner','author'=>'Reza Rafiei']);
-Route::post('/telegram/webhook', TelegramWebhookController::class);
+Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1');
 
-Route::middleware(ApiTokenMiddleware::class)->group(function (): void {
+Route::middleware([ApiTokenMiddleware::class, 'throttle:120,1'])->group(function (): void {
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
