@@ -97,7 +97,7 @@ final class EntityResolver
         $best = $ranked[0];
         $second = $ranked[1] ?? null;
 
-        if ($best['score'] >= 0.82 && ($second === null || $best['score'] - $second['score'] >= 0.10)) {
+        if ($best['score'] >= 0.82 && $second === null) {
             return [
                 'status' => 'resolved',
                 'entity' => $entity,
