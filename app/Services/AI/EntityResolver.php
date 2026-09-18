@@ -39,8 +39,17 @@ final class EntityResolver
             return [];
         }
 
+        $tokens = preg_split('/\\s+/u', trim($query), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         return $model::query()
-            ->where('title', 'like', '%'.trim($query).'%')
+            ->where(function ($builder) use ($tokens, $query): void {
+                if ($tokens === []) {
+                    $builder->where('title', 'like', '%'.trim($query).'%');
+                    return;
+                }
+                foreach ($tokens as $token) {
+                    $builder->orWhere('title', 'like', '%'.$token.'%');
+                }
+            })
             ->orderByDesc('id')
             ->limit(max(1, min(10, $limit)))
             ->get(['id', 'title'])
