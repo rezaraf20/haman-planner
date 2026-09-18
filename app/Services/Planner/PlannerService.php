@@ -69,12 +69,12 @@ final class PlannerService
         });
     }
 
-    public function logFailure(Task $task, array $data): \App\Models\ActivityLog
+    public function logFailure(Task $task, array $data): Task
     {
         $before = $task->toArray();
         $task->update(['failure_reason' => $data['reason'] ?? $data['failure_reason'] ?? 'other']);
         $this->activity->log('failure_logged', Task::class, $task->id, $before, $task->fresh()->toArray());
-        return $this->activity->latestFor(Task::class, $task->id);
+        return $task->refresh();
     }
 
     public function logBlocker(Task $task, array $data): Task
