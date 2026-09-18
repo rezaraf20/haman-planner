@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 final class MilestoneController extends Controller
 {
+    public function __construct(private readonly ProgressPropagationService $progressPropagation) {}
+
     public function index(Request $request): JsonResponse
     {
         $milestones = Milestone::query()
