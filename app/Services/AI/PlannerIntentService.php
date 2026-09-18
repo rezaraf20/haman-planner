@@ -40,6 +40,27 @@ final class PlannerIntentService
             }
         }
 
+        $command = mb_strtolower(trim($text));
+        if ($chatId !== null && str_starts_with($command, '/')) {
+            $parts = preg_split('/\\s+/', $command, 2);
+            $commandName = $parts[0] ?? '';
+            $argument = trim($parts[1] ?? '');
+            $direct = match ($commandName) {
+                '/start' => ['message' => 'Haman Planner آماده است. از /today، /tasks، /goals، /projects، /inbox، /review، /week، /report یا /search استفاده کن.'],
+                '/today' => $this->queryPlan([], $chatId),
+                '/tasks' => $this->queryTaskList($chatId),
+                '/goals' => $this->queryGoalList($chatId),
+                '/projects' => $this->queryProjectList($chatId),
+                '/inbox' => $this->queryInbox($chatId),
+                '/review' => $this->queryReview('DAILY_REVIEW', $chatId),
+                '/week' => $this->queryReview('WEEKLY_REVIEW', $chatId),
+                '/report' => $this->queryReport(['period' => 'month'], $chatId),
+                '/search' => $this->querySearch($argument, $chatId),
+                default => null,
+            };
+            if ($direct !== null) return $direct;
+        }
+
         $intent = $this->factory::make()->parseIntent($text);
         $name = strtoupper((string) ($intent['intent'] ?? 'UNKNOWN'));
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
@@ -53,6 +74,52 @@ final class PlannerIntentService
             'DAILY_REVIEW', 'WEEKLY_REVIEW' => $this->queryReview($name, $chatId),
             default => ['intent' => 'UNKNOWN', 'message' => 'I could not safely map this request to a planner action.'],
         };
+    }
+
+    private function queryTaskList(string|int $chatId): array
+    {
+        $result = $this->queries->taskSearch('');
+        $result['tasks'] = Task::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('priority')->limit(20)->get(['id','title','status','priority','progress'])->toArray();
+        $message = count($result['tasks']).' کار باز در سیستم وجود دارد.';
+        $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_TASKS', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryGoalList(string|int $chatId): array
+    {
+        $result = Goal::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
+        $message = 'اهداف فعال: '.count($result);
+        $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_GOALS', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryProjectList(string|int $chatId): array
+    {
+        $result = Project::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
+        $message = 'پروژه‌های فعال: '.count($result);
+        $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_PROJECTS', 'result' => $result, 'message' => $message];
+    }
+
+    private function queryInbox(string|int $chatId): array
+    {
+        $result = Task::query()->where('status', 'inbox')->orderByDesc('id')->limit(20)->get(['id','title','priority','estimated_minutes'])->toArray();
+        $message = 'Inbox: '.count($result).' کار.';
+        $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_INBOX', 'result' => $result, 'message' => $message];
+    }
+
+    private function querySearch(string $query, string|int $chatId): array
+    {
+        if ($query === '') {
+            $message = 'عبارت جستجو را بعد از /search بنویس.';
+            $this->telegram->sendMessage($chatId, $message);
+            return ['intent' => 'QUERY_SEARCH', 'result' => [], 'message' => $message];
+        }
+        $result = $this->queries->taskSearch($query);
+        $message = 'نتیجه جستجو: '.count($result['tasks'] ?? []).' کار.';
+        $this->telegram->sendMessage($chatId, $message);
+        return ['intent' => 'QUERY_SEARCH', 'result' => $result, 'message' => $message];
     }
 
     private function queryPlan(array $args, string|int|null $chatId): array
