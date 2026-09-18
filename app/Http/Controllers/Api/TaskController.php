@@ -6,12 +6,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Services\Planner\PlannerService;
+use App\Services\Planner\ProgressPropagationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class TaskController extends Controller
 {
-    public function __construct(private readonly PlannerService $planner) {}
+    public function __construct(private readonly PlannerService $planner, private readonly ProgressPropagationService $progressPropagation) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -45,7 +46,9 @@ final class TaskController extends Controller
             'focus_level' => 'nullable|integer|min:0|max:100',
         ]);
 
-        return response()->json($this->planner->createTask($data), 201);
+        $task = $this->planner->createTask($data);
+        $this->progressPropagation->recalculateFromTask($task);
+        return response()->json($task->refresh(), 201);
     }
 
     public function show(Task $task): JsonResponse
@@ -83,6 +86,7 @@ final class TaskController extends Controller
         } else {
             $this->planner->recalculatePriority($task);
         }
+        $this->progressPropagation->recalculateFromTask($task);
 
         return response()->json($task->refresh());
     }
