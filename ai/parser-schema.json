@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Haman Planner Intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "confidence", "entities", "requires_confirmation"],
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "CREATE_GOAL","UPDATE_GOAL","CREATE_PROJECT","UPDATE_PROJECT",
+        "CREATE_MILESTONE","CREATE_TASK","UPDATE_TASK","COMPLETE_TASK",
+        "DEFER_TASK","CANCEL_TASK","SCHEDULE_TASK","RESCHEDULE_TASK",
+        "ADD_REMINDER","LOG_TIME","LOG_PROGRESS","LOG_BLOCKER","LOG_FAILURE",
+        "DAILY_REVIEW","WEEKLY_REVIEW","QUERY_PLAN","QUERY_PROGRESS",
+        "QUERY_REPORT","QUERY_GOAL"
+      ]
+    },
+    "confidence": {"type":"number","minimum":0,"maximum":1},
+    "entities": {"type":"object","additionalProperties":true},
+    "requires_confirmation": {"type":"boolean"}
+  }
+}
