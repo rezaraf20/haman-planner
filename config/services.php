@@ -14,6 +14,7 @@ return [
     ],
     'telegram' => [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     ],
     'haman_planner' => [
         'api_token' => env('APP_API_TOKEN'),
