@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 final class ProjectController extends Controller
 {
+    public function __construct(private readonly ProgressPropagationService $progressPropagation) {}
+
     public function index(Request $request): JsonResponse
     {
         $projects = Project::query()
