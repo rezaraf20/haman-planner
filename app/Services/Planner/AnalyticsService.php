@@ -32,7 +32,7 @@ final class AnalyticsService
 
         $variances = $tasks
             ->filter(fn (Task $task): bool => $task->completed_at !== null && $task->planned_end !== null)
-            ->map(fn (Task $task): float => $task->completed_at->diffInMinutes($task->planned_end));
+            ->map(fn (Task $task): float => $task->planned_end->diffInMinutes($task->completed_at, false));
 
         return [
             'period' => ['from' => $from->toIso8601String(), 'to' => $to->toIso8601String()],
