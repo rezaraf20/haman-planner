@@ -117,8 +117,10 @@ final class PlannerIntentService
             return ['intent' => $intent, 'confirmation_required' => true, 'message' => 'A confirmation channel is required for mutations.'];
         }
 
-        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS'], true) && ! $this->resolver->resolveTask($args)) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
+        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS'], true)) {
+            $resolved = $this->resolver->resolveTask($args);
+            if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
+            $args['task_id'] = $resolved->id;
         }
         if ($intent === 'UPDATE_GOAL' && ! $this->resolver->resolveGoal($args)) {
             return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'];
