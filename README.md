@@ -37,7 +37,12 @@ Proprietary. See [LICENSE](LICENSE).
 - Explicit confirmation before planner mutations
 - Entity resolution with ambiguity protection
 - Task scheduling and rescheduling
-- Telegram reminders with scheduled dispatch
+- Telegram reminders with scheduled dispatch and retry backoff
+- Browser dashboard at `/planner`
+- Task filtering/search, notes, decisions and planner recommendations
+- Grounded AI planner recommendations from stored planner data
+- Request correlation IDs and idempotency protection
+- Queue worker and scheduler deployment topology
 - Protected API with bearer token and rate limiting
 - Telegram webhook secret validation
 - Database readiness endpoint (`/api/ready`)
