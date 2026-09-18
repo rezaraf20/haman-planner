@@ -16,11 +16,21 @@ final class TaskController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $tasks = Task::query()
-            ->with(['goal', 'project', 'milestone'])
-            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
-            ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")
-            ->paginate(50);
+        $data = $request->validate([
+            'status'=>'nullable|string','priority'=>'nullable|string','area_id'=>'nullable|integer','goal_id'=>'nullable|integer',
+            'project_id'=>'nullable|integer','milestone_id'=>'nullable|integer','q'=>'nullable|string|max:100','overdue'=>'nullable|boolean','per_page'=>'nullable|integer|min:1|max:100',
+        ]);
+        $tasks = Task::query()->with(['goal','project','milestone'])
+            ->when($data['status']??null, fn($q,$v)=>$q->where('status',$v))
+            ->when($data['priority']??null, fn($q,$v)=>$q->where('priority',$v))
+            ->when($data['area_id']??null, fn($q,$v)=>$q->where('area_id',$v))
+            ->when($data['goal_id']??null, fn($q,$v)=>$q->where('goal_id',$v))
+            ->when($data['project_id']??null, fn($q,$v)=>$q->where('project_id',$v))
+            ->when($data['milestone_id']??null, fn($q,$v)=>$q->where('milestone_id',$v))
+            ->when($data['q']??null, fn($q,$v)=>$q->where(fn($x)=>$x->where('title','ilike','%'.$v.'%')->orWhere('description','ilike','%'.$v.'%')))
+            ->when(($data['overdue']??false), fn($q)=>$q->whereNotIn('status',['completed','cancelled'])->whereNotNull('deadline')->where('deadline','<',now()))
+            ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")->orderBy('deadline')
+            ->paginate($data['per_page']??50);
 
         return response()->json($tasks);
     }
