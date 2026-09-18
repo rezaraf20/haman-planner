@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Services\Planner\ProgressPropagationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -66,6 +67,7 @@ final class ProjectController extends Controller
         ]);
 
         $project->update($data);
+        $this->progressPropagation->project($project);
 
         return response()->json($project->refresh()->load('goal'));
     }
