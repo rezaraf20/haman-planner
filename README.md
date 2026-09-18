@@ -21,3 +21,37 @@ A planning and execution system designed by **Reza Rafiei** to manage goals, pro
 
 ## License
 Proprietary. See [LICENSE](LICENSE).
+
+
+## Current MVP capabilities
+
+- Goal, project, milestone and task CRUD
+- Weighted progress and priority calculation
+- Dependency checks and dependency-aware daily planning
+- Daily capacity planning with a 20% buffer
+- Task execution/time logging
+- Failure and blocker logging
+- Daily/weekly/monthly analytics and reviews
+- Telegram text and voice input
+- AI intent parsing through OpenAI-compatible providers
+- Explicit confirmation before planner mutations
+- Entity resolution with ambiguity protection
+- Task scheduling and rescheduling
+- Telegram reminders with scheduled dispatch
+- Protected API with bearer token and rate limiting
+- Telegram webhook secret validation
+- Audit logging for important mutations
+
+## Production checklist
+
+Before production, configure:
+1. PostgreSQL and encrypted backups.
+2. `APP_KEY` and a strong `APP_API_TOKEN`.
+3. `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`.
+4. AI and speech provider credentials only when required.
+5. HTTPS and a reverse proxy.
+6. Laravel scheduler every minute.
+7. Queue workers if asynchronous jobs are enabled.
+8. Monitoring and log retention.
+
+Never commit secrets to the repository.
