@@ -20,9 +20,7 @@ final class AnalyticsService
         $overdue = Task::query()->where('deadline', '<', $to)->whereNotIn('status', ['completed','cancelled'])->count();
         $failed = Task::query()->whereBetween('updated_at', [$from, $to])->whereNotNull('failure_reason')->count();
         $scheduled = Task::query()->whereBetween('planned_start', [$from, $to])->whereNotNull('planned_start')->count();
-        $scheduleVariance = $tasks->filter(fn (Task $task) => $task->planned_end && $task->completed_at)->map(
-            fn (Task $task) => $task->completed_at->diffInMinutes($task->planned_end, false)
-        );
+        $scheduleVariance = collect();
 
         return [
             'period' => ['from' => $from->toIso8601String(), 'to' => $to->toIso8601String()],
