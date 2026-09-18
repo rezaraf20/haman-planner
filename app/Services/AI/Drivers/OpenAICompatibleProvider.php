@@ -1,20 +1,86 @@
 <?php
 declare(strict_types=1);
+
 namespace App\Services\AI\Drivers;
+
 use App\Contracts\AIProviderInterface;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
-final class OpenAICompatibleProvider implements AIProviderInterface {
- public function __construct(private readonly string $baseUrl, private readonly string $apiKey, private readonly string $model) {}
- public function chat(array $messages,array $options=[]): array {
-  $r=Http::withToken($this->apiKey)->acceptJson()->post(rtrim($this->baseUrl,'/').'/chat/completions',array_merge(['model'=>$this->model,'messages'=>$messages],$options));
-  if($r->failed()) throw new RuntimeException('AI provider request failed: '.$r->status());
-  return $r->json();
- }
- public function parseIntent(string $input,array $context=[]): array {
-  $system='Return JSON only. Allowed intents: CREATE_TASK, COMPLETE_TASK, DEFER_TASK, UPDATE_TASK, QUERY_PLAN, QUERY_PROGRESS, QUERY_REPORT, QUERY_GOAL, DAILY_REVIEW, WEEKLY_REVIEW, UNKNOWN.';
-  $r=$this->chat([['role'=>'system','content'=>$system],['role'=>'user','content'=>json_encode(['input'=>$input,'context'=>$context],JSON_UNESCAPED_UNICODE)]],['temperature'=>0,'response_format'=>['type'=>'json_object']]);
-  $v=json_decode($r['choices'][0]['message']['content']??'{}',true);
-  return is_array($v)?$v:['intent'=>'UNKNOWN','arguments'=>[]];
- }
+
+final class OpenAICompatibleProvider implements AIProviderInterface
+{
+    public function __construct(
+        private readonly string $baseUrl,
+        private readonly string $apiKey,
+        private readonly string $model
+    ) {}
+
+    public function chat(array $messages, array $options = []): array
+    {
+        $response = Http::withToken($this->apiKey)
+            ->acceptJson()
+            ->timeout(60)
+            ->post(rtrim($this->baseUrl, '/').'/chat/completions', array_merge([
+                'model' => $this->model,
+                'messages' => $messages,
+            ], $options));
+
+        if ($response->failed()) {
+            throw new RuntimeException('AI provider request failed: '.$response->status());
+        }
+
+        return $response->json();
+    }
+
+    public function parseIntent(string $input, array $context = []): array
+    {
+        $system = <<<'PROMPT'
+Return exactly one JSON object.
+Schema:
+{"intent":"INTENT","confidence":0.0,"arguments":{},"requires_confirmation":true}
+Allowed intents:
+CREATE_GOAL, UPDATE_GOAL, CREATE_PROJECT, UPDATE_PROJECT, CREATE_MILESTONE, UPDATE_MILESTONE,
+CREATE_TASK, UPDATE_TASK, COMPLETE_TASK, DEFER_TASK, CANCEL_TASK, SCHEDULE_TASK, RESCHEDULE_TASK,
+ADD_REMINDER, LOG_TIME, LOG_PROGRESS, LOG_BLOCKER, LOG_FAILURE,
+DAILY_REVIEW, WEEKLY_REVIEW, QUERY_PLAN, QUERY_PROGRESS, QUERY_REPORT, QUERY_GOAL, UNKNOWN.
+Never invent database IDs. Use titles/names when the user provides them.
+Mutation intents require confirmation. Queries/reviews do not.
+PROMPT;
+
+        $messages = [
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => json_encode([
+                'input' => $input,
+                'context' => $context,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)],
+        ];
+
+        $options = ['temperature' => 0];
+
+        try {
+            $response = $this->chat($messages, $options + ['response_format' => ['type' => 'json_object']]);
+        } catch (\Throwable) {
+            $response = $this->chat($messages, $options);
+        }
+
+        $raw = $response['choices'][0]['message']['content'] ?? '{}';
+        $value = json_decode((string) $raw, true);
+
+        if (!is_array($value)) {
+            return ['intent' => 'UNKNOWN', 'arguments' => [], 'confidence' => 0, 'requires_confirmation' => false];
+        }
+
+        $value['intent'] = strtoupper((string) ($value['intent'] ?? 'UNKNOWN'));
+        $value['arguments'] = is_array($value['arguments'] ?? null)
+            ? $value['arguments']
+            : (is_array($value['entities'] ?? null) ? $value['entities'] : []);
+        $value['confidence'] = max(0, min(1, (float) ($value['confidence'] ?? 0)));
+        $value['requires_confirmation'] = in_array($value['intent'], [
+            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE',
+            'CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','SCHEDULE_TASK','RESCHEDULE_TASK',
+            'ADD_REMINDER','LOG_TIME','LOG_PROGRESS','LOG_BLOCKER','LOG_FAILURE',
+        ], true);
+
+        return $value;
+    }
 }
