@@ -13,8 +13,8 @@ final class ActivityLogger
             'action' => $action,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
-            'before' => $before,
-            'after' => $after,
+            'before_json' => $before,
+            'after_json' => $after,
             'created_at' => now(),
         ]);
     }
