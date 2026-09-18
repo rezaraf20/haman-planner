@@ -14,6 +14,11 @@ final class ReminderService
 
     public function due(?Carbon $until = null)
     {
+        Reminder::query()
+            ->where('status', 'processing')
+            ->where('updated_at', '<', now()->subMinutes(10))
+            ->update(['status' => 'pending']);
+
         return Reminder::query()
             ->where('status', 'pending')
             ->where('scheduled_at', '<=', $until ?? now())
