@@ -31,3 +31,16 @@ php artisan migrate --force
 php artisan db:seed --force
 
 Set the web document root to public/ and make storage/ and bootstrap/cache/ writable by the web user.
+
+
+## Telegram and scheduler
+
+Set `TELEGRAM_BOT_TOKEN` and a random `TELEGRAM_WEBHOOK_SECRET` in the production environment. Configure Telegram's webhook to send the secret header and use the HTTPS API endpoint.
+
+Run Laravel's scheduler every minute in production:
+
+```cron
+* * * * * cd /var/www/haman-planner && php artisan schedule:run >> /dev/null 2>&1
+```
+
+The scheduler executes `planner:reminders`, which dispatches due Telegram reminders.
