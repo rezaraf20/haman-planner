@@ -20,6 +20,14 @@ final class TelegramWebhookController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
+        $secret = (string) config('services.telegram.webhook_secret');
+        if ($secret !== '') {
+            $provided = (string) $request->header('X-Telegram-Bot-Api-Secret-Token');
+            if ($provided === '' || !hash_equals($secret, $provided)) {
+                return response()->json(['ok' => false], 401);
+            }
+        }
+
         $message = $request->input('message', []);
         $chatId = $message['chat']['id'] ?? null;
 
