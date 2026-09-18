@@ -132,6 +132,18 @@ final class PlannerIntentService
                 $args['task_id'] = $task->id;
             }
         }
+        if ($intent === 'CREATE_PROJECT' && (!empty($args['goal']) || !empty($args['goal_id']))) {
+            $goal = $this->resolver->resolveGoal($args);
+            if (!$goal) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف پروژه پیدا نشد یا نام آن مبهم است.'];
+            $args['goal_id'] = $goal->id;
+        }
+
+        if ($intent === 'CREATE_MILESTONE') {
+            $project = $this->resolver->resolveProject($args);
+            if (!$project) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'پروژه مایلستون پیدا نشد یا نام آن مبهم است.'];
+            $args['project_id'] = $project->id;
+        }
+
         foreach ([
             'UPDATE_GOAL' => ['resolver' => 'resolveGoal', 'key' => 'goal_id', 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'],
             'UPDATE_PROJECT' => ['resolver' => 'resolveProject', 'key' => 'project_id', 'message' => 'پروژه موردنظر پیدا نشد یا نام آن مبهم است.'],
