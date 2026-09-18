@@ -56,16 +56,19 @@ final class MilestoneController extends Controller
             'completed_at' => 'sometimes|nullable|date',
         ]);
 
+        $oldProjectId = $milestone->project_id;
         $milestone->update($data);
         $this->progressPropagation->milestone($milestone);
+        if ($oldProjectId && $oldProjectId !== $milestone->project_id) { $old = \App\Models\Project::find($oldProjectId); if ($old) $this->progressPropagation->project($old); }
 
         return response()->json($milestone->refresh()->load('project'));
     }
 
     public function destroy(Milestone $milestone): JsonResponse
     {
+        $project = $milestone->project()->first();
         $milestone->delete();
-
+        if ($project) $this->progressPropagation->project($project);
         return response()->json(null, 204);
     }
 }
