@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: Haman Planner API
+  version: 1.0.0
+  description: Personal & Business Operating System API. Proprietary software by Reza Rafiei.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/health:
+    get:
+      security: []
+      summary: Health check
+      responses:
+        '200': {description: Healthy}
+  /api/ready:
+    get:
+      security: []
+      summary: Database readiness
+      responses:
+        '200': {description: Ready}
+        '503': {description: Not ready}
+  /api/tasks:
+    get:
+      summary: List tasks
+      responses:
+        '200': {description: Paginated tasks}
+    post:
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+      responses:
+        '201': {description: Created}
+        '422': {description: Validation error}
+  /api/tasks/{task}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      summary: Get task
+      responses:
+        '200': {description: Task}
+    patch:
+      summary: Update task
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+      responses:
+        '200': {description: Updated}
+    delete:
+      summary: Delete task
+      responses:
+        '204': {description: Deleted}
+  /api/goals:
+    get:
+      summary: List goals
+      responses:
+        '200': {description: Paginated goals}
+    post:
+      summary: Create goal
+      responses:
+        '201': {description: Created}
+  /api/projects:
+    get:
+      summary: List projects
+      responses:
+        '200': {description: Paginated projects}
+    post:
+      summary: Create project
+      responses:
+        '201': {description: Created}
+  /api/milestones:
+    get:
+      summary: List milestones
+      responses:
+        '200': {description: Paginated milestones}
+    post:
+      summary: Create milestone
+      responses:
+        '201': {description: Created}
+  /api/planner/today:
+    get:
+      summary: Build today's plan
+      responses:
+        '200': {description: Daily plan}
+  /api/planner/analytics:
+    get:
+      summary: Planner analytics
+      responses:
+        '200': {description: Analytics}
+  /api/tasks/{task}/dependencies:
+    post:
+      summary: Add task dependency
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '201': {description: Created}
+  /api/tasks/{task}/execution-logs:
+    post:
+      summary: Log task execution
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '201': {description: Created}
+  /api/reminders:
+    get:
+      summary: List reminders
+      responses:
+        '200': {description: Paginated reminders}
+    post:
+      summary: Create reminder
+      responses:
+        '201': {description: Created}
+  /api/commands:
+    post:
+      summary: Execute planner command
+      responses:
+        '200': {description: Command result}
+  /api/reviews:
+    get:
+      summary: List reviews
+      responses:
+        '200': {description: Paginated reviews}
+  /api/reviews/generate:
+    post:
+      summary: Generate review
+      responses:
+        '201': {description: Review}
+  /api/telegram/webhook:
+    post:
+      security: []
+      summary: Telegram webhook
+      responses:
+        '200': {description: Accepted}
+        '401': {description: Invalid webhook secret}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    TaskId:
+      name: task
+      in: path
+      required: true
+      schema: {type: integer}
+  schemas:
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string}
+        description: {type: string, nullable: true}
+        status: {type: string}
+        priority: {type: string}
+        importance: {type: integer, minimum: 0, maximum: 100}
+        weight: {type: number, minimum: 0}
+        progress: {type: number, minimum: 0, maximum: 100}
+        estimated_minutes: {type: integer, minimum: 0}
+        actual_minutes: {type: integer, minimum: 0}
+        planned_start: {type: string, format: date-time, nullable: true}
+        planned_end: {type: string, format: date-time, nullable: true}
+        deadline: {type: string, format: date-time, nullable: true}
+        energy_level: {type: integer, minimum: 0, maximum: 100}
+        focus_level: {type: integer, minimum: 0, maximum: 100}
