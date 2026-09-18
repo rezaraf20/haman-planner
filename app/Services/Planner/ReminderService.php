@@ -6,7 +6,6 @@ namespace App\Services\Planner;
 use App\Models\Reminder;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 final class ReminderService
 {
@@ -48,26 +47,39 @@ final class ReminderService
             return false;
         }
 
+        $claimed = Reminder::query()
+            ->whereKey($reminder->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'processing']);
+
+        if ($claimed !== 1) {
+            return false;
+        }
+
         $text = (string) ($payload['message'] ?? $this->defaultMessage($reminder));
-        $now = now();
 
-        return DB::transaction(function () use ($reminder, $chatId, $text, $now): bool {
-            $locked = Reminder::query()->lockForUpdate()->find($reminder->id);
-            if (! $locked || $locked->status !== 'pending') {
-                return false;
-            }
-
+        try {
             $this->telegram->sendMessage($chatId, $text);
 
-            $locked->update([
+            $reminder->update([
                 'status' => 'sent',
-                'payload' => array_merge((array) $locked->payload, [
-                    'sent_at' => $now->toIso8601String(),
+                'payload' => array_merge((array) $reminder->fresh()->payload, [
+                    'sent_at' => now()->toIso8601String(),
                 ]),
             ]);
 
             return true;
-        });
+        } catch (\Throwable $e) {
+            $current = $reminder->fresh();
+            $current?->update([
+                'status' => 'failed',
+                'payload' => array_merge((array) ($current?->payload ?? $payload), [
+                    'error' => $e->getMessage(),
+                ]),
+            ]);
+
+            return false;
+        }
     }
 
     private function defaultMessage(Reminder $reminder): string
