@@ -5,6 +5,11 @@ namespace App\Services\AI;
 
 use App\Models\PendingAction;
 use App\Models\Task;
+use App\Models\Goal;
+use App\Models\Project;
+use App\Models\Milestone;
+use Illuminate\Database\Eloquent\Model;
+use App\Services\Planner\ActivityLogger;
 use App\Services\Planner\ConfirmationService;
 use App\Services\Planner\PlannerService;
 use App\Services\Planner\PlannerQueryService;
@@ -19,6 +24,8 @@ final class PlannerIntentService
         private readonly PlannerQueryService $queries,
         private readonly ConfirmationService $confirmations,
         private readonly TelegramService $telegram,
+        private readonly EntityResolver $resolver,
+        private readonly ActivityLogger $activity,
     ) {}
 
     public function handleText(string $text, string|int|null $chatId = null): array
@@ -38,7 +45,7 @@ final class PlannerIntentService
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
 
         return match ($name) {
-            'CREATE_TASK', 'COMPLETE_TASK', 'DEFER_TASK' => $this->requestConfirmation($name, $args, $chatId),
+            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS' => $this->requestConfirmation($name, $args, $chatId),
             'QUERY_PLAN' => $this->queryPlan($args, $chatId),
             'QUERY_PROGRESS' => $this->queryProgress($args, $chatId),
             'QUERY_REPORT' => $this->queryReport($args, $chatId),
@@ -110,8 +117,17 @@ final class PlannerIntentService
             return ['intent' => $intent, 'confirmation_required' => true, 'message' => 'A confirmation channel is required for mutations.'];
         }
 
-        if ($intent !== 'CREATE_TASK' && ! $this->resolveTask($args)) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'Task could not be resolved.'];
+        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS'], true) && ! $this->resolver->resolveTask($args)) {
+            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
+        }
+        if ($intent === 'UPDATE_GOAL' && ! $this->resolver->resolveGoal($args)) {
+            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'];
+        }
+        if ($intent === 'UPDATE_PROJECT' && ! $this->resolver->resolveProject($args)) {
+            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'پروژه موردنظر پیدا نشد یا نام آن مبهم است.'];
+        }
+        if ($intent === 'UPDATE_MILESTONE' && ! $this->resolver->resolveMilestone($args)) {
+            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'مایلستون موردنظر پیدا نشد یا نام آن مبهم است.'];
         }
 
         $payload = ['arguments' => $args];
@@ -163,9 +179,18 @@ final class PlannerIntentService
         $args = (array) ($action->payload['arguments'] ?? []);
 
         return match ($action->intent) {
+            'CREATE_GOAL' => ['goal' => $this->createGoal($args)->toArray()],
+            'UPDATE_GOAL' => ['goal' => $this->updateGoal($args)->toArray()],
+            'CREATE_PROJECT' => ['project' => $this->createProject($args)->toArray()],
+            'UPDATE_PROJECT' => ['project' => $this->updateProject($args)->toArray()],
+            'CREATE_MILESTONE' => ['milestone' => $this->createMilestone($args)->toArray()],
+            'UPDATE_MILESTONE' => ['milestone' => $this->updateMilestone($args)->toArray()],
             'CREATE_TASK' => ['task' => $this->createTask($args)->toArray()],
-            'COMPLETE_TASK' => ['task' => $this->planner->complete($this->resolveTaskOrFail($args))->toArray()],
-            'DEFER_TASK' => ['task' => $this->deferTask($args)->toArray()],
+            'UPDATE_TASK' => ['task' => $this->updateTask($args)->toArray()],
+            'COMPLETE_TASK' => ['task' => $this->planner->complete($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'))->toArray()],
+            'DEFER_TASK' => ['task' => $this->planner->defer($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'))->toArray()],
+            'CANCEL_TASK' => ['task' => $this->updateTask($args + ['status' => 'cancelled'])->toArray()],
+            'LOG_PROGRESS' => ['task' => $this->updateTask($args)->toArray()],
             default => throw new RuntimeException('Unsupported pending action.'),
         };
     }
@@ -183,6 +208,72 @@ final class PlannerIntentService
             'deadline' => $args['deadline'] ?? null,
             'status' => 'inbox',
         ]);
+    }
+
+    private function createGoal(array $args): Goal
+    {
+        return $this->mutateModel(new Goal(), ['title' => trim((string) ($args['title'] ?? '')), 'description' => $args['description'] ?? null, 'status' => $args['status'] ?? 'active', 'importance' => (int) ($args['importance'] ?? 50), 'weight' => (float) ($args['weight'] ?? 1), 'target_date' => $args['target_date'] ?? $args['deadline'] ?? null, 'success_criteria' => $args['success_criteria'] ?? null]);
+    }
+
+    private function updateGoal(array $args): Goal
+    {
+        $goal = $this->resolver->resolveGoal($args) ?? throw new RuntimeException('Goal could not be resolved.');
+        return $this->updateModel($goal, $this->editable($args, ['title','description','status','importance','weight','progress','target_date','success_criteria']));
+    }
+
+    private function createProject(array $args): Project
+    {
+        $goal = (!empty($args['goal_id']) || !empty($args['goal'])) ? $this->resolver->resolveGoal($args) : null;
+        return $this->mutateModel(new Project(), ['goal_id' => $goal?->id, 'title' => trim((string) ($args['title'] ?? '')), 'description' => $args['description'] ?? null, 'status' => $args['status'] ?? 'active', 'importance' => (int) ($args['importance'] ?? 50), 'weight' => (float) ($args['weight'] ?? 1), 'estimated_minutes' => max(0, (int) ($args['estimated_minutes'] ?? 0)), 'target_date' => $args['target_date'] ?? $args['deadline'] ?? null]);
+    }
+
+    private function updateProject(array $args): Project
+    {
+        $project = $this->resolver->resolveProject($args) ?? throw new RuntimeException('Project could not be resolved.');
+        return $this->updateModel($project, $this->editable($args, ['title','description','status','importance','weight','progress','target_date','estimated_minutes']));
+    }
+
+    private function createMilestone(array $args): Milestone
+    {
+        $project = $this->resolver->resolveProject($args) ?? throw new RuntimeException('Project is required for a milestone.');
+        return $this->mutateModel(new Milestone(), ['project_id' => $project->id, 'title' => trim((string) ($args['title'] ?? '')), 'status' => $args['status'] ?? 'pending', 'weight' => (float) ($args['weight'] ?? 1), 'progress' => (float) ($args['progress'] ?? 0), 'target_date' => $args['target_date'] ?? $args['deadline'] ?? null]);
+    }
+
+    private function updateMilestone(array $args): Milestone
+    {
+        $milestone = $this->resolver->resolveMilestone($args) ?? throw new RuntimeException('Milestone could not be resolved.');
+        return $this->updateModel($milestone, $this->editable($args, ['title','status','weight','progress','target_date']));
+    }
+
+    private function updateTask(array $args): Task
+    {
+        $task = $this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.');
+        return $this->updateModel($task, $this->editable($args, ['title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','deadline','planned_start','planned_end','energy_level','focus_level','failure_reason']));
+    }
+
+    private function editable(array $args, array $keys): array
+    {
+        $data = [];
+        foreach ($keys as $key) if (array_key_exists($key, $args)) $data[$key] = $args[$key];
+        return $data;
+    }
+
+    private function mutateModel(Model $model, array $data): Model
+    {
+        if (trim((string) ($data['title'] ?? '')) === '') throw new RuntimeException('Title is required.');
+        $model->fill($data);
+        $model->save();
+        $this->activity->log('created', $model::class, $model->id, null, $model->toArray());
+        return $model->refresh();
+    }
+
+    private function updateModel(Model $model, array $data): Model
+    {
+        $before = $model->toArray();
+        $model->fill($data);
+        $model->save();
+        $this->activity->log('updated', $model::class, $model->id, $before, $model->fresh()->toArray());
+        return $model->refresh();
     }
 
     private function deferTask(array $args): Task
