@@ -118,9 +118,16 @@ final class PlannerIntentService
         }
 
         if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER','SCHEDULE_TASK','RESCHEDULE_TASK'], true)) {
-            $resolved = $this->resolver->resolveTask($args);
-            if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
-            $args['task_id'] = $resolved->id;
+            $resolution = $this->resolver->resolveWithStatus('task', $args);
+            if (($resolution['status'] ?? null) === 'ambiguous') {
+                $items = array_slice($resolution['candidates'] ?? [], 0, 5);
+                $message = "چند کار مشابه پیدا شد؛ لطفاً یکی را انتخاب کن:\n".
+                    collect($items)->values()->map(fn ($item, $i) => ($i + 1).'. '.$item['title'])->implode("\n");
+                if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
+                return ['intent' => $intent, 'confirmation_required' => false, 'ambiguous' => true, 'candidates' => $items, 'message' => $message];
+            }
+            if (($resolution['status'] ?? null) !== 'resolved') return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد.'];
+            $args['task_id'] = $resolution['model']->id;
         }
         if ($intent === 'ADD_REMINDER') {
             $args['chat_id'] = $args['chat_id'] ?? $chatId;
