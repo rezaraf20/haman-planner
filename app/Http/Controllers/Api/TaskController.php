@@ -39,6 +39,10 @@ final class TaskController extends Controller
             'weight' => 'nullable|numeric|min:0',
             'estimated_minutes' => 'nullable|integer|min:0',
             'deadline' => 'nullable|date',
+            'planned_start' => 'nullable|date',
+            'planned_end' => 'nullable|date|after_or_equal:planned_start',
+            'energy_level' => 'nullable|integer|min:0|max:100',
+            'focus_level' => 'nullable|integer|min:0|max:100',
         ]);
 
         return response()->json($this->planner->createTask($data), 201);
