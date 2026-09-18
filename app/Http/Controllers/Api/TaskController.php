@@ -48,6 +48,15 @@ final class TaskController extends Controller
 
         $task = $this->planner->createTask($data);
         $this->progressPropagation->recalculateFromTask($task);
+        if ($oldMilestoneId && $oldMilestoneId !== $task->milestone_id) {
+            $old = \App\Models\Milestone::find($oldMilestoneId); if ($old) $this->progressPropagation->milestone($old);
+        }
+        if ($oldProjectId && $oldProjectId !== $task->project_id) {
+            $old = \App\Models\Project::find($oldProjectId); if ($old) $this->progressPropagation->project($old);
+        }
+        if ($oldGoalId && $oldGoalId !== $task->goal_id) {
+            $old = \App\Models\Goal::find($oldGoalId); if ($old) $this->progressPropagation->goal($old);
+        }
         return response()->json($task->refresh(), 201);
     }
 
@@ -79,6 +88,9 @@ final class TaskController extends Controller
         if (isset($data['status']) && $data['status'] === 'completed') {
             $data['progress'] = 100;
         }
+        $oldGoalId = $task->goal_id;
+        $oldProjectId = $task->project_id;
+        $oldMilestoneId = $task->milestone_id;
         $task->update($data);
 
         if ($task->status === 'completed') {
@@ -93,8 +105,13 @@ final class TaskController extends Controller
 
     public function destroy(Task $task): JsonResponse
     {
+        $goal = $task->goal()->first();
+        $project = $task->project()->first();
+        $milestone = $task->milestone()->first();
         $task->delete();
-
+        if ($milestone) $this->progressPropagation->milestone($milestone);
+        if ($project) $this->progressPropagation->project($project);
+        if ($goal) $this->progressPropagation->goal($goal);
         return response()->json(null, 204);
     }
 }
