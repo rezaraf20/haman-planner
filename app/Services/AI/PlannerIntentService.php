@@ -122,6 +122,9 @@ final class PlannerIntentService
             if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
             $args['task_id'] = $resolved->id;
         }
+        if (in_array($intent, ['ADD_REMINDER'], true) && empty($args['scheduled_at']) && empty($args['remind_at'])) {
+            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
+        }
         if ($intent === 'UPDATE_GOAL' && ! $this->resolver->resolveGoal($args)) {
             return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'];
         }
