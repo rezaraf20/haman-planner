@@ -352,8 +352,6 @@ final class PlannerIntentService
     {
         $task = $result['task'] ?? null;
         $title = is_array($task) ? (string) ($task['title'] ?? '') : '';
-        $reminder = $result['reminder'] ?? null;
-        $log = $result['execution_log'] ?? null;
         return match ($intent) {
             'CREATE_TASK' => "ایجاد شد: {$title}",
             'COMPLETE_TASK' => "تکمیل شد: {$title}",
