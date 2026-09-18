@@ -58,7 +58,7 @@ PROMPT;
         $options = ['temperature' => 0];
 
         try {
-            $response = $this->chat($messages, $options + ['response_format' => ['type' => 'json_object']]);
+            $response = $this->chat($messages, $options + (filter_var((string) env('AI_JSON_RESPONSE_FORMAT', 'true'), FILTER_VALIDATE_BOOLEAN) ? ['response_format' => ['type' => 'json_object']] : []));
         } catch (\Throwable) {
             $response = $this->chat($messages, $options);
         }
@@ -71,6 +71,8 @@ PROMPT;
         }
 
         $value['intent'] = strtoupper((string) ($value['intent'] ?? 'UNKNOWN'));
+        $allowed = ['CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','SCHEDULE_TASK','RESCHEDULE_TASK','ADD_REMINDER','LOG_TIME','LOG_PROGRESS','LOG_BLOCKER','LOG_FAILURE','DAILY_REVIEW','WEEKLY_REVIEW','QUERY_PLAN','QUERY_PROGRESS','QUERY_REPORT','QUERY_GOAL'];
+        if (!in_array($value['intent'], $allowed, true)) $value['intent'] = 'UNKNOWN';
         $value['arguments'] = is_array($value['arguments'] ?? null)
             ? $value['arguments']
             : (is_array($value['entities'] ?? null) ? $value['entities'] : []);
