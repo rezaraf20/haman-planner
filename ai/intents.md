@@ -24,3 +24,16 @@ Example:
 - IDs are resolved by the application, not invented by the model.
 - Missing required fields cause clarification.
 - Every executed intent receives an audit record.
+
+## Mutation coverage
+
+Supported mutation intents include:
+- Goals: `CREATE_GOAL`, `UPDATE_GOAL`
+- Projects: `CREATE_PROJECT`, `UPDATE_PROJECT`
+- Milestones: `CREATE_MILESTONE`, `UPDATE_MILESTONE`
+- Tasks: `CREATE_TASK`, `UPDATE_TASK`, `COMPLETE_TASK`, `DEFER_TASK`, `CANCEL_TASK`
+- Scheduling: `SCHEDULE_TASK`, `RESCHEDULE_TASK`
+- Reminders: `ADD_REMINDER`
+- Execution logging: `LOG_TIME`, `LOG_PROGRESS`, `LOG_BLOCKER`, `LOG_FAILURE`
+
+All mutation intents require explicit confirmation before persistence. Entity references are resolved and frozen before confirmation so approval cannot silently target a different record.
