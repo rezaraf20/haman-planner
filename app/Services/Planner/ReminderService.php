@@ -71,6 +71,10 @@ final class ReminderService
 
             return true;
         } catch (\Throwable $e) {
+            Log::warning('Haman Planner reminder delivery failed', [
+                'reminder_id' => $reminder->id,
+                'error' => $e->getMessage(),
+            ]);
             $current = $reminder->fresh();
             $current?->update([
                 'status' => 'failed',
