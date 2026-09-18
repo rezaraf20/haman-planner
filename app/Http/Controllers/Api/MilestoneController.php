@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Milestone;
+use App\Services\Planner\ProgressPropagationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -54,6 +55,7 @@ final class MilestoneController extends Controller
         ]);
 
         $milestone->update($data);
+        $this->progressPropagation->milestone($milestone);
 
         return response()->json($milestone->refresh()->load('project'));
     }
