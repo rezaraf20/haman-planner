@@ -48,15 +48,6 @@ final class TaskController extends Controller
 
         $task = $this->planner->createTask($data);
         $this->progressPropagation->recalculateFromTask($task);
-        if ($oldMilestoneId && $oldMilestoneId !== $task->milestone_id) {
-            $old = \App\Models\Milestone::find($oldMilestoneId); if ($old) $this->progressPropagation->milestone($old);
-        }
-        if ($oldProjectId && $oldProjectId !== $task->project_id) {
-            $old = \App\Models\Project::find($oldProjectId); if ($old) $this->progressPropagation->project($old);
-        }
-        if ($oldGoalId && $oldGoalId !== $task->goal_id) {
-            $old = \App\Models\Goal::find($oldGoalId); if ($old) $this->progressPropagation->goal($old);
-        }
         return response()->json($task->refresh(), 201);
     }
 
@@ -99,6 +90,9 @@ final class TaskController extends Controller
             $this->planner->recalculatePriority($task);
         }
         $this->progressPropagation->recalculateFromTask($task);
+        if ($oldMilestoneId && $oldMilestoneId !== $task->milestone_id) { $old = \App\Models\Milestone::find($oldMilestoneId); if ($old) $this->progressPropagation->milestone($old); }
+        if ($oldProjectId && $oldProjectId !== $task->project_id) { $old = \App\Models\Project::find($oldProjectId); if ($old) $this->progressPropagation->project($old); }
+        if ($oldGoalId && $oldGoalId !== $task->goal_id) { $old = \App\Models\Goal::find($oldGoalId); if ($old) $this->progressPropagation->goal($old); }
 
         return response()->json($task->refresh());
     }
