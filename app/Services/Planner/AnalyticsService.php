@@ -25,7 +25,7 @@ final class AnalyticsService
             'estimated_minutes' => $estimated,
             'actual_minutes' => $actual,
             'estimation_error_percent' => $estimated ? round(($actual - $estimated) / $estimated * 100, 2) : 0,
-            'execution_minutes' => (int) $logs->sum('duration'),
+            'execution_minutes' => (int) $logs->sum('duration_minutes'),
             'execution_sessions' => $logs->count(),
         ];
     }
