@@ -122,17 +122,25 @@ final class PlannerIntentService
             if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
             $args['task_id'] = $resolved->id;
         }
-        if (in_array($intent, ['ADD_REMINDER'], true) && empty($args['scheduled_at']) && empty($args['remind_at'])) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
+        if ($intent === 'ADD_REMINDER') {
+            if (empty($args['scheduled_at']) && empty($args['remind_at'])) {
+                return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
+            }
+            if (!empty($args['task']) || !empty($args['task_id'])) {
+                $task = $this->resolver->resolveTask($args);
+                if (!$task) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
+                $args['task_id'] = $task->id;
+            }
         }
-        if ($intent === 'UPDATE_GOAL' && ! $this->resolver->resolveGoal($args)) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'];
-        }
-        if ($intent === 'UPDATE_PROJECT' && ! $this->resolver->resolveProject($args)) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'پروژه موردنظر پیدا نشد یا نام آن مبهم است.'];
-        }
-        if ($intent === 'UPDATE_MILESTONE' && ! $this->resolver->resolveMilestone($args)) {
-            return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'مایلستون موردنظر پیدا نشد یا نام آن مبهم است.'];
+        foreach ([
+            'UPDATE_GOAL' => ['resolver' => 'resolveGoal', 'key' => 'goal_id', 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'],
+            'UPDATE_PROJECT' => ['resolver' => 'resolveProject', 'key' => 'project_id', 'message' => 'پروژه موردنظر پیدا نشد یا نام آن مبهم است.'],
+            'UPDATE_MILESTONE' => ['resolver' => 'resolveMilestone', 'key' => 'milestone_id', 'message' => 'مایلستون موردنظر پیدا نشد یا نام آن مبهم است.'],
+        ] as $mutation => $definition) {
+            if ($intent !== $mutation) continue;
+            $entity = $this->resolver->{$definition['resolver']}($args);
+            if (!$entity) return ['intent' => $intent, 'confirmation_required' => false, 'message' => $definition['message']];
+            $args[$definition['key']] = $entity->id;
         }
 
         $payload = ['arguments' => $args, 'resolved' => $this->resolvedReference($intent, $args)];
