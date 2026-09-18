@@ -42,7 +42,7 @@ final class ProjectController extends Controller
         ]);
 
         $project = Project::create($data);
-
+        if ($project->goal) $this->progressPropagation->goal($project->goal);
         return response()->json($project->load('goal'), 201);
     }
 
@@ -68,16 +68,20 @@ final class ProjectController extends Controller
             'target_date' => 'sometimes|nullable|date',
         ]);
 
+        $oldGoalId = $project->goal_id;
         $project->update($data);
         $this->progressPropagation->project($project);
+        if ($oldGoalId && $oldGoalId !== $project->goal_id) { $old = \App\Models\Goal::find($oldGoalId); if ($old) $this->progressPropagation->goal($old); }
+        if ($project->goal) $this->progressPropagation->goal($project->goal);
 
         return response()->json($project->refresh()->load('goal'));
     }
 
     public function destroy(Project $project): JsonResponse
     {
+        $goal = $project->goal()->first();
         $project->delete();
-
+        if ($goal) $this->progressPropagation->goal($goal);
         return response()->json(null, 204);
     }
 }
