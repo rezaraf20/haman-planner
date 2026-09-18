@@ -9,7 +9,10 @@ use Illuminate\Support\Collection;
 
 final class DailyPlannerEngine
 {
-    public function __construct(private readonly CapacityPlanner $capacity) {}
+    public function __construct(
+        private readonly CapacityPlanner $capacity,
+        private readonly DependencyService $dependencies,
+    ) {}
 
     public function build(int $availableMinutes, ?Collection $tasks = null): array
     {
@@ -24,9 +27,19 @@ final class DailyPlannerEngine
             ->get();
 
         $selected = [];
+        $skipped = [];
         $minutes = 0;
 
         foreach ($tasks as $task) {
+            if (! $this->dependencies->canStart($task)) {
+                $skipped[] = [
+                    'task_id' => $task->id,
+                    'title' => $task->title,
+                    'reason' => 'blocked_by_dependency',
+                ];
+                continue;
+            }
+
             $estimate = max(1, (int) $task->estimated_minutes);
             if ($minutes + $estimate > $usable && $minutes > 0) {
                 continue;
@@ -49,6 +62,7 @@ final class DailyPlannerEngine
             'planned_minutes' => $minutes,
             'buffer_minutes' => max(0, $availableMinutes - $minutes),
             'tasks' => $selected,
+            'skipped' => $skipped,
         ];
     }
 }
