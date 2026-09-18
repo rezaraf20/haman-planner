@@ -127,9 +127,7 @@ final class PlannerIntentService
 
     private function deferTask(array $args): Task
     {
-        $task = $this->resolveTaskOrFail($args);
-        $task->update(['status' => 'deferred']);
-        return $task->refresh();
+        return $this->planner->defer($this->resolveTaskOrFail($args));
     }
 
     private function resolveTaskOrFail(array $args): Task
