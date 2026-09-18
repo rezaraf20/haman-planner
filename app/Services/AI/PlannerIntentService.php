@@ -178,7 +178,16 @@ final class PlannerIntentService
     {
         $args = (array) ($action->payload['arguments'] ?? []);
         $resolved = (array) ($action->payload['resolved'] ?? []);
-        if ($resolved !== []) $args['task_id'] = $resolved['type'] === Task::class ? $resolved['id'] : ($args['task_id'] ?? null);
+        if ($resolved !== []) {
+            $key = match ($resolved['type'] ?? null) {
+                Task::class => 'task_id',
+                Goal::class => 'goal_id',
+                Project::class => 'project_id',
+                Milestone::class => 'milestone_id',
+                default => null,
+            };
+            if ($key !== null) $args[$key] = $resolved['id'];
+        }
 
         return match ($action->intent) {
             'CREATE_GOAL' => ['goal' => $this->createGoal($args)->toArray()],
