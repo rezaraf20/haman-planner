@@ -29,7 +29,7 @@ final class PlannerService
     public function complete(Task $task): Task
     {
         $before = $task->toArray();
-        $task->update(['status' => 'completed', 'progress' => 100]);
+        $task->update(['status' => 'completed', 'progress' => 100, 'completed_at' => now()]);
         $this->activity->log('completed', Task::class, $task->id, $before, $task->fresh()->toArray());
         return $task->refresh();
     }
