@@ -52,18 +52,22 @@ final class EntityResolver
         if ($candidates->count() === 1) return $candidates->first();
 
         $needleNorm = mb_strtolower(preg_replace('/\s+/u', ' ', $needle) ?? $needle);
-        $best = null;
-        $bestScore = 0.0;
+        $ranked = [];
         foreach ($candidates as $candidate) {
             $titleNorm = mb_strtolower(preg_replace('/\s+/u', ' ', (string) $candidate->title) ?? $candidate->title);
             similar_text($needleNorm, $titleNorm, $percent);
-            $score = $percent / 100;
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $best = $candidate;
-            }
+            $ranked[] = ['model' => $candidate, 'score' => $percent / 100];
         }
 
-        return $bestScore >= 0.72 ? $best : null;
+        usort($ranked, static fn(array $a, array $b): int => $b['score'] <=> $a['score']);
+        $best = $ranked[0] ?? null;
+        $second = $ranked[1] ?? null;
+
+        // Never guess between similarly matching entities. Require both a strong
+        // match and a meaningful gap from the next candidate.
+        if ($best === null || $best['score'] < 0.82) return null;
+        if ($second !== null && ($best['score'] - $second['score']) < 0.10) return null;
+
+        return $best['model'];
     }
 }
