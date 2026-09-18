@@ -82,7 +82,7 @@ final class EntityResolver
     {
         $result = $this->resolveWithStatus(
             match ($model) { Task::class => 'task', Goal::class => 'goal', Project::class => 'project', Milestone::class => 'milestone' },
-            array_filter(['task_id' => $id, 'title' => $title], fn ($v) => $v !== null)
+            array_filter([($model === Task::class ? 'task_id' : $model === Goal::class ? 'goal_id' : $model === Project::class ? 'project_id' : 'milestone_id') => $id, 'title' => $title], fn ($v) => $v !== null)
         );
         return $result['status'] === 'resolved' ? $result['model'] : null;
     }
