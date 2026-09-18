@@ -45,7 +45,7 @@ final class PlannerIntentService
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
 
         return match ($name) {
-            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER' => $this->requestConfirmation($name, $args, $chatId),
+            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER','ADD_REMINDER','SCHEDULE_TASK','RESCHEDULE_TASK' => $this->requestConfirmation($name, $args, $chatId),
             'QUERY_PLAN' => $this->queryPlan($args, $chatId),
             'QUERY_PROGRESS' => $this->queryProgress($args, $chatId),
             'QUERY_REPORT' => $this->queryReport($args, $chatId),
@@ -117,7 +117,7 @@ final class PlannerIntentService
             return ['intent' => $intent, 'confirmation_required' => true, 'message' => 'A confirmation channel is required for mutations.'];
         }
 
-        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER'], true)) {
+        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER','SCHEDULE_TASK','RESCHEDULE_TASK'], true)) {
             $resolved = $this->resolver->resolveTask($args);
             if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
             $args['task_id'] = $resolved->id;
@@ -207,6 +207,9 @@ final class PlannerIntentService
             'LOG_TIME' => ['execution_log' => $this->planner->logTime($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
             'LOG_FAILURE' => ['task' => $this->planner->logFailure($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
             'LOG_BLOCKER' => ['task' => $this->planner->logBlocker($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
+            'ADD_REMINDER' => ['reminder' => $this->createReminder($args)->toArray()],
+            'SCHEDULE_TASK' => ['task' => $this->scheduleTask($args)->toArray()],
+            'RESCHEDULE_TASK' => ['task' => $this->scheduleTask($args)->toArray()],
             default => throw new RuntimeException('Unsupported pending action.'),
         };
     }
@@ -265,6 +268,34 @@ final class PlannerIntentService
     {
         $task = $this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.');
         return $this->updateModel($task, $this->editable($args, ['title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','deadline','planned_start','planned_end','energy_level','focus_level','failure_reason']));
+    }
+
+    private function createReminder(array $args): \App\Models\Reminder
+    {
+        $task = !empty($args['task_id']) || !empty($args['task'])
+            ? $this->resolver->resolveTask($args)
+            : null;
+        $scheduled = $args['scheduled_at'] ?? $args['remind_at'] ?? null;
+        if (!$scheduled) throw new RuntimeException('Reminder time is required.');
+        $chatId = $args['chat_id'] ?? null;
+        if ($chatId === null) throw new RuntimeException('Reminder chat_id is required.');
+        $reminder = \App\Models\Reminder::create([
+            'task_id' => $task?->id,
+            'type' => $args['type'] ?? 'telegram',
+            'scheduled_at' => \Carbon\Carbon::parse($scheduled),
+            'status' => 'pending',
+            'payload' => ['chat_id' => $chatId, 'message' => $args['message'] ?? null],
+        ]);
+        $this->activity->log('created', \App\Models\Reminder::class, $reminder->id, null, $reminder->toArray());
+        return $reminder->refresh();
+    }
+
+    private function scheduleTask(array $args): Task
+    {
+        $task = $this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.');
+        $data = $this->editable($args, ['planned_start','planned_end']);
+        if ($data === []) throw new RuntimeException('Schedule time is required.');
+        return $this->updateModel($task, $data);
     }
 
     private function editable(array $args, array $keys): array
