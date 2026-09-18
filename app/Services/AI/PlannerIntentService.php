@@ -45,7 +45,7 @@ final class PlannerIntentService
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
 
         return match ($name) {
-            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS' => $this->requestConfirmation($name, $args, $chatId),
+            'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER' => $this->requestConfirmation($name, $args, $chatId),
             'QUERY_PLAN' => $this->queryPlan($args, $chatId),
             'QUERY_PROGRESS' => $this->queryProgress($args, $chatId),
             'QUERY_REPORT' => $this->queryReport($args, $chatId),
@@ -117,7 +117,7 @@ final class PlannerIntentService
             return ['intent' => $intent, 'confirmation_required' => true, 'message' => 'A confirmation channel is required for mutations.'];
         }
 
-        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS'], true)) {
+        if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER'], true)) {
             $resolved = $this->resolver->resolveTask($args);
             if (! $resolved) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
             $args['task_id'] = $resolved->id;
@@ -204,6 +204,9 @@ final class PlannerIntentService
             'DEFER_TASK' => ['task' => $this->planner->defer($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'))->toArray()],
             'CANCEL_TASK' => ['task' => $this->updateTask($args + ['status' => 'cancelled'])->toArray()],
             'LOG_PROGRESS' => ['task' => $this->updateTask($args)->toArray()],
+            'LOG_TIME' => ['execution_log' => $this->planner->logTime($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
+            'LOG_FAILURE' => ['task' => $this->planner->logFailure($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
+            'LOG_BLOCKER' => ['task' => $this->planner->logBlocker($this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.'), $args)->toArray()],
             default => throw new RuntimeException('Unsupported pending action.'),
         };
     }
