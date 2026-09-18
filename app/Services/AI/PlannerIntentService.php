@@ -319,6 +319,11 @@ final class PlannerIntentService
         $task = $this->resolver->resolveTask($args) ?? throw new RuntimeException('Task could not be resolved.');
         $data = $this->editable($args, ['planned_start','planned_end']);
         if ($data === []) throw new RuntimeException('Schedule time is required.');
+        if (isset($data['planned_start'], $data['planned_end']) && $data['planned_start'] !== null && $data['planned_end'] !== null) {
+            $start = \\Carbon\\Carbon::parse($data['planned_start']);
+            $end = \\Carbon\\Carbon::parse($data['planned_end']);
+            if ($end->lt($start)) throw new RuntimeException('Schedule end must be after schedule start.');
+        }
         return $this->updateModel($task, $data);
     }
 
