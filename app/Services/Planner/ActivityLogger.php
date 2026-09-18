@@ -10,6 +10,7 @@ final class ActivityLogger
     public function log(string $action, string $entityType, string|int|null $entityId, ?array $before = null, ?array $after = null): ActivityLog
     {
         return ActivityLog::create([
+            'actor_type' => 'system',
             'action' => $action,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
