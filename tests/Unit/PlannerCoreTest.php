@@ -7,10 +7,17 @@ use App\Domain\Planner\CapacityPlanner;
 use App\Domain\Planner\DependencyValidator;
 use App\Domain\Planner\GoalHealthCalculator;
 use App\Domain\Planner\PriorityCalculator;
+use App\Domain\Planner\TaskStatus;
 use PHPUnit\Framework\TestCase;
 
 final class PlannerCoreTest extends TestCase
 {
+    public function test_task_status_enum_covers_deferred_state(): void
+    {
+        $this->assertSame('deferred', TaskStatus::Deferred->value);
+        $this->assertSame('completed', TaskStatus::Completed->value);
+    }
+
     public function test_capacity_reserves_twenty_percent_buffer(): void
     {
         $this->assertSame(400, (new CapacityPlanner())->usableMinutes(500));
