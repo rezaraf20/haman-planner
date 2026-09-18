@@ -1,0 +1,23 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets
+*.pem
+*.key
+secrets/
+credentials/
+
+# Dependencies
+/vendor/
+/node_modules/
