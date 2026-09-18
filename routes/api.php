@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\NoteController;
 use App\Http\Controllers\Api\DecisionController;
+use App\Http\Controllers\Api\AIPlannerController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
 
@@ -35,6 +36,7 @@ Route::middleware([RequestIdMiddleware::class, ApiTokenMiddleware::class, Idempo
     Route::get('/planner/today', [PlannerController::class, 'today']);
     Route::get('/planner/analytics', [PlannerController::class, 'analytics']);
     Route::get('/planner/recommendations', RecommendationController::class);
+    Route::post('/planner/ai-recommendations', AIPlannerController::class);
     Route::get('/search', SearchController::class);
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);
     Route::delete('/tasks/{task}/dependencies/{dependency}', [DependencyController::class, 'destroy']);
