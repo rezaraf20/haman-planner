@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reminder extends Model
 {
-    protected $fillable = ['task_id', 'type', 'scheduled_at', 'status', 'payload'];
+    protected $fillable = ['task_id','type','scheduled_at','next_attempt_at','status','attempts','max_attempts','payload'];
 
     protected $casts = [
-        'scheduled_at' => 'datetime',
+        'scheduled_at'=>'datetime','next_attempt_at'=>'datetime',
         'payload' => 'array',
     ];
 
