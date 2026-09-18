@@ -34,6 +34,15 @@ final class PlannerService
         return $task->refresh();
     }
 
+    public function defer(Task $task): Task
+    {
+        $before = $task->toArray();
+        $task->update(['status' => 'deferred']);
+        $this->activity->log('deferred', Task::class, $task->id, $before, $task->fresh()->toArray());
+
+        return $task->refresh();
+    }
+
     public function recalculatePriority(Task $task): Task
     {
         $task->priority = $this->priority->calculate(
