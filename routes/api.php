@@ -21,30 +21,50 @@ use App\Http\Controllers\Api\DecisionController;
 use App\Http\Controllers\Api\AIPlannerController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
+use App\Http\Middleware\RequestIdMiddleware;
+use App\Http\Middleware\IdempotencyMiddleware;
 
-Route::get('/health', fn (): array => ['status'=>'ok','app'=>'haman-planner','author'=>'Reza Rafiei']);
-Route::get('/ready', function () { try { DB::connection()->getPdo(); return response()->json(['status'=>'ready','database'=>'ok']); } catch (\\Throwable) { return response()->json(['status'=>'not_ready','database'=>'unavailable'],503); } });
+Route::get('/health', fn (): array => ['status' => 'ok', 'app' => 'haman-planner', 'author' => 'Reza Rafiei']);
+
+Route::get('/ready', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json(['status' => 'ready', 'database' => 'ok']);
+    } catch (\Throwable) {
+        return response()->json(['status' => 'not_ready', 'database' => 'unavailable'], 503);
+    }
+});
+
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1');
 
-Route::middleware([RequestIdMiddleware::class, ApiTokenMiddleware::class, IdempotencyMiddleware::class, 'throttle:120,1'])->group(function (): void {
+Route::middleware([
+    RequestIdMiddleware::class,
+    ApiTokenMiddleware::class,
+    IdempotencyMiddleware::class,
+    'throttle:120,1',
+])->group(function (): void {
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
     Route::apiResource('milestones', MilestoneController::class);
     Route::apiResource('notes', NoteController::class);
     Route::apiResource('decisions', DecisionController::class);
+
     Route::get('/planner/today', [PlannerController::class, 'today']);
     Route::get('/planner/analytics', [PlannerController::class, 'analytics']);
     Route::get('/planner/recommendations', RecommendationController::class);
     Route::post('/planner/ai-recommendations', AIPlannerController::class);
+
     Route::get('/search', SearchController::class);
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);
     Route::delete('/tasks/{task}/dependencies/{dependency}', [DependencyController::class, 'destroy']);
     Route::post('/tasks/{task}/execution-logs', [ExecutionLogController::class, 'store']);
+
     Route::get('/reminders', [ReminderController::class, 'index']);
     Route::post('/reminders', [ReminderController::class, 'store']);
     Route::delete('/reminders/{reminder}', [ReminderController::class, 'destroy']);
     Route::post('/reminders/{reminder}/cancel', [ReminderController::class, 'cancel']);
+
     Route::post('/commands', [CommandController::class, 'handle']);
     Route::get('/reviews', [ReviewController::class, 'index']);
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);
