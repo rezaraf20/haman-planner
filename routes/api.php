@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\RecommendationController;
+use App\Http\Controllers\Api\NoteController;
+use App\Http\Controllers\Api\DecisionController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\ApiTokenMiddleware;
 
@@ -28,6 +30,8 @@ Route::middleware([RequestIdMiddleware::class, ApiTokenMiddleware::class, Idempo
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
     Route::apiResource('milestones', MilestoneController::class);
+    Route::apiResource('notes', NoteController::class);
+    Route::apiResource('decisions', DecisionController::class);
     Route::get('/planner/today', [PlannerController::class, 'today']);
     Route::get('/planner/analytics', [PlannerController::class, 'analytics']);
     Route::get('/planner/recommendations', RecommendationController::class);
