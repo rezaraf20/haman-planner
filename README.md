@@ -40,6 +40,8 @@ Proprietary. See [LICENSE](LICENSE).
 - Telegram reminders with scheduled dispatch
 - Protected API with bearer token and rate limiting
 - Telegram webhook secret validation
+- Database readiness endpoint (`/api/ready`)
+- Real completion timestamps and schedule-variance analytics
 - Audit logging for important mutations
 
 ## Production checklist
