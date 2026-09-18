@@ -59,9 +59,19 @@ final class TaskController extends Controller
             'progress' => 'sometimes|numeric|min:0|max:100',
             'estimated_minutes' => 'sometimes|integer|min:0',
             'deadline' => 'nullable|date',
+            'planned_start' => 'sometimes|nullable|date',
+            'planned_end' => 'sometimes|nullable|date|after_or_equal:planned_start',
+            'energy_level' => 'sometimes|nullable|integer|min:0|max:100',
+            'focus_level' => 'sometimes|nullable|integer|min:0|max:100',
             'weight' => 'sometimes|numeric|min:0',
         ]);
 
+        if (isset($data['status']) && $data['status'] !== 'completed') {
+            $data['completed_at'] = null;
+        }
+        if (isset($data['status']) && $data['status'] === 'completed') {
+            $data['progress'] = 100;
+        }
         $task->update($data);
 
         if ($task->status === 'completed') {
