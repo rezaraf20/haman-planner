@@ -352,10 +352,19 @@ final class PlannerIntentService
     {
         $task = $result['task'] ?? null;
         $title = is_array($task) ? (string) ($task['title'] ?? '') : '';
+        $reminder = $result['reminder'] ?? null;
+        $log = $result['execution_log'] ?? null;
         return match ($intent) {
             'CREATE_TASK' => "ایجاد شد: {$title}",
             'COMPLETE_TASK' => "تکمیل شد: {$title}",
             'DEFER_TASK' => "به تعویق افتاد: {$title}",
+            'CANCEL_TASK' => "لغو شد: {$title}",
+            'UPDATE_TASK', 'LOG_PROGRESS' => "به‌روزرسانی شد: {$title}",
+            'SCHEDULE_TASK', 'RESCHEDULE_TASK' => "زمان‌بندی شد: {$title}",
+            'LOG_BLOCKER' => "تسک مسدود شد: {$title}",
+            'LOG_FAILURE' => "دلیل عدم موفقیت ثبت شد: {$title}",
+            'LOG_TIME' => 'زمان اجرا ثبت شد.',
+            'ADD_REMINDER' => 'یادآوری ثبت شد.',
             default => 'انجام شد.',
         };
     }
