@@ -21,6 +21,9 @@ final class TelegramWebhookController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $secret = (string) config('services.telegram.webhook_secret');
+        if ($secret === '' && app()->environment('production')) {
+            return response()->json(['ok' => false], 503);
+        }
         if ($secret !== '') {
             $provided = (string) $request->header('X-Telegram-Bot-Api-Secret-Token');
             if ($provided === '' || !hash_equals($secret, $provided)) {
@@ -66,11 +69,20 @@ final class TelegramWebhookController extends Controller
     private function handleVoice(string $fileId, string|int $chatId): void
     {
         $filePath = $this->telegram->getFilePath($fileId);
-        $extension = pathinfo($filePath, PATHINFO_EXTENSION) ?: 'ogg';
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION) ?: 'ogg');
+        if (! in_array($extension, ['ogg', 'oga', 'mp3', 'm4a', 'wav', 'webm'], true)) {
+            $this->telegram->sendMessage($chatId, 'فرمت فایل صوتی پشتیبانی نمی‌شود.');
+            return;
+        }
         $temporaryPath = storage_path('app/'.Str::uuid().'.'.$extension);
 
         try {
             $this->telegram->downloadFile($filePath, $temporaryPath);
+            $maxBytes = 20 * 1024 * 1024;
+            if (! is_file($temporaryPath) || filesize($temporaryPath) === false || filesize($temporaryPath) > $maxBytes) {
+                $this->telegram->sendMessage($chatId, 'حجم فایل صوتی بیش از حد مجاز است.');
+                return;
+            }
 
             $result = SpeechProviderFactory::make()->transcribe($temporaryPath);
             $text = trim((string) ($result['text'] ?? ''));
