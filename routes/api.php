@@ -77,6 +77,7 @@ Route::middleware([
     Route::apiResource('schedule-blocks', ScheduleBlockController::class)->except(['show']);
 
     Route::get('/search', SearchController::class);
+    Route::get('/tasks/{task}/dependencies', [DependencyController::class, 'index']);
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);
     Route::delete('/tasks/{task}/dependencies/{dependency}', [DependencyController::class, 'destroy']);
     Route::post('/tasks/{task}/execution-logs', [ExecutionLogController::class, 'store']);
