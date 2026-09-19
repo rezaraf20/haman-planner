@@ -14,6 +14,11 @@ final class DependencyController extends Controller
 {
     public function __construct(private readonly DependencyService $service) {}
 
+    public function index(Task $task): JsonResponse
+    {
+        return response()->json($task->dependencies()->with('dependsOn')->get());
+    }
+
     public function store(Request $request, Task $task): JsonResponse
     {
         $data = $request->validate([
