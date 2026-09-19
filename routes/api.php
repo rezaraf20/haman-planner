@@ -100,8 +100,7 @@ Route::middleware([
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);
 });
 
-Route::middleware(['auth'])->group(function(): void {
- Route::middleware(fn($r,$next)=>$r->user()->is_admin?$next($r):abort(403))->prefix('admin')->group(function(): void {
+Route::middleware(['auth','admin'])->prefix('admin')->group(function(): void {
   Route::get('/users',[AdminController::class,'users']);
   Route::post('/users',[AdminController::class,'storeUser']);
   Route::put('/users/{user}',[AdminController::class,'updateUser']);
