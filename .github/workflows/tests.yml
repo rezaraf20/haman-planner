@@ -34,6 +34,8 @@ jobs:
           extensions: pdo_pgsql
           coverage: none
       - run: composer install --no-interaction --prefer-dist
+      - run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+      - run: chmod -R ug+rw bootstrap/cache storage
       - run: php artisan migrate --force
         env:
           DB_CONNECTION: pgsql
