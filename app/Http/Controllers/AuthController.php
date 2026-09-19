@@ -38,7 +38,7 @@ final class AuthController extends Controller
             ]);
         }
 
-        if (! Auth::attempt(['email' => $data['email'], 'password' => $data['password']], (bool) ($data['remember'] ?? false))) {
+        if (! Auth::attempt(['email' => $data['email'], 'password' => $data['password'], 'is_active' => true], (bool) ($data['remember'] ?? false))) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages([
                 'email' => 'ایمیل یا رمز عبور صحیح نیست.',
