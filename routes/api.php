@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\DecisionController;
 use App\Http\Controllers\Api\AIPlannerController;
 use App\Http\Controllers\Api\DailyPlanController;
 use App\Http\Controllers\Api\ScheduleBlockController;
+use App\Http\Controllers\Api\SystemController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\PlannerApiAuth;
 use App\Http\Middleware\RequestIdMiddleware;
@@ -86,5 +88,24 @@ Route::middleware([
 
     Route::post('/commands', [CommandController::class, 'handle']);
     Route::get('/reviews', [ReviewController::class, 'index']);
+    Route::get('/system/dashboard', [SystemController::class, 'dashboard']);
+    Route::get('/system/activity', [SystemController::class, 'activity']);
+    Route::get('/system/ai-interactions', [SystemController::class, 'ai']);
+    Route::get('/system/pending-actions', [SystemController::class, 'pending']);
+    Route::get('/system/failures', [SystemController::class, 'failures']);
+    Route::get('/system/execution', [SystemController::class, 'execution']);
+    Route::get('/system/daily-plans', [SystemController::class, 'dailyPlans']);
+    Route::get('/system/report', [SystemController::class, 'report']);
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);
 });
+\nRoute::middleware(['auth'])->group(function(): void {
+ Route::middleware(fn($r,$next)=>$r->user()->is_admin?$next($r):abort(403))->prefix('admin')->group(function(): void {
+  Route::get('/users',[AdminController::class,'users']);
+  Route::post('/users',[AdminController::class,'storeUser']);
+  Route::put('/users/{user}',[AdminController::class,'updateUser']);
+  Route::delete('/users/{user}',[AdminController::class,'destroyUser']);
+  Route::get('/tokens',[AdminController::class,'tokens']);
+  Route::post('/tokens',[AdminController::class,'createToken']);
+  Route::delete('/tokens/{token}',[AdminController::class,'revokeToken']);
+ });
+});\n
