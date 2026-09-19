@@ -21,6 +21,6 @@ final class SystemController extends Controller {
  public function pending(): JsonResponse { return response()->json(PendingAction::query()->latest()->paginate(50)); }
  public function failures(): JsonResponse { return response()->json(FailureReason::query()->latest()->paginate(50)); }
  public function execution(Request $r): JsonResponse { $q=ExecutionLog::query()->with('task')->latest(); if($r->filled('task_id'))$q->where('task_id',$r->integer('task_id')); return response()->json($q->paginate(50)); }
- public function dailyPlans(): JsonResponse { return response()->json(DailyPlan::query()->latest('date')->paginate(31)); }
+ public function dailyPlans(): JsonResponse { return response()->json(DailyPlan::query()->latest('plan_date')->paginate(31)); }
  public function report(Request $r): JsonResponse { $period=$r->input('period','week'); $days=$period==='day'?1:($period==='month'?30:7); return response()->json(['period'=>$period,'metrics'=>$this->metrics($days),'tasks'=>Task::query()->where('created_at','>=',now()->subDays($days))->get(['id','title','status','priority','progress','estimated_minutes','actual_minutes','deadline'])]); }
 }
