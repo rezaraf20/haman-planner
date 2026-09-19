@@ -12,5 +12,5 @@ Route::middleware('auth')->group(function():void{
  Route::view('/planner','planner.dashboard')->name('planner.app');
  Route::get('/settings/security',[AccountController::class,'settings'])->name('account.settings');
  Route::post('/settings/password',[AccountController::class,'password'])->name('account.password');
- Route::get('/admin/users',fn()=>view('planner.users'))->middleware(fn($r,$next)=>$r->user()->is_admin?$next($r):abort(403))->name('admin.users');
+ Route::get('/admin/users',fn()=>view('planner.users'))->middleware('admin')->name('admin.users');
 });
