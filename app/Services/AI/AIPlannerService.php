@@ -5,6 +5,8 @@ namespace App\Services\AI;
 use App\Services\Planner\RecommendationService;
 use App\Models\Task;
 use RuntimeException;
+use App\Models\AiInteraction;
+use Illuminate\Support\Str;
 final class AIPlannerService
 {
  public function __construct(private readonly RecommendationService $recommendations) {}
@@ -17,7 +19,9 @@ final class AIPlannerService
    ['role'=>'user','content'=>json_encode($data,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)],
   ],['temperature'=>0,'response_format'=>['type'=>'json_object']]);
   $raw=$response['choices'][0]['message']['content']??'{}'; $value=json_decode((string)$raw,true);
-  if(!is_array($value)) throw new RuntimeException('AI planner returned invalid JSON.');
+  $valid=is_array($value);
+  AiInteraction::create(['provider'=>(string)config('services.ai.provider','configured'),'model'=>(string)config('services.ai.model','configured'),'intent'=>'AI_PLANNER','input_hash'=>hash('sha256',json_encode($context,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)),'input_payload'=>$context,'output_payload'=>$valid?$value:['raw'=>$raw],'confidence'=>null,'status'=>$valid?'completed':'invalid']);
+  if(!$valid) throw new RuntimeException('AI planner returned invalid JSON.');
   return ['generated_at'=>now()->toIso8601String(),'grounded'=>true,'data_source'=>'stored_planner_data','result'=>$value];
  }
 }
