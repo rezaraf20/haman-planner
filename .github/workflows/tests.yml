@@ -26,8 +26,6 @@ jobs:
           extensions: pdo_pgsql
           coverage: none
       - run: composer install --no-interaction --prefer-dist
-      - run: cp .env.example .env
-      - run: php artisan key:generate --force
       - run: php artisan migrate --force
         env:
           DB_CONNECTION: pgsql
