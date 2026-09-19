@@ -17,14 +17,16 @@ final class AdminUserSeeder extends Seeder
         $password = (string) env('PLANNER_ADMIN_PASSWORD', config('services.haman_planner.api_token', ''));
 
         if ($password === '') {
-            throw new RuntimeException('PLANNER_ADMIN_PASSWORD or Haman Planner API token must be configured before seeding the admin user.');
+            throw new RuntimeException('PLANNER_ADMIN_PASSWORD or APP_API_TOKEN must be configured before seeding the admin user.');
         }
 
         $user = User::firstOrNew(['email' => $email]);
         $user->name = (string) env('PLANNER_ADMIN_NAME', 'Reza');
+
         if (! $user->exists) {
             $user->password = Hash::make($password);
         }
+
         $user->save();
     }
 }
