@@ -98,7 +98,8 @@ Route::middleware([
     Route::get('/system/report', [SystemController::class, 'report']);
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);
 });
-\nRoute::middleware(['auth'])->group(function(): void {
+
+Route::middleware(['auth'])->group(function(): void {
  Route::middleware(fn($r,$next)=>$r->user()->is_admin?$next($r):abort(403))->prefix('admin')->group(function(): void {
   Route::get('/users',[AdminController::class,'users']);
   Route::post('/users',[AdminController::class,'storeUser']);
@@ -108,4 +109,4 @@ Route::middleware([
   Route::post('/tokens',[AdminController::class,'createToken']);
   Route::delete('/tokens/{token}',[AdminController::class,'revokeToken']);
  });
-});\n
+});
