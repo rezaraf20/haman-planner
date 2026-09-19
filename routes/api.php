@@ -80,10 +80,15 @@ Route::middleware([
     Route::get('/tasks/{task}/dependencies', [DependencyController::class, 'index']);
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);
     Route::delete('/tasks/{task}/dependencies/{dependency}', [DependencyController::class, 'destroy']);
+    Route::get('/tasks/{task}/execution-logs', [ExecutionLogController::class, 'index']);
     Route::post('/tasks/{task}/execution-logs', [ExecutionLogController::class, 'store']);
+    Route::put('/tasks/{task}/execution-logs/{executionLog}', [ExecutionLogController::class, 'update']);
+    Route::delete('/tasks/{task}/execution-logs/{executionLog}', [ExecutionLogController::class, 'destroy']);
 
     Route::get('/reminders', [ReminderController::class, 'index']);
+    Route::get('/reminders/{reminder}', [ReminderController::class, 'show']);
     Route::post('/reminders', [ReminderController::class, 'store']);
+    Route::put('/reminders/{reminder}', [ReminderController::class, 'update']);
     Route::delete('/reminders/{reminder}', [ReminderController::class, 'destroy']);
     Route::post('/reminders/{reminder}/cancel', [ReminderController::class, 'cancel']);
 
