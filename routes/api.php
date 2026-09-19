@@ -109,4 +109,3 @@ Route::middleware(['auth','admin'])->prefix('admin')->group(function(): void {
   Route::post('/tokens',[AdminController::class,'createToken']);
   Route::delete('/tokens/{token}',[AdminController::class,'revokeToken']);
  });
-});
