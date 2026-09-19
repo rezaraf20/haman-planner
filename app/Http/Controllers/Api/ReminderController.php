@@ -22,6 +22,30 @@ final class ReminderController extends Controller
         return response()->json($query->paginate(50));
     }
 
+    public function show(Reminder $reminder): JsonResponse
+    {
+        return response()->json($reminder->load('task'));
+    }
+
+    public function update(Request $request, Reminder $reminder): JsonResponse
+    {
+        $data = $request->validate([
+            'task_id' => 'nullable|integer|exists:tasks,id',
+            'type' => 'nullable|string|max:50',
+            'scheduled_at' => 'sometimes|date',
+            'chat_id' => 'nullable|string|max:100',
+            'message' => 'nullable|string|max:4000',
+            'status' => 'sometimes|in:pending,sent,failed,cancelled',
+        ]);
+        $payload = $reminder->payload ?? [];
+        if (array_key_exists('chat_id',$data)) $payload['chat_id']=$data['chat_id'];
+        if (array_key_exists('message',$data)) $payload['message']=$data['message'];
+        unset($data['chat_id'],$data['message']);
+        if ($payload) $data['payload']=$payload;
+        $reminder->update($data);
+        return response()->json($reminder->refresh()->load('task'));
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
