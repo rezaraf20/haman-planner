@@ -112,6 +112,7 @@ final class TaskController extends Controller
             'planned_end' => 'sometimes|nullable|date|after_or_equal:planned_start',
             'energy_level' => 'sometimes|nullable|integer|min:0|max:100',
             'focus_level' => 'sometimes|nullable|integer|min:0|max:100',
+            'failure_reason' => 'sometimes|nullable|string|max:100',
             'weight' => 'sometimes|numeric|min:0',
         ]);
 
