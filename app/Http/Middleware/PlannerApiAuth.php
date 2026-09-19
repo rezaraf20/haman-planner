@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class PlannerApiAuth {
  public function handle(Request $request, Closure $next): Response {
   if(Auth::guard('web')->check()){
-   if(!$request->user()->is_active)return response()->json(['message'=>'Account disabled.'],403);
+   if($request->user()->is_active===false)return response()->json(['message'=>'Account disabled.'],403);
    if($request->isMethodSafe(false)){return $next($request);}
    $s=(string)$request->session()->token(); $p=(string)$request->header('X-CSRF-TOKEN');
    if($s===''||$p===''||!hash_equals($s,$p))return response()->json(['message'=>'CSRF token mismatch.'],419);
