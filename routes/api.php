@@ -56,7 +56,7 @@ Route::middleware([
 ])->group(function (): void {
     Route::get('/me', fn () => response()->json(['user' => request()->user()]));
 
-    Route::apiResource('areas', AreaController::class)->except(['show']);
+    Route::apiResource('areas', AreaController::class);
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
