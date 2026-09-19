@@ -74,7 +74,7 @@ Route::middleware([
     Route::post('/daily-plans', [DailyPlanController::class, 'store']);
     Route::put('/daily-plans/{dailyPlan}', [DailyPlanController::class, 'update']);
 
-    Route::apiResource('schedule-blocks', ScheduleBlockController::class)->except(['show']);
+    Route::apiResource('schedule-blocks', ScheduleBlockController::class);
 
     Route::get('/search', SearchController::class);
     Route::get('/tasks/{task}/dependencies', [DependencyController::class, 'index']);
