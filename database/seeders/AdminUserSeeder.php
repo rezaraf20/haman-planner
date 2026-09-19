@@ -22,6 +22,8 @@ final class AdminUserSeeder extends Seeder
 
         $user = User::firstOrNew(['email' => $email]);
         $user->name = (string) env('PLANNER_ADMIN_NAME', 'Reza');
+        $user->is_admin = true;
+        $user->is_active = true;
 
         if (! $user->exists) {
             $user->password = Hash::make($password);
