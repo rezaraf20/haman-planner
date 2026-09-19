@@ -48,7 +48,7 @@ jobs:
           CACHE_STORE: array
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
-      - run: php artisan test
+      - run: composer test
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
