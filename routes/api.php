@@ -103,14 +103,14 @@ Route::middleware([
     Route::get('/system/daily-plans', [SystemController::class, 'dailyPlans']);
     Route::get('/system/report', [SystemController::class, 'report']);
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);
-});
 
-Route::middleware(['auth','admin'])->prefix('admin')->group(function(): void {
-  Route::get('/users',[AdminController::class,'users']);
-  Route::post('/users',[AdminController::class,'storeUser']);
-  Route::put('/users/{user}',[AdminController::class,'updateUser']);
-  Route::delete('/users/{user}',[AdminController::class,'destroyUser']);
-  Route::get('/tokens',[AdminController::class,'tokens']);
-  Route::post('/tokens',[AdminController::class,'createToken']);
-  Route::delete('/tokens/{token}',[AdminController::class,'revokeToken']);
- });
+    Route::middleware('admin')->prefix('admin')->group(function (): void {
+        Route::get('/users', [AdminController::class, 'users']);
+        Route::post('/users', [AdminController::class, 'storeUser']);
+        Route::put('/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{user}', [AdminController::class, 'destroyUser']);
+        Route::get('/tokens', [AdminController::class, 'tokens']);
+        Route::post('/tokens', [AdminController::class, 'createToken']);
+        Route::delete('/tokens/{token}', [AdminController::class, 'revokeToken']);
+    });
+});
