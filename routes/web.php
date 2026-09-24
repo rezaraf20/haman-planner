@@ -8,6 +8,9 @@ Route::post('/logout',[AuthController::class,'logout'])->name('logout');
 Route::middleware('auth')->group(function():void{
  Route::get('/',fn()=>redirect()->route('planner.app'))->name('planner.dashboard');
  Route::view('/planner','planner.dashboard')->name('planner.app');
+ Route::middleware('admin')->group(function():void{
+  Route::view('/admin/users','planner.users')->name('admin.users');
+ });
  Route::get('/settings/security',[AccountController::class,'settings'])->name('account.settings');
  Route::post('/settings/security/password',[AccountController::class,'password'])->name('account.password');
  Route::post('/settings/telegram/link',[AccountController::class,'telegramLink'])->name('account.telegram.link');
