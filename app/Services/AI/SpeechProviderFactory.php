@@ -23,7 +23,6 @@ final class SpeechProviderFactory
             'gemini' => new GeminiSpeechProvider(
                 $key,
                 (string) config('services.speech.model', 'gemini-3.5-transcribe'),
-                (string) config('services.speech.base_url', 'https://generativelanguage.googleapis.com'),
             ),
             'openai-compatible' => new OpenAICompatibleSpeechProvider(
                 (string) config('services.speech.base_url', config('services.ai.base_url')),
