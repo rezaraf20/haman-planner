@@ -337,23 +337,43 @@ final class PlannerIntentService
 
     private function normalizeArguments(array $args): array
     {
+        if (!empty($args['planned_start'])) {
+            $args['planned_start'] = $this->normalizePlannedDateTime((string) $args['planned_start']);
+            return $args;
+        }
+
         $date = $args['scheduled_date'] ?? $args['date'] ?? null;
         $time = $args['scheduled_time'] ?? $args['time'] ?? null;
 
-        if ($date !== null && $time !== null && empty($args['planned_start'])) {
+        if ($date !== null && $time !== null) {
             $normalizedDate = $this->normalizeRelativeDate((string) $date);
-            $normalizedTime = $this->normalizeDigits((string) $time);
-            if ($normalizedDate !== null && preg_match('/^\\d{1,2}:\\d{2}$/', $normalizedTime)) {
-                $args['planned_start'] = $normalizedDate.' '.str_pad($normalizedTime, 5, '0', STR_PAD_LEFT).':00';
+            $normalizedTime = $this->normalizeTime((string) $time);
+
+            if ($normalizedDate !== null && $normalizedTime !== null) {
+                $args['planned_start'] = $normalizedDate.' '.$normalizedTime.':00';
             }
         }
 
         return $args;
     }
 
+    private function normalizePlannedDateTime(string $value): ?string
+    {
+        $value = trim($this->normalizeDigits($value));
+        if ($value === '') return null;
+
+        try {
+            return \Carbon\Carbon::parse($value, 'Asia/Tehran')->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function normalizeRelativeDate(string $value): ?string
     {
         $value = trim($this->normalizeDigits($value));
+        $value = preg_replace('/\\s+(صبح|بعدازظهر|عصر|شب)$/u', '', $value) ?? $value;
+        $value = trim($value);
         $today = now('Asia/Tehran')->startOfDay();
 
         return match ($value) {
@@ -364,14 +384,33 @@ final class PlannerIntentService
         };
     }
 
-    private function normalizeDigits(string $value): string
+    private function normalizeTime(string $value): ?string
     {
-        return strtr($value, [
-            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
-            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-        ]);
+        $value = trim($this->normalizeDigits($value));
+        $value = str_replace(['٫', '،'], ':', $value);
+        $value = preg_replace('/\\s+/u', ' ', $value) ?? $value;
+
+        $isPm = preg_match('/(?:بعدازظهر|عصر|شب|pm)$/iu', $value) === 1;
+        $isAm = preg_match('/(?:صبح|am)$/iu', $value) === 1;
+        $value = preg_replace('/\\s*(?:صبح|بعدازظهر|عصر|شب|am|pm)$/iu', '', $value) ?? $value;
+        $value = trim($value);
+
+        if (preg_match('/^(\\d{1,2}):(\\d{1,2})$/', $value, $m)) {
+            $hour = (int) $m[1];
+            $minute = (int) $m[2];
+        } elseif (preg_match('/^(\\d{1,2})$/', $value, $m)) {
+            $hour = (int) $m[1];
+            $minute = 0;
+        } else {
+            return null;
+        }
+
+        if ($hour > 23 || $minute > 59) return null;
+
+        if ($isPm && !$isAm && $hour < 12) $hour += 12;
+        if ($isAm && $hour === 12) $hour = 0;
+
+        return sprintf('%02d:%02d', $hour, $minute);
     }
 
     private function createGoal(array $args): Goal
