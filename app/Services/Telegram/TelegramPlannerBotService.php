@@ -113,7 +113,7 @@ final class TelegramPlannerBotService
                 'delete'=>$this->deleteConfirm($chatId,$messageId,$p[1]??'',isset($p[2])?(int)$p[2]:0),
                 'delok'=>$this->deleteEntity($chatId,$messageId,$p[1]??'',isset($p[2])?(int)$p[2]:0),
                 'pick'=>$this->pickReference($chatId,$messageId,$p[1]??'',isset($p[2])?(int)$p[2]:0,$p[3]??'',isset($p[4])?(int)$p[4]:0),
-                'enum'=>$this->chooseEnum($chatId,$messageId,$p[1]??'',isset($p[2])?(int)$p[2]:0,$p[3]??'', $p[4]??''),
+                'enum'=>$this->handleEnumSelection($chatId,$messageId,$p[1]??'',isset($p[2])?(int)$p[2]:0,$p[3]??'', $p[4]??''),
                 'done'=>$this->completeTask($chatId,$messageId,isset($p[1])?(int)$p[1]:0),
                 'defer'=>$this->deferTask($chatId,$messageId,isset($p[1])?(int)$p[1]:0),
                 'cancel'=>$this->cancelTask($chatId,$messageId,isset($p[1])?(int)$p[1]:0),
@@ -302,7 +302,7 @@ final class TelegramPlannerBotService
         $def=collect($this->fields($e))->first(fn($f)=>$f[0]===$field);
         if(isset($def[2])) {
             $this->putState($c,['mode'=>'pick_edit','entity'=>$e,'id'=>$id,'field'=>$field,'message_id'=>$m]);
-            $this->referencePicker($c,$m,$def[2]);
+            $this->referencePicker($c,$m,$def[2],false,$field);
             return;
         }
         if($field==='status'||$field==='priority'||$field==='type') {
@@ -314,17 +314,19 @@ final class TelegramPlannerBotService
     }
 
     private function beginCreate(string|int $c,int $m,string $e): void {
+        if($e==='schedule'){ $this->newSchedule($c,$m); return; }
         if(!in_array($e,array_keys($this->fieldsMap()),true)) {$this->home($c,$m);return;}
         $this->putState($c,['mode'=>'create','entity'=>$e,'step'=>0,'data'=>[],'message_id'=>$m]);
         $this->askCreateField($c,$m,$this->state($c));
     }
     private function fieldsMap(): array { return array_fill_keys(['area','goal','project','milestone','task','note','decision','reminder'],true); }
+    private function newSchedule(string|int $c,int $m): void { $this->telegram->editMessage($c,$m,'➕ ایجاد Schedule Block\n\nبرای ایجاد بلوک زمانی، ابتدا Task را انتخاب کن و سپس زمان شروع و پایان را ارسال کن.',[[['text'=>'📋 انتخاب Task','callback_data'=>'tasks']],$this->back('calendar')]); }
 
     private function askCreateField(string|int $c,int $m,array $s): void {
         $f=$this->fields($s['entity'])[$s['step']]??null;
         if(!$f){$this->showCreateSummary($c,$m,$s);return;}
         [$n,$label]=$f;
-        if(isset($f[2])) {$this->putState($c,$s);$this->referencePicker($c,$m,$f[2],true);return;}
+        if(isset($f[2])) {$this->putState($c,$s);$this->referencePicker($c,$m,$f[2],true,$f[0]);return;}
         if($n==='status'||$n==='priority'||$n==='type') {
             $this->putState($c,$s);
             $this->enumCreate($c,$m,$s['entity'],$n);
@@ -360,10 +362,10 @@ final class TelegramPlannerBotService
         return $v;
     }
 
-    private function referencePicker(string|int $c,int $m,string $ref,bool $create=false): void {
+    private function referencePicker(string|int $c,int $m,string $ref,bool $create=false,string $field=''): void {
         $class=$this->entityClass($ref);$items=$class::query()->latest('id')->limit(20)->get();
         $kb=[];
-        foreach($items as $x) $kb[]=[['text'=>'• '.$this->titleOf($x),'callback_data'=>'pick:'.$ref.':'.($create?0:($this->state($c)['id']??0)).':'.$ref.':'.$x->id]];
+        foreach($items as $x) $kb[]=[['text'=>'• '.$this->titleOf($x),'callback_data'=>'pick:'.$ref.':'.($create?0:($this->state($c)['id']??0)).':'.$field.':'.$x->id]];
         $kb[]=[['text'=>'بدون مقدار','callback_data'=>'enum:'.$ref.':'.($create?0:($this->state($c)['id']??0)).':__ref:none']];
         $this->telegram->editMessage($c,$m,'انتخاب '.$this->entityLabel($ref).' برای ادامه:',array_merge($kb,[[['text'=>'⬅️ بازگشت','callback_data'=>$create?$this->parentFor($this->state($c)['entity']):'view:'.$this->state($c)['entity'].':'.$this->state($c)['id']]]));
     }
