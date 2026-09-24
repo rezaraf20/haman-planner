@@ -88,6 +88,7 @@ final class TelegramPlannerBotService
                 'milestones'=>$this->milestones($chatId,$messageId),
                 'reminders'=>$this->reminders($chatId,$messageId),
                 'newtask'=>$this->beginTaskCreate($chatId,$messageId),
+                'newtask_confirm'=>$this->confirmTaskCreate($chatId,$messageId),
                 'back'=>$this->home($chatId,$messageId),
                 default=>$this->home($chatId,$messageId),
             };
@@ -177,6 +178,29 @@ final class TelegramPlannerBotService
     private function beginTaskCreate(string|int $chatId,int $messageId): void {
         $this->putState($chatId,['mode'=>'input','kind'=>'create_task','step'=>'title','message_id'=>$messageId,'data'=>[]]);
         $this->telegram->editMessage($chatId,$messageId,'➕ ایجاد کار\n\nعنوان کار را بنویس:',[['text'=>'❌ لغو','callback_data'=>'tasks']]);
+    }
+
+    private function confirmTaskCreate(string|int $chatId,int $messageId): void {
+        $state=$this->state($chatId);
+        if(($state['mode']??null)!=='input' || ($state['kind']??null)!=='create_task' || ($state['step']??null)!=='confirm') {
+            $this->telegram->editMessage($chatId,$messageId,'درخواست ایجاد کار منقضی شده است.',[['text'=>'⬅️ بازگشت','callback_data'=>'home']]);
+            return;
+        }
+        $data=$state['data']??[];
+        $task=$this->planner->createTask([
+            'title'=>$data['title'],
+            'description'=>$data['description']??null,
+            'importance'=>$data['importance']??50,
+            'estimated_minutes'=>$data['estimated_minutes']??30,
+            'planned_start'=>$data['planned_start']??null,
+            'deadline'=>$data['deadline']??null,
+            'status'=>'inbox',
+        ]);
+        $this->clearState($chatId);
+        $this->telegram->editMessage($chatId,$messageId,'✅ کار ایجاد شد:\n'.$task->title,[
+            [['text'=>'📋 مشاهده کار','callback_data'=>'open:'.$task->id]],
+            [['text'=>'📋 کارها','callback_data'=>'tasks'],['text'=>'🏠 خانه','callback_data'=>'home']],
+        ]);
     }
 
     private function consumeInput(User $user,string|int $chatId,string $text,array $state): void {
