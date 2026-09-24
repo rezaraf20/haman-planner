@@ -61,9 +61,15 @@ final class PlannerIntentService
             if ($direct !== null) return $direct;
         }
 
-        $intent = $this->factory::make()->parseIntent($text);
+        $context = [
+            'current_datetime' => now('Asia/Tehran')->toIso8601String(),
+            'timezone' => 'Asia/Tehran',
+        ];
+
+        $intent = $this->factory::make()->parseIntent($text, $context);
         $name = strtoupper((string) ($intent['intent'] ?? 'UNKNOWN'));
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
+        $args = $this->normalizeArguments($args);
 
         return match ($name) {
             'CREATE_GOAL','UPDATE_GOAL','CREATE_PROJECT','UPDATE_PROJECT','CREATE_MILESTONE','UPDATE_MILESTONE','CREATE_TASK','UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER','ADD_REMINDER','SCHEDULE_TASK','RESCHEDULE_TASK' => $this->requestConfirmation($name, $args, $chatId),
@@ -323,7 +329,48 @@ final class PlannerIntentService
             'importance' => (int) ($args['importance'] ?? 50),
             'estimated_minutes' => max(0, (int) ($args['estimated_minutes'] ?? 30)),
             'deadline' => $args['deadline'] ?? null,
+            'planned_start' => $args['planned_start'] ?? null,
+            'planned_end' => $args['planned_end'] ?? null,
             'status' => 'inbox',
+        ]);
+    }
+
+    private function normalizeArguments(array $args): array
+    {
+        $date = $args['scheduled_date'] ?? $args['date'] ?? null;
+        $time = $args['scheduled_time'] ?? $args['time'] ?? null;
+
+        if ($date !== null && $time !== null && empty($args['planned_start'])) {
+            $normalizedDate = $this->normalizeRelativeDate((string) $date);
+            $normalizedTime = $this->normalizeDigits((string) $time);
+            if ($normalizedDate !== null && preg_match('/^\\d{1,2}:\\d{2}$/', $normalizedTime)) {
+                $args['planned_start'] = $normalizedDate.' '.str_pad($normalizedTime, 5, '0', STR_PAD_LEFT).':00';
+            }
+        }
+
+        return $args;
+    }
+
+    private function normalizeRelativeDate(string $value): ?string
+    {
+        $value = trim($this->normalizeDigits($value));
+        $today = now('Asia/Tehran')->startOfDay();
+
+        return match ($value) {
+            'امروز', 'today' => $today->format('Y-m-d'),
+            'فردا', 'tomorrow' => $today->copy()->addDay()->format('Y-m-d'),
+            'پس فردا', 'پس‌فردا', 'day after tomorrow' => $today->copy()->addDays(2)->format('Y-m-d'),
+            default => preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $value) ? $value : null,
+        };
+    }
+
+    private function normalizeDigits(string $value): string
+    {
+        return strtr($value, [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
         ]);
     }
 
