@@ -8,6 +8,7 @@ use App\Services\AI\SpeechProviderFactory;
 use App\Services\Telegram\TelegramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -33,6 +34,14 @@ final class TelegramWebhookController extends Controller
 
         $message = $request->input('message', []);
         $chatId = $message['chat']['id'] ?? null;
+
+        $updateId = $request->input('update_id');
+        if ($updateId !== null) {
+            $dedupeKey = 'telegram:webhook:update:'.(string) $updateId;
+            if (! Cache::add($dedupeKey, true, now()->addMinutes(10))) {
+                return response()->json(['ok' => true]);
+            }
+        }
 
         if ($chatId === null) {
             return response()->json(['ok' => true]);
