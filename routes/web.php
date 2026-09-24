@@ -1,7 +1,5 @@
 <?php
-declare(strict_types=1);
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 Route::get('/login',[AuthController::class,'showLogin'])->name('login');
@@ -11,6 +9,7 @@ Route::middleware('auth')->group(function():void{
  Route::get('/',fn()=>redirect()->route('planner.app'))->name('planner.dashboard');
  Route::view('/planner','planner.dashboard')->name('planner.app');
  Route::get('/settings/security',[AccountController::class,'settings'])->name('account.settings');
- Route::post('/settings/password',[AccountController::class,'password'])->name('account.password');
- Route::get('/admin/users',fn()=>view('planner.users'))->middleware('admin')->name('admin.users');
+ Route::post('/settings/security/password',[AccountController::class,'password'])->name('account.password');
+ Route::post('/settings/telegram/link',[AccountController::class,'telegramLink'])->name('account.telegram.link');
+ Route::post('/settings/telegram/unlink',[AccountController::class,'telegramUnlink'])->name('account.telegram.unlink');
 });
