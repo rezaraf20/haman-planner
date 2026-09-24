@@ -342,10 +342,12 @@ final class PlannerIntentService
             return $args;
         }
 
-        if (!empty($args['scheduled_at'])) {
-            $args['planned_start'] = $this->normalizePlannedDateTime((string) $args['scheduled_at']);
-            unset($args['scheduled_at']);
-            return $args;
+        foreach (['scheduled_at', 'scheduled_datetime', 'scheduled_date_time'] as $scheduleKey) {
+            if (!empty($args[$scheduleKey])) {
+                $args['planned_start'] = $this->normalizePlannedDateTime((string) $args[$scheduleKey]);
+                unset($args[$scheduleKey]);
+                return $args;
+            }
         }
 
         $date = $args['scheduled_date'] ?? $args['date'] ?? null;
