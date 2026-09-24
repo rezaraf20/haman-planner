@@ -20,6 +20,7 @@ final class OpenAICompatibleProvider implements AIProviderInterface
         $response = Http::withToken($this->apiKey)
             ->acceptJson()
             ->timeout(60)
+            ->retry(3, 1000, throw: false)
             ->post(rtrim($this->baseUrl, '/').'/chat/completions', array_merge([
                 'model' => $this->model,
                 'messages' => $messages,
@@ -63,8 +64,20 @@ PROMPT;
             $response = $this->chat($messages, $options);
         }
 
-        $raw = $response['choices'][0]['message']['content'] ?? '{}';
-        $value = json_decode((string) $raw, true);
+        $raw = trim((string) ($response['choices'][0]['message']['content'] ?? '{}'));
+        if (str_starts_with($raw, '```')) {
+            $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw) ?? $raw;
+            $raw = preg_replace('/\s*```$/', '', $raw) ?? $raw;
+        }
+        $value = json_decode(trim($raw), true);
+
+        if (!is_array($value)) {
+            $start = strpos($raw, '{');
+            $end = strrpos($raw, '}');
+            if ($start !== false && $end !== false && $end > $start) {
+                $value = json_decode(substr($raw, $start, $end - $start + 1), true);
+            }
+        }
 
         if (!is_array($value)) {
             return ['intent' => 'UNKNOWN', 'arguments' => [], 'confidence' => 0, 'requires_confirmation' => false];
