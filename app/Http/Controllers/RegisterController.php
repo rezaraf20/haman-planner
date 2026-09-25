@@ -16,7 +16,7 @@ final class RegisterController extends Controller
 {
     public static function enabled(): bool
     {
-        return (bool) config('services.haman_planner.registration', true);
+        return \App\Support\AppSettings::bool('registration_enabled');
     }
 
     public function show(): View|RedirectResponse

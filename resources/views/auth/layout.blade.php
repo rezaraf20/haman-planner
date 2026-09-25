@@ -1,9 +1,10 @@
+@php($brand = \App\Support\AppSettings::all())
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>@yield('title') | Haman Planner</title>
+<title>@yield('title') | {{ $brand['app_name'] }}</title>
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Vazirmatn,Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:#0f172a;color:#172033;display:grid;place-items:center;padding:24px 0}
 .card{width:min(430px,calc(100% - 32px));background:#fff;border-radius:24px;padding:36px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
@@ -22,8 +23,9 @@ a{color:#18212f;font-weight:700;text-decoration:none}a:hover{text-decoration:und
 </style>
 </head>
 <body><main class="card">
-<div class="logo">Haman Planner</div>
-<div class="sub">@yield('subtitle', 'برنامه‌ریزی شخصی و کاری شما')</div>
+@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" style="max-height:56px;max-width:200px;object-fit:contain;display:block;margin-bottom:10px">@endif
+<div class="logo">{{ $brand['app_name'] }}</div>
+<div class="sub">@hasSection('subtitle')@yield('subtitle')@else{{ $brand['app_tagline'] }}@endif</div>
 @if (session('status'))<div class="ok">{{ session('status') }}</div>@endif
 @if ($errors->any())<div class="error">@foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>@endif
 @yield('content')

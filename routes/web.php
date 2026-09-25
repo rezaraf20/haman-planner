@@ -1,5 +1,8 @@
 <?php
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AdminPanelController;
+use App\Http\Controllers\Admin\AdminSupportController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\RegisterController;
@@ -13,12 +16,27 @@ Route::get('/forgot-password',[PasswordResetController::class,'showForgot'])->na
 Route::post('/forgot-password',[PasswordResetController::class,'sendLink'])->middleware('throttle:5,1')->name('password.email');
 Route::get('/reset-password/{token}',[PasswordResetController::class,'showReset'])->name('password.reset');
 Route::post('/reset-password',[PasswordResetController::class,'reset'])->middleware('throttle:10,1')->name('password.update');
-Route::middleware('auth')->group(function():void{
+Route::middleware(['auth',\App\Http\Middleware\TrackLastSeen::class])->group(function():void{
  Route::get('/',fn()=>redirect()->route('planner.app'))->name('planner.dashboard');
  Route::view('/planner','planner.dashboard')->name('planner.app');
- Route::middleware('admin')->group(function():void{
-  Route::view('/admin/users','planner.users')->name('admin.users');
+ Route::middleware('admin')->prefix('admin')->group(function():void{
+  Route::get('/',[AdminPanelController::class,'overview'])->name('admin.home');
+  Route::get('/users',[AdminPanelController::class,'users'])->name('admin.users');
+  Route::get('/users/export',[AdminPanelController::class,'exportUsers'])->name('admin.users.export');
+  Route::post('/users/{user}/toggle',[AdminPanelController::class,'toggleUser'])->name('admin.users.toggle');
+  Route::view('/access','planner.users')->name('admin.access');
+  Route::get('/settings',[AdminPanelController::class,'settings'])->name('admin.settings');
+  Route::post('/settings',[AdminPanelController::class,'saveSettings'])->name('admin.settings.save');
+  Route::get('/support',[AdminSupportController::class,'index'])->name('admin.support');
+  Route::get('/support/{ticket}',[AdminSupportController::class,'show'])->name('admin.support.show');
+  Route::post('/support/{ticket}/reply',[AdminSupportController::class,'reply'])->name('admin.support.reply');
+  Route::post('/support/{ticket}/status',[AdminSupportController::class,'status'])->name('admin.support.status');
  });
+ Route::get('/support',[SupportController::class,'index'])->name('support.index');
+ Route::post('/support',[SupportController::class,'store'])->middleware('throttle:10,1')->name('support.store');
+ Route::get('/support/{ticket}',[SupportController::class,'show'])->whereNumber('ticket')->name('support.show');
+ Route::post('/support/{ticket}/reply',[SupportController::class,'reply'])->whereNumber('ticket')->middleware('throttle:20,1')->name('support.reply');
+ Route::post('/support/{ticket}/close',[SupportController::class,'close'])->whereNumber('ticket')->name('support.close');
  Route::get('/settings/security',[AccountController::class,'settings'])->name('account.settings');
  Route::post('/settings/security/password',[AccountController::class,'password'])->name('account.password');
  Route::post('/settings/telegram/link',[AccountController::class,'telegramLink'])->name('account.telegram.link');

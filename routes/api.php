@@ -52,6 +52,7 @@ Route::middleware([
     RequestIdMiddleware::class,
     PlannerApiAuth::class,
     IdempotencyMiddleware::class,
+    \App\Http\Middleware\TrackLastSeen::class,
     'throttle:120,1',
 ])->group(function (): void {
     Route::get('/me', fn () => response()->json(['user' => request()->user()]));

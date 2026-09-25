@@ -249,6 +249,10 @@ final class TelegramPlannerBotService
             return null;
         }
         $this->syncIdentity($u, $username);
+        try {
+            $u->markSeen();
+        } catch (\Throwable) {
+        }
         return $u;
     }
 

@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="csrf-token" content="{{ csrf_token() }}"><title>Haman Planner</title>
+<meta name="csrf-token" content="{{ csrf_token() }}"><title>{{ \App\Support\AppSettings::get('app_name') }}</title>
 <style>
 :root{--bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#718096;--line:#e4e8ef;--nav:#0f1726;--nav2:#1e2a3d;--blue:#3157d5;--ok:#087f5b;--warn:#9a6509;--danger:#b42318}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}
@@ -10,7 +10,7 @@
 </style></head>
 <body>
 <div class="shell"><aside class="side">
-<div class="brand"><span>Haman Planner</span><small>Personal & Business Operating System</small></div>
+@php($brand = \App\Support\AppSettings::all())<div class="brand">@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" style="max-height:40px;max-width:150px;object-fit:contain;display:block;margin-bottom:6px">@endif<span>{{ $brand['app_name'] }}</span><small>{{ $brand['app_tagline'] }}</small></div>
 <nav class="nav">
 <button class="active" data-view="today">◉ <span class="txt">امروز</span></button><button data-view="tasks">✓ <span class="txt">کارها</span></button><button data-view="inbox">▣ <span class="txt">Inbox</span></button><button data-view="search">⌕ <span class="txt">جستجو</span></button>
 <div class="group">ساختار</div><button data-view="areas">◈ <span class="txt">حوزه‌ها</span></button><button data-view="goals">◎ <span class="txt">اهداف</span></button><button data-view="projects">▤ <span class="txt">پروژه‌ها</span></button><button data-view="milestones">◇ <span class="txt">Milestones</span></button>
@@ -18,9 +18,9 @@
 <div class="group">تحلیل</div><button data-view="reviews">↻ <span class="txt">Reviews</span></button><button data-view="analytics">◫ <span class="txt">Analytics</span></button><button data-view="reports">▥ <span class="txt">Reports</span></button>
 <div class="group">دانش و AI</div><button data-view="notes">▤ <span class="txt">Notes</span></button><button data-view="decisions">◆ <span class="txt">Decisions</span></button><button data-view="ai-planner">✦ <span class="txt">AI Planner</span></button><button data-view="ai">✧ <span class="txt">AI Interactions</span></button><button data-view="pending">⌛ <span class="txt">Pending Actions</span></button><button data-view="activity">◌ <span class="txt">Activity Logs</span></button>
 </nav>
-<div class="bottom"><button onclick="location.href='{{ route('account.settings') }}'">🔐 <span class="txt">حساب و تلگرام</span></button>@if(auth()->user()->is_admin)<button onclick="location.href='/admin/users'">⚙ <span class="txt">مدیریت</span></button>@endif<form method="post" action="{{route('logout')}}">@csrf<button>↪ <span class="txt">خروج</span></button></form></div>
+<div class="bottom"><button onclick="location.href='{{ route('account.settings') }}'">🔐 <span class="txt">حساب و تلگرام</span></button>@if($brand['support_enabled'] || auth()->user()->is_admin)<button onclick="location.href='{{ route('support.index') }}'">💬 <span class="txt">پشتیبانی</span></button>@endif @if(auth()->user()->is_admin)<button onclick="location.href='{{ route('admin.home') }}'">⚙ <span class="txt">مدیریت</span></button>@endif<form method="post" action="{{route('logout')}}">@csrf<button>↪ <span class="txt">خروج</span></button></form></div>
 </aside>
-<main class="main"><div class="top"><div><div class="eyebrow">Haman Planner · {{auth()->user()->name}} · {{auth()->user()->email}}</div><h1 id="title">امروز</h1></div><div class="actions"><button class="btn" onclick="loadView(view)">↻ بروزرسانی</button><button class="btn primary" onclick="openCreate()">＋ افزودن</button></div></div><div id="content"></div></main></div>
+<main class="main">@if(filled($brand['announcement']))<div style="background:#fff7d6;border:1px solid #efd98a;color:#6b4e00;border-radius:12px;padding:10px 14px;margin-bottom:14px;line-height:1.8;white-space:pre-wrap">📢 {{ $brand['announcement'] }}</div>@endif<div class="top"><div><div class="eyebrow">Haman Planner · {{auth()->user()->name}} · {{auth()->user()->email}}</div><h1 id="title">امروز</h1></div><div class="actions"><button class="btn" onclick="loadView(view)">↻ بروزرسانی</button><button class="btn primary" onclick="openCreate()">＋ افزودن</button></div></div><div id="content"></div></main></div>
 <div class="modalback" id="modal"><div class="modal"><div class="head"><h2 id="mtitle">افزودن</h2><button class="btn small" onclick="closeModal()">×</button></div><div id="mbody"></div></div></div><div id="toast" class="toast"></div>
 <script>
 const csrf=document.querySelector('meta[name=csrf-token]').content,$=id=>document.getElementById(id);let view='today',cache={areas:[],goals:[],projects:[],milestones:[],tasks:[]};
