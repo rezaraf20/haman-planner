@@ -63,7 +63,13 @@ final class TelegramWebhookController extends Controller
                 $this->telegram->sendMessage($chatId,'فعلاً Voice را غیرفعال کرده‌ایم تا نسخه دکمه‌ای Planner را کامل و پایدار کنیم. از دکمه‌های ربات استفاده کن.');
             }
         }catch(\Throwable $e){
-            Log::error('Telegram planner update failed',['error'=>$e->getMessage(),'chat_id'=>$request->input('message.chat.id')]);
+            Log::error('Telegram planner update failed', [
+                'error' => $e->getMessage(),
+                'chat_id' => $request->input('message.chat.id')
+                    ?? $request->input('callback_query.message.chat.id'),
+                'update_id' => $request->input('update_id'),
+                'callback_data' => $request->input('callback_query.data'),
+            ]);
             try{
                 $chatId=$request->input('message.chat.id')??$request->input('callback_query.message.chat.id');
                 if($chatId!==null) $this->telegram->sendMessage($chatId,'خطا در پردازش درخواست. لطفاً دوباره تلاش کن.');
