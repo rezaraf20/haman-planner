@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPlannerUser;
 use Illuminate\Database\Eloquent\Model;
 
 class ActivityLog extends Model
 {
+    use BelongsToPlannerUser;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'user_id',
         'actor_type',
         'actor_id',
         'action',

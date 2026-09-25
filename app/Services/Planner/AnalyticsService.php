@@ -11,23 +11,25 @@ use Illuminate\Support\Carbon;
 
 final class AnalyticsService
 {
-    public function summary(Carbon $from, Carbon $to): array
+    public function summary(Carbon $from, Carbon $to, ?int $userId = null): array
     {
-        $tasks = Task::query()->whereBetween('created_at', [$from, $to])->get();
+        // When $userId is given every metric is restricted to that planner owner.
+        $own = fn ($query) => $query->when($userId !== null, fn ($q) => $q->where('user_id', $userId));
+        $tasks = $own(Task::query())->whereBetween('created_at', [$from, $to])->get();
         $completed = $tasks->where('status', 'completed')->count();
         $estimated = (int) $tasks->sum('estimated_minutes');
         $actual = (int) $tasks->sum('actual_minutes');
-        $logs = ExecutionLog::query()->whereBetween('started_at', [$from, $to])->get();
+        $logs = $own(ExecutionLog::query())->whereBetween('started_at', [$from, $to])->get();
 
-        $overdue = Task::query()
+        $overdue = $own(Task::query())
             ->where('deadline', '<', $to)
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
-        $failed = Task::query()
+        $failed = $own(Task::query())
             ->whereBetween('updated_at', [$from, $to])
             ->whereNotNull('failure_reason')
             ->count();
-        $scheduled = Task::query()
+        $scheduled = $own(Task::query())
             ->whereBetween('planned_start', [$from, $to])
             ->whereNotNull('planned_start')
             ->count();
@@ -38,12 +40,12 @@ final class AnalyticsService
 
         $deepWork = (int) $logs->filter(fn ($log) => (int) $log->duration_minutes >= 45)->sum('duration_minutes');
         $velocity = $days = max(1, $from->diffInDays($to) + 1);
-        $activeGoals = Goal::query()->whereNotIn('status', ['completed','cancelled'])->get();
+        $activeGoals = $own(Goal::query())->whereNotIn('status', ['completed','cancelled'])->get();
         $health = $activeGoals->groupBy(fn ($g) => $g->health ?: 'unknown')->map->count()->all();
-        $planningDays = DailyPlan::query()->whereBetween('plan_date', [$from->toDateString(), $to->toDateString()])->get();
+        $planningDays = $own(DailyPlan::query())->whereBetween('plan_date', [$from->toDateString(), $to->toDateString()])->get();
         $overloadedDays = $planningDays->filter(fn ($p) => (int)$p->planned_minutes > (int)$p->available_minutes)->count();
-        $failureReasons = Task::query()->whereBetween('updated_at', [$from, $to])->whereNotNull('failure_reason')->selectRaw('failure_reason, count(*) as total')->groupBy('failure_reason')->orderByDesc('total')->limit(10)->pluck('total','failure_reason')->all();
-        $blockers = Task::query()->whereBetween('updated_at', [$from, $to])->where('status','blocked')->count() + $logs->filter(fn ($log) => filled($log->blocker))->count();
+        $failureReasons = $own(Task::query())->whereBetween('updated_at', [$from, $to])->whereNotNull('failure_reason')->selectRaw('failure_reason, count(*) as total')->groupBy('failure_reason')->orderByDesc('total')->limit(10)->pluck('total','failure_reason')->all();
+        $blockers = $own(Task::query())->whereBetween('updated_at', [$from, $to])->where('status','blocked')->count() + $logs->filter(fn ($log) => filled($log->blocker))->count();
 
         return [
             'period' => ['from' => $from->toIso8601String(), 'to' => $to->toIso8601String()],

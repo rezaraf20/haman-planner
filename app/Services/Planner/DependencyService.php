@@ -24,6 +24,8 @@ final class DependencyService
             'task_id' => $task->id,
             'depends_on_task_id' => $dependency->id,
             'type' => $type,
+        ], [
+            'user_id' => $task->user_id,
         ]);
     }
 

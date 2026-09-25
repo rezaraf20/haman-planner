@@ -53,6 +53,7 @@ final class PlannerService
 
         return DB::transaction(function () use ($task, $data, $start, $end, $duration) {
             $log = \App\Models\ExecutionLog::create([
+                'user_id' => $task->user_id,
                 'task_id' => $task->id,
                 'started_at' => $start,
                 'ended_at' => $end,

@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPlannerUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -8,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Task extends Model
 {
-    protected $fillable=['area_id','goal_id','project_id','milestone_id','parent_task_id','title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','planned_start','planned_end','deadline','energy_level','focus_level','failure_reason','completed_at'];
+    use BelongsToPlannerUser;
+
+    protected $fillable=['user_id', 'area_id','goal_id','project_id','milestone_id','parent_task_id','title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','planned_start','planned_end','deadline','energy_level','focus_level','failure_reason','completed_at'];
     protected $casts=['planned_start'=>'datetime','planned_end'=>'datetime','deadline'=>'datetime','completed_at'=>'datetime','progress'=>'decimal:2','weight'=>'decimal:2'];
 
     public function area(): BelongsTo { return $this->belongsTo(Area::class); }

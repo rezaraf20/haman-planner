@@ -9,9 +9,9 @@ use Illuminate\Support\Collection;
 
 final class RecommendationService
 {
-    public function build(): array
+    public function build(?int $userId = null): array
     {
-        $tasks=Task::query()->whereNotIn('status',['completed','cancelled'])->orderByDesc('importance')->get();
+        $tasks=Task::query()->when($userId!==null,fn($q)=>$q->where('user_id',$userId))->whereNotIn('status',['completed','cancelled'])->orderByDesc('importance')->get();
         $overdue=$tasks->filter(fn(Task $t)=>$t->deadline && $t->deadline->isPast());
         $blocked=$tasks->where('status','blocked');
         $unplanned=$tasks->whereNull('planned_start');
