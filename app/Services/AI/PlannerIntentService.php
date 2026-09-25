@@ -203,7 +203,8 @@ final class PlannerIntentService
             $args['task_id'] = $resolution['model']->id;
         }
         if ($intent === 'ADD_REMINDER') {
-            $args['chat_id'] = $args['chat_id'] ?? $chatId;
+            // Never trust a chat ID coming from model output: reminders go to the caller's own chat.
+            $args['chat_id'] = $chatId ?? (\Illuminate\Support\Facades\Auth::user()?->telegram_chat_id);
             if (empty($args['scheduled_at']) && empty($args['remind_at'])) {
                 return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
             }

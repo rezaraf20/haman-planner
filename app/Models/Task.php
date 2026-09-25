@@ -11,6 +11,9 @@ class Task extends Model
 {
     use BelongsToPlannerUser;
 
+    /** @var array<string,class-string> references that must belong to the same owner */
+    protected array $plannerReferences = ['area_id'=>Area::class,'goal_id'=>Goal::class,'project_id'=>Project::class,'milestone_id'=>Milestone::class,'parent_task_id'=>Task::class];
+
     protected $fillable=['user_id', 'area_id','goal_id','project_id','milestone_id','parent_task_id','title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','planned_start','planned_end','deadline','energy_level','focus_level','failure_reason','completed_at'];
     protected $casts=['planned_start'=>'datetime','planned_end'=>'datetime','deadline'=>'datetime','completed_at'=>'datetime','progress'=>'decimal:2','weight'=>'decimal:2'];
 

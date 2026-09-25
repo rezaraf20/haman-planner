@@ -5,6 +5,9 @@ use Illuminate\Database\Eloquent\Model;
 class Decision extends Model {
     use BelongsToPlannerUser;
 
+    /** @var array<string,class-string> references that must belong to the same owner */
+    protected array $plannerReferences = ['area_id'=>Area::class];
+
  protected $fillable=['user_id', 'area_id','title','decision','rationale','decided_at'];
  protected $casts=['decided_at'=>'datetime'];
 }

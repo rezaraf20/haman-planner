@@ -11,10 +11,14 @@ final class TaskApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    private \App\Models\User $owner;
+
     protected function setUp(): void
     {
         parent::setUp();
         config(['services.haman_planner.api_token' => 'test-token']);
+        // The system API token acts as the planner owner (first active admin).
+        $this->owner = \App\Models\User::create(['name' => 'Owner', 'email' => 'owner@example.com', 'password' => 'secret-pass-123', 'is_admin' => true, 'is_active' => true]);
     }
 
     public function test_task_creation_accepts_schedule_and_focus_fields(): void
@@ -60,7 +64,7 @@ final class TaskApiTest extends TestCase
 
     public function test_completing_task_persists_completed_at(): void
     {
-        $task = Task::create(['title' => 'Complete me']);
+        $task = Task::create(['user_id' => $this->owner->id, 'title' => 'Complete me']);
 
         $response = $this->withHeader('Authorization', 'Bearer test-token')
             ->patchJson('/api/tasks/'.$task->id, ['status' => 'completed']);

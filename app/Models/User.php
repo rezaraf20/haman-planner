@@ -9,4 +9,5 @@ final class User extends Authenticatable {
  protected $hidden=['password','remember_token'];
  protected function casts(): array { return ['email_verified_at'=>'datetime','telegram_linked_at'=>'datetime','is_admin'=>'boolean','is_active'=>'boolean']; }
  public function apiTokens(){ return $this->hasMany(ApiToken::class); }
+ public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void { $this->notify(new \App\Notifications\ResetPasswordNotification($token)); }
 }

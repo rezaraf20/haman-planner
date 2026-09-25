@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Project extends Model {
     use BelongsToPlannerUser;
 
+    /** @var array<string,class-string> references that must belong to the same owner */
+    protected array $plannerReferences = ['goal_id'=>Goal::class];
+
  protected $fillable=['user_id', 'goal_id','title','description','status','importance','weight','progress','health','estimated_minutes','actual_minutes','start_date','target_date'];
  protected $casts=['start_date'=>'date','target_date'=>'date','progress'=>'decimal:2','weight'=>'decimal:2'];
  public function goal(): BelongsTo { return $this->belongsTo(Goal::class); }

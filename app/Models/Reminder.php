@@ -11,6 +11,9 @@ class Reminder extends Model
 {
     use BelongsToPlannerUser;
 
+    /** @var array<string,class-string> references that must belong to the same owner */
+    protected array $plannerReferences = ['task_id'=>Task::class];
+
     protected $attributes = ['type' => 'telegram', 'attempts' => 0, 'max_attempts' => 3];
     protected $fillable = ['user_id', 'task_id','type','scheduled_at','next_attempt_at','status','attempts','max_attempts','payload'];
 

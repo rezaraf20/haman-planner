@@ -9,6 +9,9 @@ class TaskDependency extends Model
 {
     use BelongsToPlannerUser;
 
+    /** @var array<string,class-string> references that must belong to the same owner */
+    protected array $plannerReferences = ['task_id'=>Task::class,'depends_on_task_id'=>Task::class];
+
     protected $fillable = ['user_id', 'task_id','depends_on_task_id','type'];
     public function task(): BelongsTo { return $this->belongsTo(Task::class); }
     public function dependsOn(): BelongsTo { return $this->belongsTo(Task::class, 'depends_on_task_id'); }

@@ -90,7 +90,7 @@ final class TelegramPlannerBotService
 
         $user = User::where('telegram_chat_id', (string) $chatId)->where('is_active', true)->first();
         if (!$user) {
-            $this->telegram->sendMessage($chatId, 'این Telegram هنوز به Planner متصل نیست. از پنل Planner یک کد اتصال بساز و /start CODE را ارسال کن.');
+            $this->telegram->sendMessage($chatId, $this->linkHelp());
             return;
         }
         $this->syncIdentity($user, $username);
@@ -245,11 +245,20 @@ final class TelegramPlannerBotService
     {
         $u = User::where('telegram_chat_id', (string) $chatId)->where('is_active', true)->first();
         if (!$u) {
-            $this->telegram->sendMessage($chatId, 'دسترسی فعال نیست. از پنل Planner کد اتصال بگیر.');
+            $this->telegram->sendMessage($chatId, 'دسترسی فعال نیست.'."\n\n".$this->linkHelp());
             return null;
         }
         $this->syncIdentity($u, $username);
         return $u;
+    }
+
+    private function linkHelp(): string
+    {
+        $url = rtrim((string) config('app.url'), '/');
+        return "این Telegram هنوز به حسابی در Haman Planner متصل نیست.\n\n"
+            ."۱. در {$url}/register ثبت‌نام کن (یا اگر حساب داری وارد شو).\n"
+            ."۲. در بخش «🔐 حساب و تلگرام» دکمه «ساخت کد اتصال Telegram» را بزن.\n"
+            ."۳. کد را این‌جا به شکل /start CODE بفرست (یا روی دکمه اتصال یک‌کلیکی بزن).";
     }
 
     private function syncIdentity(User $u, string $username): void
