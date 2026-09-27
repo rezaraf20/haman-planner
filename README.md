@@ -49,6 +49,19 @@ Proprietary. See [LICENSE](LICENSE).
 - Real completion timestamps and schedule-variance analytics
 - Audit logging for important mutations
 
+## SaaS capabilities
+
+- Public sign-up, password reset, per-account data isolation (web, API and Telegram)
+- Persian and English everywhere — web app, emails, Telegram bot, AI answers — with RTL/LTR layouts,
+  Jalali dates for Persian and a per-user time zone
+- Plans with limits and feature flags (edited in Admin → Plans), trials, cancel/resume
+- Payments through Zarinpal (IRT) and Stripe Checkout (USD), verified with the provider; invoices
+- Skippable onboarding, account settings, data export and account deletion
+- Bilingual landing, pricing, privacy and terms pages with SEO metadata, sitemap and robots.txt
+- Admin: business overview, users, subscriptions, plans, payments, support tickets, system health
+
+Details: [docs/saas.md](docs/saas.md) · Deployment and upgrades: [docs/deployment.md](docs/deployment.md)
+
 ## Production checklist
 
 Before production, configure:
@@ -60,5 +73,8 @@ Before production, configure:
 6. Laravel scheduler every minute.
 7. Queue workers if asynchronous jobs are enabled.
 8. Monitoring and log retention.
+9. `MAIL_*` for password-reset and billing emails.
+10. `LEGAL_ENTITY_NAME`, `SUPPORT_EMAIL`, and a lawyer-reviewed Privacy Policy and Terms.
+11. Plan prices (Admin → Plans), then `ZARINPAL_*` and/or `STRIPE_*` to accept payments.
 
 Never commit secrets to the repository.

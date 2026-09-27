@@ -40,7 +40,8 @@ final class TelegramWebhookController extends Controller
                 $callbackId=(string)($callback['id']??'');
                 $data=(string)($callback['data']??'');
                 $username=(string)($callback['from']['username']??'');
-                if($chatId!==null && $messageId!==null && $callbackId!=='') $this->bot->handleCallback($chatId,$username,$callbackId,(int)$messageId,$data);
+                $lang=isset($callback['from']['language_code'])?(string)$callback['from']['language_code']:null;
+                if($chatId!==null && $messageId!==null && $callbackId!=='') $this->bot->handleCallback($chatId,$username,$callbackId,(int)$messageId,$data,$lang);
                 return response()->json(['ok'=>true]);
             }
 
@@ -48,19 +49,20 @@ final class TelegramWebhookController extends Controller
             $chatId=$message['chat']['id']??null;
             if($chatId===null) return response()->json(['ok'=>true]);
             $username=(string)($message['from']['username']??'');
+            $lang=isset($message['from']['language_code'])?(string)$message['from']['language_code']:null;
 
             $text=trim((string)($message['text']??''));
             if($text!==''){
                 if(preg_match('/^\/start(?:\s+(.+))?$/u',$text,$m)){
-                    $this->bot->start($chatId,$username,isset($m[1])?trim($m[1]):null);
+                    $this->bot->start($chatId,$username,isset($m[1])?trim($m[1]):null,$lang);
                 } else {
-                    $this->bot->handleText($chatId,$username,$text);
+                    $this->bot->handleText($chatId,$username,$text,$lang);
                 }
                 return response()->json(['ok'=>true]);
             }
 
             if(isset($message['voice'])){
-                $this->telegram->sendMessage($chatId,'فعلاً Voice را غیرفعال کرده‌ایم تا نسخه دکمه‌ای Planner را کامل و پایدار کنیم. از دکمه‌های ربات استفاده کن.');
+                $this->telegram->sendMessage($chatId,__('bot.voice_disabled',[],$this->localeFor($chatId)));
             }
         }catch(\Throwable $e){
             Log::error('Telegram planner update failed', [
@@ -72,9 +74,16 @@ final class TelegramWebhookController extends Controller
             ]);
             try{
                 $chatId=$request->input('message.chat.id')??$request->input('callback_query.message.chat.id');
-                if($chatId!==null) $this->telegram->sendMessage($chatId,'خطا در پردازش درخواست. لطفاً دوباره تلاش کن.');
+                if($chatId!==null) $this->telegram->sendMessage($chatId,__('bot.update_failed',[],$this->localeFor($chatId)));
             }catch(\Throwable){}
         }
         return response()->json(['ok'=>true]);
+    }
+
+    /** Language for messages sent outside a user context: the linked account's, else Persian. */
+    private function localeFor(string|int $chatId): string
+    {
+        $user = \App\Models\User::query()->where('telegram_chat_id', (string) $chatId)->first();
+        return $user?->preferredLocale() ?? \App\Support\Locales::DEFAULT;
     }
 }

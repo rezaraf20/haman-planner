@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Support\AuthMessages;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Services\Telegram\TelegramService;
@@ -19,8 +18,6 @@ use Illuminate\View\View;
 
 final class PasswordResetController extends Controller
 {
-    private const GENERIC = 'اگر این ایمیل در Haman Planner ثبت شده باشد، لینک بازیابی رمز به ایمیل (و در صورت اتصال، به Telegram) شما ارسال شد.';
-
     public function showForgot(): View|RedirectResponse
     {
         if (Auth::check()) {
@@ -31,7 +28,7 @@ final class PasswordResetController extends Controller
 
     public function sendLink(Request $request, TelegramService $telegram): RedirectResponse
     {
-        $data = $request->validate(['email' => ['required', 'email', 'max:255']], AuthMessages::MESSAGES, AuthMessages::ATTRIBUTES);
+        $data = $request->validate(['email' => ['required', 'email', 'max:255']]);
         $user = User::query()->whereRaw('lower(email) = ?', [mb_strtolower(trim($data['email']))])->where('is_active', true)->first();
 
         if ($user) {
@@ -46,7 +43,9 @@ final class PasswordResetController extends Controller
                 if ($user->telegram_chat_id) {
                     try {
                         $url = route('password.reset', ['token' => $token, 'email' => $user->email]);
-                        $telegram->sendMessage($user->telegram_chat_id, "🔐 بازیابی رمز عبور Haman Planner\n\nبرای تعیین رمز جدید این لینک را باز کن (تا ".config('auth.passwords.users.expire', 60)." دقیقه معتبر است):\n{$url}\n\nاگر این درخواست از طرف تو نبوده، این پیام را نادیده بگیر.");
+                        $telegram->sendMessage($user->telegram_chat_id, __('auth.reset_telegram', [
+                            'minutes' => config('auth.passwords.users.expire', 60), 'url' => $url,
+                        ], $user->preferredLocale()));
                     } catch (\Throwable $e) {
                         report($e);
                     }
@@ -55,7 +54,7 @@ final class PasswordResetController extends Controller
         }
 
         // Same answer whether or not the account exists (no account enumeration).
-        return back()->with('status', self::GENERIC);
+        return back()->with('status', __('auth.reset_link_sent'));
     }
 
     public function showReset(Request $request, string $token): View|RedirectResponse
@@ -72,7 +71,7 @@ final class PasswordResetController extends Controller
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
-        ], AuthMessages::MESSAGES, AuthMessages::ATTRIBUTES);
+        ]);
         $data['email'] = trim($data['email']);
 
         $status = Password::broker()->reset($data, function (User $user, string $password): void {
@@ -84,11 +83,9 @@ final class PasswordResetController extends Controller
         });
 
         if ($status === Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', 'رمز عبور با موفقیت تغییر کرد. حالا با رمز جدید وارد شوید.');
+            return redirect()->route('login')->with('status', __('auth.reset_done'));
         }
 
-        return back()->withInput(['email' => $data['email']])->withErrors([
-            'email' => 'لینک بازیابی نامعتبر یا منقضی شده است. دوباره درخواست بازیابی بدهید.',
-        ]);
+        return back()->withInput(['email' => $data['email']])->withErrors(['email' => __('auth.reset_invalid')]);
     }
 }

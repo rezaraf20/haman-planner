@@ -6,19 +6,21 @@ namespace App\Notifications;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 
+/** Password reset email in the account's own language. */
 final class ResetPasswordNotification extends ResetPassword
 {
     public function toMail($notifiable): MailMessage
     {
+        $locale = method_exists($notifiable, 'preferredLocale') ? $notifiable->preferredLocale() : app()->getLocale();
         $minutes = (int) config('auth.passwords.users.expire', 60);
 
         return (new MailMessage())
-            ->subject('بازیابی رمز عبور | Haman Planner')
-            ->greeting('سلام '.($notifiable->name ?? ''))
-            ->line('درخواست بازیابی رمز عبور حساب شما در Haman Planner ثبت شد.')
-            ->action('تعیین رمز عبور جدید', $this->resetUrl($notifiable))
-            ->line("این لینک تا {$minutes} دقیقه معتبر است.")
-            ->line('اگر شما این درخواست را نداده‌اید، این ایمیل را نادیده بگیرید؛ رمز فعلی شما تغییری نمی‌کند.')
+            ->subject(__('auth.mail_reset_subject', [], $locale))
+            ->greeting(__('auth.mail_greeting', ['name' => $notifiable->name ?? ''], $locale))
+            ->line(__('auth.mail_reset_line', [], $locale))
+            ->action(__('auth.mail_reset_action', [], $locale), $this->resetUrl($notifiable))
+            ->line(__('auth.mail_reset_expire', ['minutes' => $minutes], $locale))
+            ->line(__('auth.mail_reset_ignore', [], $locale))
             ->salutation('Haman Planner');
     }
 }

@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Goal extends Model {
     use BelongsToPlannerUser;
 
+    /** Plan limit applied when a new record is created (see Entitlements). */
+    protected string $planLimitMetric = 'active_goals';
+
+    /** Product analytics event recorded the first time a user creates one. */
+    protected string $plannerFirstEvent = 'first_goal';
+
     /** @var array<string,class-string> references that must belong to the same owner */
     protected array $plannerReferences = ['area_id'=>Area::class];
 

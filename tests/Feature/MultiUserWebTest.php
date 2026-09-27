@@ -30,8 +30,8 @@ final class MultiUserWebTest extends TestCase
         parent::setUp();
         config(['services.telegram.bot_token' => 'test-token', 'services.haman_planner.registration' => true]);
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 1]])]);
-        $this->a = User::create(['name' => 'A', 'email' => 'a@example.com', 'password' => Hash::make('password-a1'), 'is_active' => true, 'telegram_chat_id' => '1001']);
-        $this->b = User::create(['name' => 'B', 'email' => 'b@example.com', 'password' => Hash::make('password-b1'), 'is_active' => true]);
+        $this->a = User::create(['name' => 'A', 'email' => 'a@example.com', 'onboarded_at' => now(), 'password' => Hash::make('password-a1'), 'is_active' => true, 'telegram_chat_id' => '1001']);
+        $this->b = User::create(['name' => 'B', 'email' => 'b@example.com', 'onboarded_at' => now(), 'password' => Hash::make('password-b1'), 'is_active' => true]);
     }
 
     private function token(User $u): array
@@ -59,7 +59,7 @@ final class MultiUserWebTest extends TestCase
         $this->get('/register')->assertOk();
         $this->post('/register', [
             'name' => 'Sara', 'email' => 'Sara@Example.com', 'password' => 'secret123', 'password_confirmation' => 'secret123',
-        ])->assertRedirect(route('account.settings'));
+        ])->assertRedirect(route('onboarding'));
 
         $user = User::where('email', 'sara@example.com')->first();
         $this->assertNotNull($user);
@@ -194,8 +194,9 @@ final class MultiUserWebTest extends TestCase
     public function test_admin_area_is_hidden_and_forbidden_for_regular_users(): void
     {
         $html = $this->actingAs($this->b)->get('/planner')->assertOk()->getContent();
-        $this->assertStringNotContainsString("/admin/users'", $html);
-        $this->assertStringContainsString('/settings/security', $html);
+        $this->assertStringNotContainsString(route('admin.home'), $html);
+        $this->assertStringContainsString(route('account.settings'), $html);
+        $this->get('/settings/security')->assertRedirect('/settings');
         $this->actingAs($this->b)->get('/admin/users')->assertForbidden();
         $this->withHeaders($this->token($this->b))->getJson('/api/admin/users')->assertForbidden();
     }

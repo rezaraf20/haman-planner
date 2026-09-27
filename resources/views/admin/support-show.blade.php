@@ -1,23 +1,24 @@
 @extends('layouts.page')
-@section('title', 'تیکت #'.$ticket->id)
+@section('title', '#'.$ticket->id)
 @section('content')
 <div class="row" style="justify-content:space-between">
 <h1>#{{ $ticket->id }} — {{ $ticket->subject }}</h1>
 <form method="post" action="{{ route('admin.support.status', $ticket) }}" class="row">@csrf
-<select name="status" class="btn">@foreach(\App\Models\SupportTicket::STATUSES as $k => $l)<option value="{{ $k }}" @selected($ticket->status === $k)>{{ $l }}</option>@endforeach</select>
-<button class="btn sm">تغییر وضعیت</button></form>
+<select name="status" class="btn">@foreach(\App\Models\SupportTicket::STATUSES as $k)<option value="{{ $k }}" @selected($ticket->status === $k)>{{ __('support.status.'.$k) }}</option>@endforeach</select>
+<button class="btn sm">{{ __('admin.change_status') }}</button></form>
 </div>
 <div class="card">
-<b>{{ $ticket->user?->name ?? 'کاربر حذف‌شده' }}</b> <span class="ltr muted">{{ $ticket->user?->email }}</span>
+<b>{{ $ticket->user?->name ?? __('support.deleted_user') }}</b> <span class="ltr muted">{{ $ticket->user?->email }}</span>
 @if($ticket->user?->telegram_chat_id) · Telegram: <span class="ltr">{{ $ticket->user->telegram_username ? '@'.$ticket->user->telegram_username : $ticket->user->telegram_chat_id }}</span>@endif
+@if($ticket->user && app(\App\Services\Billing\Entitlements::class)->canUse($ticket->user, 'priority_support')) · <span class="pill b">{{ __('support.priority_badge') }}</span>@endif
 · <span class="pill">{{ $ticket->statusLabel() }}</span>
 </div>
 @foreach($ticket->messages as $m)
-<div class="msg {{ $m->is_staff ? 'staff' : '' }}"><div class="meta">{{ $m->is_staff ? '🛟 پشتیبانی ('.($m->user?->name ?? '—').')' : '👤 '.($m->user?->name ?? 'کاربر') }} · <span class="ltr">{{ $m->created_at?->timezone('Asia/Tehran')->format('Y-m-d H:i') }}</span></div>{{ $m->body }}</div>
+<div class="msg {{ $m->is_staff ? 'staff' : '' }}"><div class="meta">{{ $m->is_staff ? __('support.staff').' ('.($m->user?->name ?? '—').')' : '👤 '.($m->user?->name ?? __('support.user')) }} · {{ \App\Support\LocalDate::dateTime($m->created_at) }}</div>{{ $m->body }}</div>
 @endforeach
 <form class="card" method="post" action="{{ route('admin.support.reply', $ticket) }}">@csrf
-<div class="field"><label>پاسخ</label><textarea name="body" required maxlength="5000">{{ old('body') }}</textarea><div class="help">بعد از ارسال، کاربر از طریق Telegram (اگر متصل باشد) و ایمیل مطلع می‌شود.</div></div>
-<div class="row"><button class="btn primary">ارسال پاسخ</button><label class="check"><input type="checkbox" name="close" value="1"> ارسال و بستن تیکت</label></div>
+<div class="field"><label>{{ __('admin.reply') }}</label><textarea name="body" required maxlength="5000">{{ old('body') }}</textarea><div class="help">{{ __('admin.reply_help') }}</div></div>
+<div class="row"><button class="btn primary">{{ __('admin.send_reply') }}</button><label class="check"><input type="checkbox" name="close" value="1"> {{ __('admin.send_and_close') }}</label></div>
 </form>
-<a href="{{ route('admin.support') }}">← بازگشت به تیکت‌ها</a>
+<a href="{{ route('admin.support') }}">{{ __('support.back') }}</a>
 @endsection

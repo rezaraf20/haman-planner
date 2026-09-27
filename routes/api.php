@@ -51,6 +51,7 @@ Route::middleware([
     StartSession::class,
     RequestIdMiddleware::class,
     PlannerApiAuth::class,
+    \App\Http\Middleware\SetLocale::class,
     IdempotencyMiddleware::class,
     \App\Http\Middleware\TrackLastSeen::class,
     'throttle:120,1',
@@ -101,6 +102,7 @@ Route::middleware([
     Route::get('/system/pending-actions', [SystemController::class, 'pending']);
     Route::get('/system/failures', [SystemController::class, 'failures']);
     Route::get('/system/execution', [SystemController::class, 'execution']);
+    Route::get('/system/dependencies', [SystemController::class, 'dependencies']);
     Route::get('/system/daily-plans', [SystemController::class, 'dailyPlans']);
     Route::get('/system/report', [SystemController::class, 'report']);
     Route::post('/reviews/generate', [ReviewController::class, 'generate']);

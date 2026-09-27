@@ -11,6 +11,12 @@ class Task extends Model
 {
     use BelongsToPlannerUser;
 
+    /** Plan limit applied when a new record is created (see Entitlements). */
+    protected string $planLimitMetric = 'open_tasks';
+
+    /** Product analytics event recorded the first time a user creates one. */
+    protected string $plannerFirstEvent = 'first_task';
+
     /** @var array<string,class-string> references that must belong to the same owner */
     protected array $plannerReferences = ['area_id'=>Area::class,'goal_id'=>Goal::class,'project_id'=>Project::class,'milestone_id'=>Milestone::class,'parent_task_id'=>Task::class];
 

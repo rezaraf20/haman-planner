@@ -5,7 +5,8 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => env('APP_TIMEZONE', 'Asia/Tehran'),
-    'locale' => 'en',
+    // Interface language for visitors with no saved or browser preference (fa or en).
+    'locale' => env('APP_LOCALE', 'fa'),
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'key' => env('APP_KEY'),

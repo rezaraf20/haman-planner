@@ -21,3 +21,12 @@ credentials/
 # Dependencies
 /vendor/
 /node_modules/
+/vendor
+
+# Laravel runtime / build output
+/storage/
+/bootstrap/cache/*.php
+/public/storage
+/public/uploads/
+.phpunit.result.cache
+.phpunit.cache/

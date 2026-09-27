@@ -28,9 +28,9 @@ final class AdminAndSupportTest extends TestCase
         Cache::flush();
         config(['services.telegram.bot_token' => 'test-token']);
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 1]])]);
-        $this->admin = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('x'), 'is_admin' => true, 'is_active' => true, 'telegram_chat_id' => '900']);
-        $this->user = User::create(['name' => 'Sara', 'email' => 'sara@example.com', 'password' => Hash::make('x'), 'is_active' => true, 'telegram_chat_id' => '777', 'telegram_username' => 'sara_tg', 'telegram_linked_at' => now()]);
-        $this->other = User::create(['name' => 'Omid', 'email' => 'omid@example.com', 'password' => Hash::make('x'), 'is_active' => true]);
+        $this->admin = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'onboarded_at' => now(), 'password' => Hash::make('x'), 'is_admin' => true, 'is_active' => true, 'telegram_chat_id' => '900']);
+        $this->user = User::create(['name' => 'Sara', 'email' => 'sara@example.com', 'onboarded_at' => now(), 'password' => Hash::make('x'), 'is_active' => true, 'telegram_chat_id' => '777', 'telegram_username' => 'sara_tg', 'telegram_linked_at' => now()]);
+        $this->other = User::create(['name' => 'Omid', 'email' => 'omid@example.com', 'onboarded_at' => now(), 'password' => Hash::make('x'), 'is_active' => true]);
     }
 
     private function telegramTo(string $chat): array

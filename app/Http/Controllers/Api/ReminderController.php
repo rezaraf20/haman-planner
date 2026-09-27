@@ -86,10 +86,10 @@ final class ReminderController extends Controller
             return $requested;
         }
         if ($requested !== null) {
-            throw ValidationException::withMessages(['chat_id' => 'فقط به Telegram متصل به حساب خودتان می‌توانید یادآور بفرستید.']);
+            throw ValidationException::withMessages(['chat_id' => __('planner.reminder_chat_forbidden')]);
         }
         if ($own === null) {
-            throw ValidationException::withMessages(['chat_id' => 'ابتدا Telegram را از بخش «حساب و تلگرام» به حساب خود متصل کنید.']);
+            throw ValidationException::withMessages(['chat_id' => __('planner.reminder_link_first')]);
         }
         return $own;
     }

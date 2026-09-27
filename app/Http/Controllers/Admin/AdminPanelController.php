@@ -37,7 +37,16 @@ final class AdminPanelController extends Controller
             'tasks' => Task::withoutGlobalScopes()->count(),
             'tasks_7' => Task::withoutGlobalScopes()->where('created_at', '>=', $now->copy()->subDays(7))->count(),
             'open_tickets' => SupportTicket::query()->where('status', 'open')->count(),
+            'paying' => \App\Models\Subscription::query()->current()->where('status', '!=', 'trialing')->whereNotNull('billing_interval')->count(),
+            'trialing' => \App\Models\Subscription::query()->current()->where('status', 'trialing')->count(),
+            'ai_month' => (int) \App\Models\UsageCounter::query()->where('metric', 'ai_requests')->where('period', now()->format('Y-m'))->sum('used'),
+            'ai_30' => \App\Models\AiInteraction::withoutGlobalScopes()->where('created_at', '>=', $now->copy()->subDays(30))->count(),
         ];
+        $revenue30 = \App\Models\Payment::query()->where('status', 'paid')->where('paid_at', '>=', $now->copy()->subDays(30))
+            ->selectRaw('currency, sum(amount) as total')->groupBy('currency')->pluck('total', 'currency')->all();
+        $funnel = \App\Models\ProductEvent::query()->where('created_at', '>=', $now->copy()->subDays(30))
+            ->whereIn('event', \App\Services\Analytics\ProductEvents::FUNNEL)
+            ->selectRaw('event, count(distinct coalesce(user_id, id)) as c')->groupBy('event')->pluck('c', 'event')->all();
 
         $from = $now->copy()->subDays(13)->startOfDay();
         $raw = User::query()->where('created_at', '>=', $from)
@@ -51,6 +60,8 @@ final class AdminPanelController extends Controller
         return view('admin.overview', [
             'stats' => $stats,
             'signups' => $signups,
+            'revenue30' => $revenue30,
+            'funnel' => $funnel,
             'recent' => User::query()->latest('id')->limit(8)->get(),
             'tickets' => SupportTicket::query()->with('user')->where('status', 'open')->latest('last_reply_at')->limit(5)->get(),
         ]);
@@ -74,10 +85,16 @@ final class AdminPanelController extends Controller
             ->when($filter === 'no_telegram', fn ($w) => $w->whereNull('users.telegram_chat_id'))
             ->when($filter === 'inactive', fn ($w) => $w->where('users.is_active', false))
             ->when($filter === 'admins', fn ($w) => $w->where('users.is_admin', true))
+            ->when($filter === 'paying', fn ($w) => $w->whereIn('users.id', \App\Models\Subscription::query()->current()->whereNotNull('billing_interval')->select('user_id')))
             ->orderByDesc('users.id')
             ->paginate(30)->withQueryString();
 
-        return view('admin.users', ['users' => $users, 'q' => $q, 'filter' => $filter]);
+        $plansByUser = \App\Models\Subscription::query()->current()->with('plan')->whereIn('user_id', $users->pluck('id'))->get()->keyBy('user_id');
+        return view('admin.users', [
+            'users' => $users, 'q' => $q, 'filter' => $filter, 'subs' => $plansByUser,
+            'plans' => \App\Models\Plan::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'defaultPlan' => \App\Models\Plan::query()->where('is_default', true)->first(),
+        ]);
     }
 
     public function exportUsers(): \Symfony\Component\HttpFoundation\StreamedResponse
@@ -100,11 +117,11 @@ final class AdminPanelController extends Controller
         $field = (string) $request->input('field');
         abort_unless(in_array($field, ['is_active', 'is_admin'], true), 422);
         if ($user->id === $request->user()->id) {
-            return back()->withErrors(['user' => 'نمی‌توانید وضعیت یا نقش حساب خودتان را تغییر دهید.']);
+            return back()->withErrors(['user' => __('admin.cannot_change_self')]);
         }
         $user->forceFill([$field => !$user->{$field}])->save();
-        $label = $field === 'is_active' ? ($user->is_active ? 'فعال' : 'غیرفعال') : ($user->is_admin ? 'مدیر' : 'کاربر عادی');
-        return back()->with('status', "«{$user->name}» اکنون {$label} است.");
+        $label = $field === 'is_active' ? __($user->is_active ? 'admin.state_active' : 'admin.state_inactive') : __($user->is_admin ? 'admin.state_admin' : 'admin.state_user');
+        return back()->with('status', __('admin.role_changed', ['name' => $user->name, 'state' => $label]));
     }
 
     public function settings(): View
@@ -117,19 +134,20 @@ final class AdminPanelController extends Controller
         $data = $request->validate([
             'app_name' => 'required|string|max:60',
             'app_tagline' => 'nullable|string|max:120',
+            'app_tagline_en' => 'nullable|string|max:120',
             'support_note' => 'nullable|string|max:2000',
             'announcement' => 'nullable|string|max:500',
             'logo' => 'nullable|file|mimes:png,jpg,jpeg,webp|max:300',
             'remove_logo' => 'nullable|boolean',
         ], [
-            'logo.mimes' => 'لوگو باید PNG، JPG یا WEBP باشد.',
-            'logo.max' => 'حجم لوگو حداکثر ۳۰۰ کیلوبایت است.',
-            'app_name.required' => 'نام پلتفرم الزامی است.',
+            'logo.mimes' => __('admin.logo_mimes'),
+            'logo.max' => __('admin.logo_max'),
         ]);
 
         $values = [
             'app_name' => trim($data['app_name']),
             'app_tagline' => trim((string) ($data['app_tagline'] ?? '')),
+            'app_tagline_en' => trim((string) ($data['app_tagline_en'] ?? '')),
             'support_note' => trim((string) ($data['support_note'] ?? '')),
             'announcement' => trim((string) ($data['announcement'] ?? '')),
             'registration_enabled' => $request->boolean('registration_enabled'),
@@ -144,6 +162,6 @@ final class AdminPanelController extends Controller
         }
         AppSettings::put($values);
 
-        return redirect()->route('admin.settings')->with('status', 'تنظیمات ذخیره شد.');
+        return redirect()->route('admin.settings')->with('status', __('admin.settings_saved'));
     }
 }

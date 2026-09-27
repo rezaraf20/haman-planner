@@ -19,7 +19,7 @@ final class AdminSupportController extends Controller
     {
         $status = (string) $request->query('status', 'open');
         $tickets = SupportTicket::query()->with('user')
-            ->when(array_key_exists($status, SupportTicket::STATUSES), fn ($q) => $q->where('status', $status))
+            ->when(in_array($status, SupportTicket::STATUSES, true), fn ($q) => $q->where('status', $status))
             ->latest('last_reply_at')->latest('id')->paginate(30)->withQueryString();
         $counts = SupportTicket::query()->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status')->all();
         return view('admin.support-index', ['tickets' => $tickets, 'status' => $status, 'counts' => $counts]);
@@ -32,18 +32,18 @@ final class AdminSupportController extends Controller
 
     public function reply(Request $request, SupportTicket $ticket): RedirectResponse
     {
-        $data = $request->validate(['body' => 'required|string|min:1|max:5000'], ['body.required' => 'متن پاسخ الزامی است.']);
+        $data = $request->validate(['body' => 'required|string|min:1|max:5000'], ['body.required' => __('admin.reply_required')]);
         SupportMessage::create(['support_ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'is_staff' => true, 'body' => trim($data['body'])]);
         $ticket->update(['status' => $request->boolean('close') ? 'closed' : 'answered', 'last_reply_at' => now()]);
         $this->notifier->notifyUser($ticket->fresh('user'), $data['body']);
-        return redirect()->route('admin.support.show', $ticket)->with('status', 'پاسخ ارسال شد و به کاربر اطلاع داده شد.');
+        return redirect()->route('admin.support.show', $ticket)->with('status', __('admin.reply_sent'));
     }
 
     public function status(Request $request, SupportTicket $ticket): RedirectResponse
     {
         $status = (string) $request->input('status');
-        abort_unless(array_key_exists($status, SupportTicket::STATUSES), 422);
+        abort_unless(in_array($status, SupportTicket::STATUSES, true), 422);
         $ticket->update(['status' => $status]);
-        return back()->with('status', 'وضعیت تیکت تغییر کرد.');
+        return back()->with('status', __('admin.status_changed'));
     }
 }

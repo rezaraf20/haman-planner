@@ -21,6 +21,7 @@ final class AuthenticationTest extends TestCase
     public function test_user_can_login_and_access_planner(): void
     {
         User::create([
+            'onboarded_at' => now(),
             'name' => 'Test',
             'email' => 'test@example.com',
             'password' => Hash::make('correct-password'),
@@ -42,6 +43,7 @@ final class AuthenticationTest extends TestCase
     public function test_authenticated_browser_can_read_planner_api_without_api_token(): void
     {
         $user = User::create([
+            'onboarded_at' => now(),
             'name' => 'Test',
             'email' => 'test@example.com',
             'password' => Hash::make('correct-password'),

@@ -46,3 +46,32 @@ Run Laravel's scheduler every minute in production:
 ```
 
 The scheduler executes `planner:reminders`, which dispatches due Telegram reminders.
+
+
+## Upgrading an existing installation (SaaS release)
+
+All migrations in this release only **add** tables, columns and indexes; no data is converted or removed.
+Existing users keep their data, get `locale=fa`, `timezone=Asia/Tehran` and are marked as already onboarded.
+
+```bash
+cd /path/to/haman-planner
+git pull                                   # or fetch the release bundle
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force
+docker compose -f docker-compose.prod.yml run --rm app php artisan db:seed --class=PlanSeeder --force
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml exec app php artisan optimize:clear
+```
+
+Never use `migrate:fresh`, `migrate:reset`, `db:wipe` or `docker compose down -v` on production — they delete data.
+Take a database backup before upgrading (see backup-restore.md).
+
+After the upgrade:
+
+1. Open `/admin` → *System* and check the database, queue and scheduler heartbeat.
+2. Review plans and prices in `/admin` → *Plans* (seeded prices are placeholders).
+3. Set `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL`, and replace the Privacy/Terms placeholders after legal review.
+4. Payments stay off until `ZARINPAL_ENABLED`/`STRIPE_ENABLED` and their credentials are set. See saas.md §4.
+
+The scheduler runs `planner:reminders` every minute and `billing:lifecycle` hourly, and writes a heartbeat
+shown on the System page. The Telegram webhook URL does not change.

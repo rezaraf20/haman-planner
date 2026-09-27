@@ -32,7 +32,7 @@ final class PlannerIntentService
     {
         if ($chatId !== null) {
             $command = mb_strtolower(trim($text));
-            if (in_array($command, ['yes', 'y', 'ok', 'confirm', 'بله', 'تایید', 'تایید کن'], true)) {
+            if (in_array($command, ['yes', 'y', 'ok', 'confirm', 'بله', 'تایید', 'تأیید', 'تایید کن'], true)) {
                 return $this->approve($chatId);
             }
             if (in_array($command, ['no', 'n', 'cancel', 'لغو', 'خیر'], true)) {
@@ -46,7 +46,7 @@ final class PlannerIntentService
             $commandName = $parts[0] ?? '';
             $argument = trim($parts[1] ?? '');
             $direct = match ($commandName) {
-                '/start' => ['message' => 'Haman Planner آماده است. از /today، /tasks، /goals، /projects، /inbox، /review، /week، /report یا /search استفاده کن.'],
+                '/start' => ['message' => __('assistant.ready')],
                 '/today' => $this->queryPlan([], $chatId),
                 '/tasks' => $this->queryTaskList($chatId),
                 '/goals' => $this->queryGoalList($chatId),
@@ -61,12 +61,28 @@ final class PlannerIntentService
             if ($direct !== null) return $direct;
         }
 
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $tz = $user instanceof \App\Models\User ? $user->preferredTimezone() : (string) config('app.timezone');
         $context = [
-            'current_datetime' => now('Asia/Tehran')->toIso8601String(),
-            'timezone' => 'Asia/Tehran',
+            'current_datetime' => now($tz)->toIso8601String(),
+            'timezone' => $tz,
         ];
 
-        $intent = $this->factory::make()->parseIntent($text, $context);
+        // Natural-language parsing is an AI request: metered against the user's plan.
+        if ($user instanceof \App\Models\User) {
+            if ($user->preference('ai_enabled') === false) {
+                throw new \App\Exceptions\PlanLimitReached('ai_disabled');
+            }
+            app(\App\Services\Billing\Entitlements::class)->consume($user, 'ai_requests');
+        }
+        try {
+            $intent = $this->factory::make()->parseIntent($text, $context);
+        } catch (\Throwable $e) {
+            if ($user instanceof \App\Models\User) {
+                app(\App\Services\Billing\Entitlements::class)->refund($user, 'ai_requests');
+            }
+            throw $e;
+        }
         $name = strtoupper((string) ($intent['intent'] ?? 'UNKNOWN'));
         $args = is_array($intent['arguments'] ?? null) ? $intent['arguments'] : [];
         $args = $this->normalizeArguments($args);
@@ -78,7 +94,7 @@ final class PlannerIntentService
             'QUERY_REPORT' => $this->queryReport($args, $chatId),
             'QUERY_GOAL' => $this->queryProgress($args, $chatId),
             'DAILY_REVIEW', 'WEEKLY_REVIEW' => $this->queryReview($name, $chatId),
-            default => ['intent' => 'UNKNOWN', 'message' => 'I could not safely map this request to a planner action.'],
+            default => ['intent' => 'UNKNOWN', 'message' => __('assistant.unknown')],
         };
     }
 
@@ -86,7 +102,7 @@ final class PlannerIntentService
     {
         $result = $this->queries->taskSearch('');
         $result['tasks'] = Task::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('priority')->limit(20)->get(['id','title','status','priority','progress'])->toArray();
-        $message = count($result['tasks']).' کار باز در سیستم وجود دارد.';
+        $message = __('assistant.open_tasks', ['count' => count($result['tasks'])]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_TASKS', 'result' => $result, 'message' => $message];
     }
@@ -94,7 +110,7 @@ final class PlannerIntentService
     private function queryGoalList(string|int $chatId): array
     {
         $result = Goal::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
-        $message = 'اهداف فعال: '.count($result);
+        $message = __('assistant.active_goals', ['count' => count($result)]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_GOALS', 'result' => $result, 'message' => $message];
     }
@@ -102,7 +118,7 @@ final class PlannerIntentService
     private function queryProjectList(string|int $chatId): array
     {
         $result = Project::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
-        $message = 'پروژه‌های فعال: '.count($result);
+        $message = __('assistant.active_projects', ['count' => count($result)]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_PROJECTS', 'result' => $result, 'message' => $message];
     }
@@ -110,7 +126,7 @@ final class PlannerIntentService
     private function queryInbox(string|int $chatId): array
     {
         $result = Task::query()->where('status', 'inbox')->orderByDesc('id')->limit(20)->get(['id','title','priority','estimated_minutes'])->toArray();
-        $message = 'Inbox: '.count($result).' کار.';
+        $message = __('assistant.inbox', ['count' => count($result)]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_INBOX', 'result' => $result, 'message' => $message];
     }
@@ -118,12 +134,12 @@ final class PlannerIntentService
     private function querySearch(string $query, string|int $chatId): array
     {
         if ($query === '') {
-            $message = 'عبارت جستجو را بعد از /search بنویس.';
+            $message = __('assistant.search_usage');
             $this->telegram->sendMessage($chatId, $message);
             return ['intent' => 'QUERY_SEARCH', 'result' => [], 'message' => $message];
         }
         $result = $this->queries->taskSearch($query);
-        $message = 'نتیجه جستجو: '.count($result['tasks'] ?? []).' کار.';
+        $message = __('assistant.search_result', ['count' => count($result['tasks'] ?? [])]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_SEARCH', 'result' => $result, 'message' => $message];
     }
@@ -150,9 +166,10 @@ final class PlannerIntentService
     private function queryReport(array $args, string|int|null $chatId): array
     {
         $result = $this->queries->report((string) ($args['period'] ?? 'month'));
-        $message = sprintf("گزارش: %s کار ایجاد شد، %s کار تکمیل شد، نرخ تکمیل %s%%، %s دقیقه اجرا.",
-            $result['tasks_created'] ?? 0, $result['tasks_completed'] ?? 0,
-            $result['completion_rate'] ?? 0, $result['execution_minutes'] ?? 0);
+        $message = __('assistant.report', [
+            'created' => $result['tasks_created'] ?? 0, 'completed' => $result['tasks_completed'] ?? 0,
+            'rate' => $result['completion_rate'] ?? 0, 'minutes' => $result['execution_minutes'] ?? 0,
+        ]);
         if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_REPORT', 'result' => $result, 'message' => $message];
     }
@@ -160,76 +177,77 @@ final class PlannerIntentService
     private function queryReview(string $intent, string|int|null $chatId): array
     {
         $result = $this->queries->report($intent === 'DAILY_REVIEW' ? 'day' : 'week');
-        $message = sprintf("مرور %s: %s کار تکمیل شد، نرخ تکمیل %s%%، %s دقیقه اجرا.",
-            $intent === 'DAILY_REVIEW' ? 'روزانه' : 'هفتگی',
-            $result['tasks_completed'] ?? 0, $result['completion_rate'] ?? 0,
-            $result['execution_minutes'] ?? 0);
+        $message = __($intent === 'DAILY_REVIEW' ? 'assistant.review_daily' : 'assistant.review_weekly', [
+            'completed' => $result['tasks_completed'] ?? 0, 'rate' => $result['completion_rate'] ?? 0,
+            'minutes' => $result['execution_minutes'] ?? 0,
+        ]);
         if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
         return ['intent' => $intent, 'result' => $result, 'message' => $message];
     }
 
     private function formatPlan(array $result): string
     {
-        $lines = ["برنامه امروز — {$result['planned_minutes']} دقیقه"];
-        foreach ($result['tasks'] as $task) $lines[] = "• [{$task['priority']}] {$task['title']} ({$task['estimated_minutes']} دقیقه)";
-        if (!$result['tasks']) $lines[] = 'کار قابل برنامه‌ریزی پیدا نشد.';
+        $lines = [__('assistant.plan_header', ['minutes' => $result['planned_minutes']])];
+        foreach ($result['tasks'] as $task) $lines[] = __('assistant.plan_line', ['priority' => $task['priority'], 'title' => $task['title'], 'minutes' => $task['estimated_minutes']]);
+        if (!$result['tasks']) $lines[] = __('assistant.plan_empty');
         return implode("\n", $lines);
     }
 
     private function formatProgress(array $result): string
     {
-        if (($result['found'] ?? false) === false) return (string) ($result['message'] ?? 'یافت نشد.');
-        if (($result['type'] ?? '') === 'overview') return 'نمای کلی پیشرفت: '.count($result['goals']).' هدف و '.count($result['projects']).' پروژه فعال.';
-        return sprintf("%s: %s%% — وضعیت: %s — سلامت: %s",
-            $result['title'], $result['progress'], $result['status'] ?? '-', $result['health'] ?? '-');
+        if (($result['found'] ?? false) === false) return (string) ($result['message'] ?? __('assistant.not_found'));
+        if (($result['type'] ?? '') === 'overview') return __('assistant.progress_overview', ['goals' => count($result['goals']), 'projects' => count($result['projects'])]);
+        return __('assistant.progress_item', [
+            'title' => $result['title'], 'progress' => $result['progress'], 'status' => $result['status'] ?? '-', 'health' => $result['health'] ?? '-',
+        ]);
     }
 
     private function requestConfirmation(string $intent, array $args, string|int|null $chatId): array
     {
         if ($chatId === null) {
-            return ['intent' => $intent, 'confirmation_required' => true, 'message' => 'A confirmation channel is required for mutations.'];
+            return ['intent' => $intent, 'confirmation_required' => true, 'message' => __('assistant.needs_channel')];
         }
 
         if (in_array($intent, ['UPDATE_TASK','COMPLETE_TASK','DEFER_TASK','CANCEL_TASK','LOG_PROGRESS','LOG_TIME','LOG_FAILURE','LOG_BLOCKER','SCHEDULE_TASK','RESCHEDULE_TASK'], true)) {
             $resolution = $this->resolver->resolveWithStatus('task', $args);
             if (($resolution['status'] ?? null) === 'ambiguous') {
                 $items = array_slice($resolution['candidates'] ?? [], 0, 5);
-                $message = "چند کار مشابه پیدا شد؛ لطفاً یکی را انتخاب کن:\n".
+                $message = __('assistant.ambiguous')."\n".
                     collect($items)->values()->map(fn ($item, $i) => ($i + 1).'. '.$item['title'])->implode("\n");
                 if ($chatId !== null) $this->telegram->sendMessage($chatId, $message);
                 return ['intent' => $intent, 'confirmation_required' => false, 'ambiguous' => true, 'candidates' => $items, 'message' => $message];
             }
-            if (($resolution['status'] ?? null) !== 'resolved') return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد.'];
+            if (($resolution['status'] ?? null) !== 'resolved') return ['intent' => $intent, 'confirmation_required' => false, 'message' => __('assistant.task_not_found')];
             $args['task_id'] = $resolution['model']->id;
         }
         if ($intent === 'ADD_REMINDER') {
             // Never trust a chat ID coming from model output: reminders go to the caller's own chat.
             $args['chat_id'] = $chatId ?? (\Illuminate\Support\Facades\Auth::user()?->telegram_chat_id);
             if (empty($args['scheduled_at']) && empty($args['remind_at'])) {
-                return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'زمان یادآوری مشخص نشده است.'];
+                return ['intent' => $intent, 'confirmation_required' => false, 'message' => __('assistant.reminder_no_time')];
             }
             if (!empty($args['task']) || !empty($args['task_id'])) {
                 $task = $this->resolver->resolveTask($args);
-                if (!$task) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'کار موردنظر پیدا نشد یا نام آن مبهم است.'];
+                if (!$task) return ['intent' => $intent, 'confirmation_required' => false, 'message' => __('assistant.task_ambiguous')];
                 $args['task_id'] = $task->id;
             }
         }
         if ($intent === 'CREATE_PROJECT' && (!empty($args['goal']) || !empty($args['goal_id']))) {
             $goal = $this->resolver->resolveGoal($args);
-            if (!$goal) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'هدف پروژه پیدا نشد یا نام آن مبهم است.'];
+            if (!$goal) return ['intent' => $intent, 'confirmation_required' => false, 'message' => __('assistant.project_goal_ambiguous')];
             $args['goal_id'] = $goal->id;
         }
 
         if ($intent === 'CREATE_MILESTONE') {
             $project = $this->resolver->resolveProject($args);
-            if (!$project) return ['intent' => $intent, 'confirmation_required' => false, 'message' => 'پروژه مایلستون پیدا نشد یا نام آن مبهم است.'];
+            if (!$project) return ['intent' => $intent, 'confirmation_required' => false, 'message' => __('assistant.milestone_project_ambiguous')];
             $args['project_id'] = $project->id;
         }
 
         foreach ([
-            'UPDATE_GOAL' => ['resolver' => 'resolveGoal', 'key' => 'goal_id', 'message' => 'هدف موردنظر پیدا نشد یا نام آن مبهم است.'],
-            'UPDATE_PROJECT' => ['resolver' => 'resolveProject', 'key' => 'project_id', 'message' => 'پروژه موردنظر پیدا نشد یا نام آن مبهم است.'],
-            'UPDATE_MILESTONE' => ['resolver' => 'resolveMilestone', 'key' => 'milestone_id', 'message' => 'مایلستون موردنظر پیدا نشد یا نام آن مبهم است.'],
+            'UPDATE_GOAL' => ['resolver' => 'resolveGoal', 'key' => 'goal_id', 'message' => __('assistant.goal_ambiguous')],
+            'UPDATE_PROJECT' => ['resolver' => 'resolveProject', 'key' => 'project_id', 'message' => __('assistant.project_ambiguous')],
+            'UPDATE_MILESTONE' => ['resolver' => 'resolveMilestone', 'key' => 'milestone_id', 'message' => __('assistant.milestone_ambiguous')],
         ] as $mutation => $definition) {
             if ($intent !== $mutation) continue;
             $entity = $this->resolver->{$definition['resolver']}($args);
@@ -241,7 +259,7 @@ final class PlannerIntentService
         $action = $this->confirmations->create($chatId, $intent, $payload);
         $summary = $this->summarize($intent, $args);
 
-        $this->telegram->sendMessage($chatId, $summary."\n\nتأیید می‌کنی؟ (بله/خیر)\nاعتبار: ۱۰ دقیقه");
+        $this->telegram->sendMessage($chatId, $summary."\n\n".__('assistant.confirm_prompt'));
 
         return [
             'intent' => $intent,
@@ -255,7 +273,7 @@ final class PlannerIntentService
     {
         $action = $this->confirmations->approve($chatId);
         if (! $action) {
-            $this->telegram->sendMessage($chatId, 'درخواستی برای تأیید وجود ندارد یا منقضی شده است.');
+            $this->telegram->sendMessage($chatId, __('assistant.nothing_to_confirm'));
             return ['confirmation' => 'none'];
         }
 
@@ -273,11 +291,11 @@ final class PlannerIntentService
     {
         $action = $this->confirmations->reject($chatId);
         if (! $action) {
-            $this->telegram->sendMessage($chatId, 'درخواستی برای لغو وجود ندارد.');
+            $this->telegram->sendMessage($chatId, __('assistant.nothing_to_cancel'));
             return ['confirmation' => 'none'];
         }
 
-        $this->telegram->sendMessage($chatId, 'انجام نشد؛ درخواست لغو شد.');
+        $this->telegram->sendMessage($chatId, __('assistant.canceled'));
         return ['confirmation' => 'rejected', 'pending_action_id' => $action->id];
     }
 
@@ -546,10 +564,10 @@ final class PlannerIntentService
     private function summarize(string $intent, array $args): string
     {
         return match ($intent) {
-            'CREATE_TASK' => 'ایجاد کار: '.((string) ($args['title'] ?? 'بدون عنوان')),
-            'COMPLETE_TASK' => 'تکمیل کار: '.((string) ($args['title'] ?? ('#'.($args['task_id'] ?? '?')))),
-            'DEFER_TASK' => 'تعویق کار: '.((string) ($args['title'] ?? ('#'.($args['task_id'] ?? '?')))),
-            default => 'تغییر در برنامه',
+            'CREATE_TASK' => __('assistant.summary_create', ['title' => (string) ($args['title'] ?? __('common.untitled'))]),
+            'COMPLETE_TASK' => __('assistant.summary_complete', ['title' => (string) ($args['title'] ?? ('#'.($args['task_id'] ?? '?')))]),
+            'DEFER_TASK' => __('assistant.summary_defer', ['title' => (string) ($args['title'] ?? ('#'.($args['task_id'] ?? '?')))]),
+            default => __('assistant.summary_change'),
         };
     }
 
@@ -558,17 +576,17 @@ final class PlannerIntentService
         $task = $result['task'] ?? null;
         $title = is_array($task) ? (string) ($task['title'] ?? '') : '';
         return match ($intent) {
-            'CREATE_TASK' => "ایجاد شد: {$title}",
-            'COMPLETE_TASK' => "تکمیل شد: {$title}",
-            'DEFER_TASK' => "به تعویق افتاد: {$title}",
-            'CANCEL_TASK' => "لغو شد: {$title}",
-            'UPDATE_TASK', 'LOG_PROGRESS' => "به‌روزرسانی شد: {$title}",
-            'SCHEDULE_TASK', 'RESCHEDULE_TASK' => "زمان‌بندی شد: {$title}",
-            'LOG_BLOCKER' => "تسک مسدود شد: {$title}",
-            'LOG_FAILURE' => "دلیل عدم موفقیت ثبت شد: {$title}",
-            'LOG_TIME' => 'زمان اجرا ثبت شد.',
-            'ADD_REMINDER' => 'یادآوری ثبت شد.',
-            default => 'انجام شد.',
+            'CREATE_TASK' => __('assistant.done_create', ['title' => $title]),
+            'COMPLETE_TASK' => __('assistant.done_complete', ['title' => $title]),
+            'DEFER_TASK' => __('assistant.done_defer', ['title' => $title]),
+            'CANCEL_TASK' => __('assistant.done_cancel', ['title' => $title]),
+            'UPDATE_TASK', 'LOG_PROGRESS' => __('assistant.done_update', ['title' => $title]),
+            'SCHEDULE_TASK', 'RESCHEDULE_TASK' => __('assistant.done_schedule', ['title' => $title]),
+            'LOG_BLOCKER' => __('assistant.done_blocker', ['title' => $title]),
+            'LOG_FAILURE' => __('assistant.done_failure', ['title' => $title]),
+            'LOG_TIME' => __('assistant.done_time'),
+            'ADD_REMINDER' => __('assistant.done_reminder'),
+            default => __('assistant.done'),
         };
     }
 }

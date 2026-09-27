@@ -19,7 +19,8 @@ final class AppSettings
     {
         return [
             'app_name' => (string) config('app.name', 'Haman Planner'),
-            'app_tagline' => 'برنامه‌ریزی شخصی و کاری شما',
+            'app_tagline' => '',      // Persian tagline (empty = translated default)
+            'app_tagline_en' => '',   // English tagline (empty = translated default)
             'logo' => null,
             'registration_enabled' => (bool) config('services.haman_planner.registration', true),
             'support_enabled' => true,
@@ -43,7 +44,15 @@ final class AppSettings
             if (!array_key_exists($k, $out)) continue;
             $out[$k] = is_bool($out[$k]) ? $v === '1' : $v;
         }
+        $out['tagline'] = self::tagline($out);
         return $out;
+    }
+
+    /** Tagline for the current interface language; falls back to the translated default. */
+    private static function tagline(array $settings): string
+    {
+        $value = trim((string) (app()->getLocale() === 'en' ? $settings['app_tagline_en'] : $settings['app_tagline']));
+        return $value !== '' ? $value : (string) __('auth.default_tagline');
     }
 
     public static function get(string $key): mixed

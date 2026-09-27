@@ -31,9 +31,14 @@ final class ReminderService
         $payload=is_array($reminder->payload)?$reminder->payload:[];
         $chatId=$payload['chat_id']??null;
         if($chatId===null){$reminder->update(['status'=>'failed','payload'=>array_merge($payload,['error'=>'chat_id is missing'])]);return false;}
+        $owner=$reminder->user_id?\App\Models\User::query()->find($reminder->user_id):null;
+        if($owner && ($owner->preference('notify_reminders_telegram')===false || !$owner->is_active)){
+            $reminder->update(['status'=>'cancelled','payload'=>array_merge($payload,['skipped'=>$owner->is_active?'disabled_by_user':'account_inactive'])]);
+            return false;
+        }
         $claimed=Reminder::query()->whereKey($reminder->id)->where('status','pending')->update(['status'=>'processing']);
         if($claimed!==1)return false;
-        $text=(string)($payload['message']??$this->defaultMessage($reminder));
+        $text=(string)($payload['message']??$this->defaultMessage($reminder,$owner?->preferredLocale()));
         try{
             $this->telegram->sendMessage($chatId,$text);
             $reminder->update(['status'=>'sent','next_attempt_at'=>null,'payload'=>array_merge((array)$reminder->fresh()->payload,['sent_at'=>now()->toIso8601String()])]);
@@ -47,8 +52,9 @@ final class ReminderService
         }
     }
 
-    private function defaultMessage(Reminder $reminder): string
+    private function defaultMessage(Reminder $reminder, ?string $locale = null): string
     {
-        $taskTitle=$reminder->task?->title; return $taskTitle ? "Reminder: {$taskTitle}" : 'Haman Planner reminder';
+        $taskTitle=$reminder->task?->title;
+        return $taskTitle ? __('bot.reminder_for_task',['title'=>$taskTitle],$locale) : __('bot.reminder_generic',[],$locale);
     }
 }

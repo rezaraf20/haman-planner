@@ -22,5 +22,8 @@ return [
         'api_token' => env('APP_API_TOKEN'),
         // Public self-service sign-up on /register (set PLANNER_REGISTRATION=false to close it).
         'registration' => filter_var(env('PLANNER_REGISTRATION', true), FILTER_VALIDATE_BOOL),
+        // Shown on the public Privacy/Terms pages and in the footer.
+        'legal_name' => env('LEGAL_ENTITY_NAME', 'HamanTech'),
+        'contact_email' => env('SUPPORT_EMAIL', env('MAIL_FROM_ADDRESS')),
     ],
 ];

@@ -42,7 +42,31 @@ trait BelongsToPlannerUser
                 }
             }
             $model->assertPlannerReferencesOwned();
+            if (!$model->exists) {
+                $model->assertPlanAllowsCreation();
+            }
         });
+
+        static::created(function (Model $model): void {
+            $event = property_exists($model, 'plannerFirstEvent') ? $model->plannerFirstEvent : null;
+            if ($event && $model->getAttribute('user_id') !== null) {
+                \App\Services\Analytics\ProductEvents::record(User::find($model->getAttribute('user_id')), $event, [], true);
+            }
+        });
+    }
+
+    /** Count-based plan limits (e.g. open tasks) — enforced here so web, API and Telegram all obey them. */
+    public function assertPlanAllowsCreation(): void
+    {
+        $metric = property_exists($this, 'planLimitMetric') ? $this->planLimitMetric : null;
+        $ownerId = $this->getAttribute('user_id');
+        if ($metric === null || $ownerId === null) {
+            return;
+        }
+        $owner = User::find($ownerId);
+        if ($owner) {
+            app(\App\Services\Billing\Entitlements::class)->ensureCanCreate($owner, $metric);
+        }
     }
 
     public function initializeBelongsToPlannerUser(): void
@@ -91,6 +115,18 @@ trait BelongsToPlannerUser
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    /**
+     * Timestamps are stored as wall-clock time in the application timezone. Values that carry
+     * their own offset (ISO 8601 from the browser, a Carbon in the user's timezone) are converted
+     * first, so "10:00+04:00" and "06:00Z" land on the same stored instant.
+     */
+    public function fromDateTime($value)
+    {
+        return empty($value) ? $value : $this->asDateTime($value)
+            ->copy()->setTimezone((string) config('app.timezone'))
+            ->format($this->getDateFormat());
     }
 
     public function user(): BelongsTo

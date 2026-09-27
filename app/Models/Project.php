@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Project extends Model {
     use BelongsToPlannerUser;
 
+    /** Plan limit applied when a new record is created (see Entitlements). */
+    protected string $planLimitMetric = 'active_projects';
+
     /** @var array<string,class-string> references that must belong to the same owner */
     protected array $plannerReferences = ['goal_id'=>Goal::class];
 

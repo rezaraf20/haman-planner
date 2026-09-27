@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Support\AuthMessages;
 use App\Models\User;
+use App\Services\Analytics\ProductEvents;
+use App\Support\AppSettings;
+use App\Support\Timezones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +18,7 @@ final class RegisterController extends Controller
 {
     public static function enabled(): bool
     {
-        return \App\Support\AppSettings::bool('registration_enabled');
+        return AppSettings::bool('registration_enabled');
     }
 
     public function show(): View|RedirectResponse
@@ -44,11 +46,14 @@ final class RegisterController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', function (string $attr, mixed $value, \Closure $fail): void {
                 if (User::query()->whereRaw('lower(email) = ?', [(string) $value])->exists()) {
-                    $fail('این ایمیل قبلاً ثبت شده است. وارد شوید یا از «فراموشی رمز عبور» استفاده کنید.');
+                    $fail(__('auth.email_taken'));
                 }
             }],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
-        ], AuthMessages::MESSAGES, AuthMessages::ATTRIBUTES);
+            'timezone' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        $tz = (string) ($data['timezone'] ?? '');
 
         $user = User::create([
             'name' => trim($data['name']),
@@ -56,11 +61,16 @@ final class RegisterController extends Controller
             'password' => Hash::make($data['password']),
             'is_admin' => false,
             'is_active' => true,
+            // New accounts start in the language they signed up in and the browser's timezone.
+            'locale' => app()->getLocale(),
+            'timezone' => Timezones::valid($tz) ? $tz : (string) config('app.timezone'),
+            'onboarded_at' => null,
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
+        ProductEvents::record($user, ProductEvents::REGISTERED, ['locale' => $user->locale]);
 
-        return redirect()->route('account.settings')->with('status', 'حساب شما ساخته شد 🎉 برای استفاده از ربات، Telegram را از همین صفحه متصل کنید.');
+        return redirect()->route('onboarding')->with('status', __('auth.registered'));
     }
 }

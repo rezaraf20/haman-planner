@@ -19,14 +19,14 @@ final class AdminController extends Controller {
   $user->update($d); return response()->json($user->only(['id','name','email','is_admin','is_active']));
  }
  public function destroyUser(User $user): JsonResponse {
-  if($user->id===request()->user()->id) return response()->json(['message'=>'حساب فعلی قابل حذف نیست.'],422);
+  if($user->id===request()->user()->id) return response()->json(['message'=>__('admin.cannot_delete_self')],422);
   $user->delete(); return response()->json(null,204);
  }
  public function tokens(): JsonResponse { return response()->json(ApiToken::where('user_id',request()->user()->id)->latest()->get(['id','name','token_prefix','last_used_at','expires_at','created_at'])); }
  public function createToken(Request $r): JsonResponse {
   $d=$r->validate(['name'=>'required|string|max:100','expires_at'=>'nullable|date|after:now']);
   $plain=Str::random(64); $t=ApiToken::create(['user_id'=>request()->user()->id,'name'=>$d['name'],'token_hash'=>hash('sha256',$plain),'token_prefix'=>substr($plain,0,12),'expires_at'=>$d['expires_at']??null]);
-  return response()->json(['token'=>$plain,'id'=>$t->id,'name'=>$t->name,'warning'=>'این توکن فقط همین یک بار نمایش داده می‌شود.'],201);
+  return response()->json(['token'=>$plain,'id'=>$t->id,'name'=>$t->name,'warning'=>__('admin.token_once')],201);
  }
  public function revokeToken(ApiToken $token): JsonResponse {
   abort_unless($token->user_id===request()->user()->id,403); $token->delete(); return response()->json(null,204);

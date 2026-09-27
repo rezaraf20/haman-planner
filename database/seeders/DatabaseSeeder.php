@@ -13,6 +13,7 @@ final class DatabaseSeeder extends Seeder
         $this->call([
             FailureReasonSeeder::class,
             AdminUserSeeder::class,
+            PlanSeeder::class,
         ]);
     }
 }
