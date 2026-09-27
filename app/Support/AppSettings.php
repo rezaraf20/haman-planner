@@ -26,6 +26,10 @@ final class AppSettings
             'support_enabled' => true,
             'support_note' => '',
             'announcement' => '',
+            'font_fa' => 'vazirmatn',   // vazirmatn | custom (uploaded, e.g. IRANSans)
+            'font_fa_name' => '',       // display name of the uploaded font
+            'font_fa_version' => '',    // JSON of content hashes of the uploaded files
+            'font_en' => 'poppins',     // poppins | persian (use the Persian font's Latin glyphs)
         ];
     }
 
@@ -34,7 +38,9 @@ final class AppSettings
     {
         $stored = Cache::rememberForever(self::CACHE_KEY, function (): array {
             try {
-                return AppSetting::query()->pluck('value', 'key')->all();
+                // Large values (uploaded fonts, page content) are read on their own, not cached here.
+                return AppSetting::query()->where('key', 'not like', 'font_file_%')->where('key', '!=', 'landing_content')
+                    ->pluck('value', 'key')->all();
             } catch (\Throwable) {
                 return [];
             }

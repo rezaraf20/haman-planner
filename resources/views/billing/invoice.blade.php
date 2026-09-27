@@ -1,9 +1,10 @@
 @php($brand = \App\Support\AppSettings::all())
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<head>
+@include('partials.fonts')<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>{{ __('billing.invoice_title', ['number' => $invoice->number]) }}</title>
-<style>body{font-family:Vazirmatn,Inter,system-ui,Tahoma,sans-serif;color:#172033;margin:0;background:#f4f6f9}.sheet{max-width:760px;margin:30px auto;background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:34px}
+<style>body{font-family:var(--font);color:#172033;margin:0;background:#f4f6f9}.sheet{max-width:760px;margin:30px auto;background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:34px}
 h1{margin:0 0 4px;font-size:22px}.muted{color:#64748b}table{width:100%;border-collapse:collapse;margin-top:22px}th,td{padding:10px;border-bottom:1px solid #e4e8ef;text-align:start}th{font-size:12px;color:#64748b}
 .total{font-weight:900;font-size:18px}.head{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.ltr{direction:ltr;unicode-bidi:isolate}
 .btn{border:1px solid #d5dbe4;background:#fff;border-radius:9px;padding:8px 13px;cursor:pointer;font:inherit}@media print{.noprint{display:none}body{background:#fff}.sheet{border:0;margin:0}}</style></head>

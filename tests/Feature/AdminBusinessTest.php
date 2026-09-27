@@ -168,4 +168,51 @@ final class AdminBusinessTest extends TestCase
         $this->assertNull(\App\Models\AppSetting::find('pay_zarinpal_merchant_id'));
         $this->assertFalse(app(\App\Services\Billing\BillingService::class)->gateway('zarinpal')->isConfigured());
     }
+
+    // ---------------------------------------------------------------- fonts
+
+    public function test_bundled_fonts_are_self_hosted_and_used_on_every_layout(): void
+    {
+        $this->assertFileExists(public_path('fonts/vazirmatn/Vazirmatn-wght.woff2'));
+        $this->assertFileExists(public_path('fonts/poppins/poppins-latin-400-normal.woff2'));
+        foreach (['/', '/login'] as $url) {
+            $html = $this->get($url)->getContent();
+            $this->assertStringContainsString('fonts/vazirmatn/Vazirmatn-wght.woff2', $html);
+            $this->assertStringContainsString('fonts/poppins/poppins-latin-700-normal.woff2', $html);
+            $this->assertStringContainsString('font-family:var(--font)', $html);
+            $this->assertStringNotContainsString('fonts.googleapis.com', $html);
+        }
+        $this->assertStringContainsString('font-family:var(--font)', $this->actingAs($this->member)->get('/planner')->getContent());
+    }
+
+    public function test_admin_can_upload_a_persian_font_and_switch_the_english_font(): void
+    {
+        $woff2 = file_get_contents(public_path('fonts/vazirmatn/Vazirmatn-wght.woff2'));
+        $upload = \Illuminate\Http\UploadedFile::fake()->createWithContent('IRANSansWeb.woff2', $woff2);
+        $base = ['app_name' => 'Haman Planner'];
+
+        $this->actingAs($this->member)->post('/admin/settings', $base + ['font_fa' => 'custom', 'font_regular' => $upload])->assertForbidden();
+
+        $bad = \Illuminate\Http\UploadedFile::fake()->createWithContent('x.woff2', '<?php echo 1;');
+        $this->actingAs($this->admin)->post('/admin/settings', $base + ['font_regular' => $bad])->assertSessionHasErrors('font_regular');
+        $this->assertFalse(\App\Support\Fonts::hasCustom());
+
+        $this->post('/admin/settings', $base + ['font_fa' => 'custom', 'font_fa_name' => 'IRANSans', 'font_en' => 'poppins', 'font_regular' => $upload])
+            ->assertRedirect(route('admin.settings'))->assertSessionHasNoErrors();
+        $html = $this->get('/en/pricing')->getContent();
+        $this->assertStringNotContainsString('Vazirmatn-wght.woff2', $html);
+        $this->assertMatchesRegularExpression('#/fonts/custom/regular\.font\?v=[0-9a-f]{12}#', $html);
+
+        $font = $this->get(route('fonts.custom', ['weight' => 'regular']))->assertOk()->assertHeader('Content-Type', 'font/woff2');
+        $this->assertSame($woff2, $font->getContent());
+        $this->get('/fonts/custom/bold.font')->assertNotFound();
+
+        $this->post('/admin/settings', $base + ['font_fa' => 'custom', 'font_en' => 'persian'])->assertRedirect();
+        $html = $this->get('/en/pricing')->getContent();
+        $this->assertStringNotContainsString('poppins-latin', $html);
+        $this->assertStringContainsString('/fonts/custom/regular.font', $html);
+
+        $this->post('/admin/settings', $base + ['font_fa' => 'custom', 'remove_font_regular' => '1'])->assertSessionHasErrors('font_regular');
+        $this->assertStringContainsString('Vazirmatn-wght.woff2', $this->get('/en/pricing')->getContent());
+    }
 }

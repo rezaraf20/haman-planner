@@ -2,11 +2,12 @@
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}">
 <head>
+@include('partials.fonts')
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Vazirmatn,Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:#0f172a;color:#172033;display:grid;place-items:center;padding:24px 0}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:var(--font);background:#0f172a;color:#172033;display:grid;place-items:center;padding:24px 0}
 .card{width:min(430px,calc(100% - 32px));background:#fff;border-radius:24px;padding:36px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .logo{font-size:26px;font-weight:850;letter-spacing:-.5px}.sub{color:#718096;margin:7px 0 24px;line-height:1.8}

@@ -13,6 +13,7 @@
 <!doctype html>
 <html lang="{{ $loc }}" dir="{{ \App\Support\Locales::dir() }}">
 <head>
+@include('partials.fonts')
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ $metaTitle }}</title>
 <meta name="description" content="{{ $metaDesc }}">
@@ -34,7 +35,7 @@
 @stack('jsonld')
 <style>
 :root{--ink:#111827;--muted:#5b6475;--line:#e6e9ef;--bg:#f6f7fb;--dark:#0f1726;--accent:#3157d5;--accent2:#7c3aed}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Vazirmatn,Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:var(--ink);background:#fff;line-height:1.75}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:var(--font);color:var(--ink);background:#fff;line-height:1.75}
 a{color:inherit}.container{width:min(1120px,calc(100% - 32px));margin-inline:auto}
 header.site{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header.site .in{display:flex;align-items:center;gap:18px;height:64px}.logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:18px;text-decoration:none}.logo img{height:30px}

@@ -27,6 +27,14 @@ Route::get('/en/terms', [MarketingController::class, 'terms'])->name('marketing.
 Route::get('/sitemap.xml', [MarketingController::class, 'sitemap'])->name('marketing.sitemap')->defaults('indexable', true);
 Route::get('/robots.txt', [MarketingController::class, 'robots'])->name('marketing.robots')->defaults('indexable', true);
 
+// Uploaded web font (e.g. a licensed IRANSans), stored in the database so it survives rebuilds.
+Route::get('/fonts/custom/{weight}.font', function (string $weight) {
+    $file = \App\Support\Fonts::customFile($weight);
+    abort_if($file === null, 404);
+    [$bytes, $mime] = $file;
+    return response($bytes, 200, ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin' => '*']);
+})->whereIn('weight', array_keys(\App\Support\Fonts::WEIGHTS))->name('fonts.custom');
+
 // ---------------------------------------------------------------- language switcher
 Route::get('/language/{locale}', LocaleController::class)->name('locale.switch');
 

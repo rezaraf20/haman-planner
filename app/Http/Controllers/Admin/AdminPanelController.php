@@ -139,6 +139,11 @@ final class AdminPanelController extends Controller
             'announcement' => 'nullable|string|max:500',
             'logo' => 'nullable|file|mimes:png,jpg,jpeg,webp|max:300',
             'remove_logo' => 'nullable|boolean',
+            'font_fa' => 'nullable|in:'.implode(',', \App\Support\Fonts::FA_OPTIONS),
+            'font_en' => 'nullable|in:'.implode(',', \App\Support\Fonts::EN_OPTIONS),
+            'font_fa_name' => 'nullable|string|max:60',
+            'font_regular' => 'nullable|file|max:1024',
+            'font_bold' => 'nullable|file|max:1024',
         ], [
             'logo.mimes' => __('admin.logo_mimes'),
             'logo.max' => __('admin.logo_max'),
@@ -160,8 +165,27 @@ final class AdminPanelController extends Controller
         } elseif ($request->boolean('remove_logo')) {
             $values['logo'] = null;
         }
+        // Fonts: uploaded files are checked by their signature (woff/woff2 only) and kept in the database.
+        foreach (['regular' => 'font_regular', 'bold' => 'font_bold'] as $weight => $input) {
+            if ($request->hasFile($input)) {
+                $bytes = (string) file_get_contents($request->file($input)->getRealPath());
+                $format = \App\Support\Fonts::isFontFile($bytes);
+                if ($format === null) {
+                    return back()->withErrors([$input => __('admin.font_invalid')])->withInput();
+                }
+                \App\Support\Fonts::storeCustom($weight, $bytes, $format);
+            } elseif ($request->boolean('remove_'.$input)) {
+                \App\Support\Fonts::storeCustom($weight, null);
+            }
+        }
+        $values['font_en'] = $data['font_en'] ?? 'poppins';
+        $values['font_fa_name'] = trim((string) ($data['font_fa_name'] ?? ''));
+        $values['font_fa'] = ($data['font_fa'] ?? 'vazirmatn') === 'custom' && \App\Support\Fonts::hasCustom() ? 'custom' : 'vazirmatn';
         AppSettings::put($values);
 
+        if (($data['font_fa'] ?? null) === 'custom' && !\App\Support\Fonts::hasCustom()) {
+            return redirect()->route('admin.settings')->withErrors(['font_regular' => __('admin.font_needs_file')]);
+        }
         return redirect()->route('admin.settings')->with('status', __('admin.settings_saved'));
     }
 }

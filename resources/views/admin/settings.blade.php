@@ -15,6 +15,31 @@
 <div class="help">{{ __('admin.logo_help') }}</div></div>
 </div>
 <div class="card">
+<h2>{{ __('admin.fonts_title') }}</h2>
+<div class="grid">
+<div class="field"><label>{{ __('admin.font_fa') }}</label>
+<select name="font_fa">
+<option value="vazirmatn" @selected($s['font_fa'] !== 'custom')>{{ __('admin.font_vazirmatn') }}</option>
+<option value="custom" @selected($s['font_fa'] === 'custom')>{{ __('admin.font_custom') }}{{ $s['font_fa_name'] ? ' — '.$s['font_fa_name'] : '' }}</option>
+</select></div>
+<div class="field"><label>{{ __('admin.font_en') }}</label>
+<select name="font_en">
+<option value="poppins" @selected($s['font_en'] !== 'persian')>Poppins</option>
+<option value="persian" @selected($s['font_en'] === 'persian')>{{ __('admin.font_en_persian') }}</option>
+</select></div>
+</div>
+<div class="field"><label>{{ __('admin.font_name') }}</label><input type="text" name="font_fa_name" value="{{ old('font_fa_name', $s['font_fa_name']) }}" maxlength="60" placeholder="IRANSans"></div>
+<div class="grid">
+@foreach (['regular' => 'font_regular', 'bold' => 'font_bold'] as $weight => $input)
+<div class="field"><label>{{ __('admin.'.$input) }}</label>
+<input type="file" name="{{ $input }}" accept=".woff2,.woff,font/woff2,font/woff">
+@if (\App\Support\Fonts::hasCustom() && \App\Support\Fonts::customFile($weight))<label class="check"><input type="checkbox" name="remove_{{ $input }}" value="1"> {{ __('admin.font_remove') }}</label>@endif
+</div>
+@endforeach
+</div>
+<div class="help">{{ __('admin.fonts_help') }}</div>
+</div>
+<div class="card">
 <h2>{{ __('admin.registration_support') }}</h2>
 <label class="check"><input type="checkbox" name="registration_enabled" value="1" @checked($s['registration_enabled'])> {{ __('admin.registration_enabled') }}</label>
 <label class="check"><input type="checkbox" name="support_enabled" value="1" @checked($s['support_enabled'])> {{ __('admin.support_enabled') }}</label>

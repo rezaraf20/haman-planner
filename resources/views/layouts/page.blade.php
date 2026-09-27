@@ -2,13 +2,14 @@
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}">
 <head>
+@include('partials.fonts')
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
 <style>
 :root{--bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e4e8ef;--dark:#0f1726;--ok:#087f5b;--warn:#9a6509;--danger:#b42318;--blue:#3157d5}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;font-size:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px}
 a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .top{background:var(--dark);color:#fff}.top .in{max-width:1180px;margin:auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-weight:850;font-size:17px;color:#fff}.brand img{height:32px;max-width:120px;object-fit:contain;border-radius:6px;background:#fff1}
