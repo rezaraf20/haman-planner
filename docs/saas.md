@@ -95,10 +95,15 @@ limits are unlimited. Change this in Admin → Plans if you want different defau
 ### Enabling payments
 
 1. Review plan prices in Admin → Plans.
-2. Zarinpal: `ZARINPAL_ENABLED=true`, `ZARINPAL_MERCHANT_ID=…` (`ZARINPAL_SANDBOX=true` for Zarinpal's sandbox).
-3. Stripe: `STRIPE_ENABLED=true`, `STRIPE_SECRET=sk_test_…` first, then the live key.
-4. `APP_URL` must be the public HTTPS URL (it is used in the signed callback URL).
-5. Make one real low-value payment per provider and check Admin → Payments.
+2. Admin → **Payment settings**: enable Zarinpal and enter the merchant ID (tick *sandbox* to test against
+   Zarinpal's sandbox), and/or enable Stripe and enter the secret key (`sk_test_…` first, then `sk_live_…`).
+   Secrets are stored encrypted with `APP_KEY` and never shown again in full. Values saved in the panel take
+   precedence over `.env` (`ZARINPAL_*`, `STRIPE_*`), which remain a fallback.
+3. `APP_URL` must be the public HTTPS URL (it is used in the signed callback URL); the page warns if it is not.
+4. Make one real low-value payment per provider and check Admin → Payments.
+
+If `APP_KEY` is ever rotated, re-enter the keys in the panel (old encrypted values can no longer be read and
+are ignored).
 
 ## 5. Onboarding
 
@@ -128,7 +133,15 @@ billing, admin and API paths. Every non-public response carries `X-Robots-Tag: n
 `telegram_connected`, `trial_started`, `subscription_started`, `subscription_upgraded`, `subscription_canceled`,
 `account_deleted`. Admin → Overview shows the activation funnel built from them.
 
-## 9. Admin
+## 9. Public page content
+
+Admin → **Landing content** edits, per language, the texts of the landing page (SEO title/description, hero,
+sections, features, FAQ, final call to action, footer), the pricing page SEO, and the Privacy and Terms pages,
+including hiding the "draft" notice once the legal texts are final. Only changed fields are stored
+(`app_settings.landing_content`); emptying a field or *Reset* returns to the built-in text in `resources/lang`.
+Plan names and prices on the page come from Admin → Plans.
+
+## 10. Admin
 
 `/admin`: overview (users, active, paying, trials, AI usage, 30-day revenue, funnel), users (filters incl. *paying*,
 plan, grant, activate/deactivate, CSV export), subscriptions, plans, payments/revenue, support tickets,

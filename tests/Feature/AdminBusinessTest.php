@@ -75,4 +75,97 @@ final class AdminBusinessTest extends TestCase
             $backup === null ? @unlink($log) : file_put_contents($log, $backup);
         }
     }
+
+    // ---------------------------------------------------------------- landing content editor
+
+    public function test_admin_can_edit_landing_content_per_language(): void
+    {
+        $this->actingAs($this->member)->get('/admin/content')->assertForbidden();
+        $this->actingAs($this->member)->post('/admin/content', ['lang' => 'fa', 'marketing__hero_title' => 'x'])->assertForbidden();
+
+        $this->actingAs($this->admin)->get('/admin/content?lang=fa')->assertOk()->assertSee(__('marketing.hero_title', [], 'fa'));
+        $this->post('/admin/content', [
+            'lang' => 'fa',
+            'marketing__hero_title' => 'تیتر تازه <script>alert(1)</script>',
+            'marketing__faq' => [['سؤال یک', 'پاسخ یک'], ['', ''], ['سؤال دو', 'پاسخ دو']],
+            'marketing__benefits' => "مزیت الف\n\nمزیت ب\n",
+            'marketing__features_title' => __('marketing.features_title', [], 'fa'), // unchanged → not stored
+        ])->assertRedirect(route('admin.content', ['lang' => 'fa']));
+
+        auth()->logout();
+        $fa = $this->get('/')->assertOk()->getContent();
+        $this->assertStringContainsString('تیتر تازه &lt;script&gt;', $fa);
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $fa);
+        $this->assertStringContainsString('سؤال دو', $fa);
+        $this->assertStringContainsString('مزیت ب', $fa);
+        $this->assertStringNotContainsString(\App\Support\LandingContent::default('fa', 'marketing.faq')[0][0], $fa);
+        $this->assertStringContainsString(__('marketing.features_title', [], 'fa'), $fa); // other texts untouched
+        $this->assertStringContainsString('"@context":"https://schema.org"', $fa);
+        $en = $this->get('/en')->assertOk()->getContent();
+        $this->assertStringNotContainsString('تیتر تازه', $en);
+
+        $stored = json_decode(\App\Models\AppSetting::find('landing_content')->value, true);
+        $this->assertSame(['marketing.hero_title', 'marketing.benefits', 'marketing.faq'], array_keys($stored['fa']));
+        $this->assertSame([['سؤال یک', 'پاسخ یک'], ['سؤال دو', 'پاسخ دو']], $stored['fa']['marketing.faq']);
+
+        $this->actingAs($this->admin)->post('/admin/content/reset', ['lang' => 'fa'])->assertRedirect();
+        auth()->logout();
+        $this->assertStringNotContainsString('تیتر تازه', $this->get('/')->getContent());
+    }
+
+    public function test_legal_texts_and_draft_notice_are_editable(): void
+    {
+        $notice = __('legal.draft_notice', [], 'en');
+        $this->assertStringContainsString($notice, $this->get('/en/privacy')->getContent());
+        $this->actingAs($this->admin)->post('/admin/content', [
+            'lang' => 'en', 'legal__privacy' => [['Who we are', 'HamanTech, Tehran.']], 'hide_legal_notice' => '1',
+        ])->assertRedirect();
+        auth()->logout();
+        $html = $this->get('/en/privacy')->getContent();
+        $this->assertStringContainsString('HamanTech, Tehran.', $html);
+        $this->assertStringNotContainsString($notice, $html);
+        $this->assertStringNotContainsString(\App\Support\LandingContent::default('en', 'legal.privacy')[0][0], $html);
+    }
+
+    // ---------------------------------------------------------------- payment settings
+
+    public function test_payment_settings_are_saved_encrypted_and_used_by_the_gateways(): void
+    {
+        config(['billing.providers.zarinpal' => ['enabled' => false, 'merchant_id' => null, 'sandbox' => false], 'billing.providers.stripe' => ['enabled' => false, 'secret' => null]]);
+        $this->actingAs($this->member)->get('/admin/payment-settings')->assertForbidden();
+        $this->actingAs($this->admin)->get('/admin/payment-settings')->assertOk();
+
+        $merchant = '11111111-2222-3333-4444-555555555555';
+        $this->post('/admin/payment-settings', [
+            'zarinpal_enabled' => '1', 'zarinpal_sandbox' => '1', 'zarinpal_merchant_id' => $merchant,
+            'stripe_secret' => 'sk_test_abcdef123456',
+        ])->assertRedirect(route('admin.payment-settings'))->assertSessionHasNoErrors();
+
+        $raw = \App\Models\AppSetting::find('pay_zarinpal_merchant_id')->value;
+        $this->assertStringNotContainsString($merchant, $raw);
+        $this->assertStringNotContainsString('sk_test_abcdef123456', \App\Models\AppSetting::find('pay_stripe_secret')->value);
+
+        $billing = app(\App\Services\Billing\BillingService::class);
+        $this->assertTrue($billing->gateway('zarinpal')->isConfigured());
+        $this->assertFalse($billing->gateway('stripe')->isConfigured()); // key saved but not enabled
+
+        $html = $this->get('/admin/payment-settings')->getContent();
+        $this->assertStringNotContainsString($merchant, $html);
+        $this->assertStringNotContainsString('sk_test_abcdef123456', $html);
+        $this->assertStringContainsString('••••5555', $html);
+
+        // Blank keeps the saved secret; the checkout sends it to the sandbox host.
+        $this->post('/admin/payment-settings', ['zarinpal_enabled' => '1', 'zarinpal_sandbox' => '1', 'zarinpal_merchant_id' => ''])->assertRedirect();
+        \Illuminate\Support\Facades\Http::fake(['https://sandbox.zarinpal.com/*' => \Illuminate\Support\Facades\Http::response(['data' => ['code' => 100, 'authority' => 'A1'], 'errors' => []])]);
+        $pro = Plan::where('code', 'pro')->first();
+        $this->actingAs($this->member)->post('/billing/checkout', ['plan' => $pro->id, 'interval' => 'monthly', 'provider' => 'zarinpal'])
+            ->assertRedirect('https://sandbox.zarinpal.com/pg/StartPay/A1');
+        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => $r['merchant_id'] === $merchant);
+
+        // Invalid values are rejected; clearing falls back to .env.
+        $this->actingAs($this->admin)->post('/admin/payment-settings', ['stripe_secret' => 'pk_live_nope'])->assertSessionHasErrors('stripe_secret');
+        $this->post('/admin/payment-settings', ['clear_zarinpal_merchant_id' => '1', 'zarinpal_enabled' => '1'])->assertRedirect();
+        $this->assertNull(\App\Models\AppSetting::find('pay_zarinpal_merchant_id'));
+        $this->assertFalse(app(\App\Services\Billing\BillingService::class)->gateway('zarinpal')->isConfigured());
+    }
 }

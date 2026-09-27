@@ -159,7 +159,7 @@ final class AdminBusinessController extends Controller
         $text = (string) preg_replace('/(Bearer\s+)[A-Za-z0-9._~+\/=-]{8,}/i', '$1***', $text);
         foreach ([config('services.telegram.bot_token'), config('services.ai.api_key'), config('billing.providers.stripe.secret'),
             config('billing.providers.zarinpal.merchant_id'), config('database.connections.pgsql.password'), config('app.key'),
-            config('services.haman_planner.api_token'), config('services.telegram.webhook_secret')] as $secret) {
+            config('services.haman_planner.api_token'), config('services.telegram.webhook_secret'), ...\App\Support\PaymentSettings::secrets()] as $secret) {
             if (is_string($secret) && strlen($secret) >= 6) {
                 $text = str_replace($secret, '***', $text);
             }

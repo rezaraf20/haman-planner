@@ -16,6 +16,8 @@ final class MarketingController extends Controller
 {
     private function remember(Request $request): void
     {
+        \App\Support\LandingContent::apply(); // admin-edited texts on top of the built-in ones
+
         // Guests who browse /en keep English on /login and /register too.
         if (!$request->user() && $request->hasSession()) {
             $request->session()->put('locale', app()->getLocale());

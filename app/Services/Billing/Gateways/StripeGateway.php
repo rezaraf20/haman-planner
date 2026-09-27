@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services\Billing\Gateways;
 
 use App\Models\Payment;
+use App\Support\PaymentSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -18,11 +19,11 @@ final class StripeGateway implements PaymentGateway
 
     public function currency(): string { return 'USD'; }
 
-    private function secret(): string { return (string) config('billing.providers.stripe.secret'); }
+    private function secret(): string { return (string) PaymentSettings::get('stripe_secret'); }
 
     public function isConfigured(): bool
     {
-        return (bool) config('billing.providers.stripe.enabled') && $this->secret() !== '';
+        return (bool) PaymentSettings::get('stripe_enabled') && $this->secret() !== '';
     }
 
     public function start(Payment $payment, string $callbackUrl, string $description): CheckoutSession

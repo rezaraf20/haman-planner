@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services\Billing\Gateways;
 
 use App\Models\Payment;
+use App\Support\PaymentSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -17,7 +18,7 @@ final class ZarinpalGateway implements PaymentGateway
 
     public function currency(): string { return 'IRT'; }
 
-    private function config(string $key): mixed { return config('billing.providers.zarinpal.'.$key); }
+    private function config(string $key): mixed { return PaymentSettings::get('zarinpal_'.$key); }
 
     public function isConfigured(): bool
     {

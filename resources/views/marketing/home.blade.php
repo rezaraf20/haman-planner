@@ -1,7 +1,7 @@
 @extends('marketing.layout')
 @push('jsonld')
 <script type="application/ld+json">{!! json_encode([
-    '@context' => 'https://schema.org',
+    '@'.'context' => 'https://schema.org',
     '@graph' => [
         ['@type' => 'Organization', 'name' => config('services.haman_planner.legal_name', 'HamanTech'), 'url' => url('/')],
         ['@type' => 'SoftwareApplication', 'name' => \App\Support\AppSettings::get('app_name'), 'applicationCategory' => 'ProductivityApplication', 'operatingSystem' => 'Web, Telegram',

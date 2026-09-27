@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AdminBusinessController;
+use App\Http\Controllers\Admin\AdminContentController;
 use App\Http\Controllers\Admin\AdminPanelController;
 use App\Http\Controllers\Admin\AdminSupportController;
 use App\Http\Controllers\AuthController;
@@ -88,6 +89,11 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
         Route::get('/plans', [AdminBusinessController::class, 'plans'])->name('admin.plans');
         Route::post('/plans', [AdminBusinessController::class, 'savePlan'])->name('admin.plans.save');
         Route::get('/payments', [AdminBusinessController::class, 'payments'])->name('admin.payments');
+        Route::get('/payment-settings', [AdminContentController::class, 'payments'])->name('admin.payment-settings');
+        Route::post('/payment-settings', [AdminContentController::class, 'savePayments'])->name('admin.payment-settings.save');
+        Route::get('/content', [AdminContentController::class, 'content'])->name('admin.content');
+        Route::post('/content', [AdminContentController::class, 'saveContent'])->name('admin.content.save');
+        Route::post('/content/reset', [AdminContentController::class, 'resetContent'])->name('admin.content.reset');
         Route::get('/system', [AdminBusinessController::class, 'system'])->name('admin.system');
         Route::get('/support', [AdminSupportController::class, 'index'])->name('admin.support');
         Route::get('/support/{ticket}', [AdminSupportController::class, 'show'])->name('admin.support.show');
