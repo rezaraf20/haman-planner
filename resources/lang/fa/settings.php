@@ -74,4 +74,10 @@ return [
     'planning_saved' => 'تنظیمات برنامه‌ریزی ذخیره شد.',
     'email_weekly_review' => 'مرور هفتگی را ایمیل کن',
     'email_product_updates' => 'ایمیل‌های راهنما و یادآوری (قابل لغو)',
+    'email_verified_badge' => 'تأییدشده',
+    'email_unverified_badge' => 'تأییدنشده',
+    'send_verification' => 'ارسال لینک تأیید',
+    'verification_sent' => 'لینک تأیید به :email ارسال شد.',
+    'email_verified' => 'آدرس ایمیل شما تأیید شد. سپاس!',
+    'email_already_verified' => 'آدرس ایمیل شما قبلاً تأیید شده است.',
 ];

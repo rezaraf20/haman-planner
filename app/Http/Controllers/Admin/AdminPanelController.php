@@ -90,8 +90,13 @@ final class AdminPanelController extends Controller
             ->paginate(30)->withQueryString();
 
         $plansByUser = \App\Models\Subscription::query()->current()->with('plan')->whereIn('user_id', $users->pluck('id'))->get()->keyBy('user_id');
+        // Operational signals only (counts/flags) — no planner content is shown to admins.
+        $ids = $users->pluck('id');
+        $aiUsage = DB::table('usage_counters')->where('metric', 'ai_requests')->where('period', now()->format('Y-m'))->whereIn('user_id', $ids)->pluck('used', 'user_id');
+        $calendars = \Illuminate\Support\Facades\Schema::hasTable('calendar_connections')
+            ? DB::table('calendar_connections')->whereIn('user_id', $ids)->pluck('status', 'user_id') : collect();
         return view('admin.users', [
-            'users' => $users, 'q' => $q, 'filter' => $filter, 'subs' => $plansByUser,
+            'users' => $users, 'q' => $q, 'filter' => $filter, 'subs' => $plansByUser, 'aiUsage' => $aiUsage, 'calendars' => $calendars,
             'plans' => \App\Models\Plan::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'defaultPlan' => \App\Models\Plan::query()->where('is_default', true)->first(),
         ]);

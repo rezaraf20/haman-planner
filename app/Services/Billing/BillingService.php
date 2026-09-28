@@ -125,6 +125,7 @@ final class BillingService
     /** Handles the provider redirect. Idempotent: a payment is activated at most once. */
     public function completeCheckout(Payment $payment, Request $request): Payment
     {
+        \Illuminate\Support\Facades\Context::add('payment_id', $payment->id);
         if ($payment->status !== 'pending') {
             return $payment;
         }

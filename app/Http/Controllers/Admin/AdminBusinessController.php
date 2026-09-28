@@ -133,6 +133,11 @@ final class AdminBusinessController extends Controller
             'telegram' => $this->configuredRow(filled(config('services.telegram.bot_token')) && filled(config('services.telegram.webhook_secret'))),
             'ai' => $this->configuredRow(filled(config('services.ai.api_key')) || config('services.ai.provider') === 'ollama'),
             'mail' => $this->configuredRow(filled(config('mail.default')) && config('mail.default') !== 'log' && (config('mail.default') !== 'smtp' || filled(config('mail.mailers.smtp.host')))),
+            'storage' => $check(fn () => $this->storageRow()) ?? ['down', '—'],
+            'zarinpal' => $this->configuredRow($check(fn () => app(\App\Services\Billing\Gateways\ZarinpalGateway::class)->isConfigured()) === true),
+            'stripe' => $check(fn () => $this->stripeRow()) ?? ['down', '—'],
+            'stripe_webhooks' => $check(fn () => $this->webhookRow()) ?? ['down', '—'],
+            'google_calendar' => $check(fn () => $this->calendarRow()) ?? ['down', '—'],
             'app' => ['ok', PHP_VERSION.' / '.app()->version()],
         ];
 
@@ -142,6 +147,51 @@ final class AdminBusinessController extends Controller
             : collect()) ?? collect();
 
         return view('admin.system', ['health' => $health, 'failedJobs' => $failedJobs, 'logErrors' => $this->recentErrors()]);
+    }
+
+    private function storageRow(): array
+    {
+        // The attachments directory is created on first upload; check the nearest existing parent.
+        $dir = (string) config('filesystems.disks.attachments.root', storage_path('app/attachments'));
+        while (!is_dir($dir) && dirname($dir) !== $dir) {
+            $dir = dirname($dir);
+        }
+        $free = @disk_free_space($dir);
+        $writable = is_writable($dir);
+        $freeText = $free === false ? '—' : \App\Support\LocalDate::number((int) round($free / 1024 / 1024 / 1024, 0)).' GB';
+        $used = Schema::hasTable('attachments') ? (int) DB::table('attachments')->sum('size') : 0;
+        $state = !$writable ? 'down' : ($free !== false && $free < 1024 ** 3 ? 'warn' : 'ok');
+        return [$state, __('admin.storage_value', ['free' => $freeText, 'used' => \App\Support\LocalDate::number((int) round($used / 1024 / 1024)).' MB'])];
+    }
+
+    private function stripeRow(): array
+    {
+        $g = app(\App\Services\Billing\Gateways\StripeGateway::class);
+        if (!$g->isConfigured()) {
+            return ['warn', __('admin.not_configured')];
+        }
+        return ['ok', $g->supportsRecurring() ? __('admin.pay_mode_recurring') : __('admin.pay_mode_one_time')];
+    }
+
+    private function webhookRow(): array
+    {
+        if (!Schema::hasTable('webhook_events')) {
+            return ['warn', '—'];
+        }
+        $failed = DB::table('webhook_events')->where('status', 'failed')->where('updated_at', '>=', now()->subDays(7))->count();
+        $last = DB::table('webhook_events')->where('provider', 'stripe')->max('created_at');
+        $text = __('admin.webhook_value', ['failed' => \App\Support\LocalDate::number($failed), 'last' => $last ? \App\Support\LocalDate::dateTime($last) : __('admin.never')]);
+        return [$failed > 0 ? 'warn' : 'ok', $text];
+    }
+
+    private function calendarRow(): array
+    {
+        if (!app(\App\Services\Calendar\GoogleCalendarProvider::class)->isConfigured()) {
+            return ['warn', __('admin.not_configured')];
+        }
+        $total = Schema::hasTable('calendar_connections') ? DB::table('calendar_connections')->count() : 0;
+        $errors = Schema::hasTable('calendar_connections') ? DB::table('calendar_connections')->where('status', '!=', 'active')->count() : 0;
+        return [$errors > 0 ? 'warn' : 'ok', __('admin.calendar_value', ['n' => \App\Support\LocalDate::number($total), 'errors' => \App\Support\LocalDate::number($errors)])];
     }
 
     private function countRow(?int $n, int $warnAt): array
@@ -161,6 +211,8 @@ final class AdminBusinessController extends Controller
     {
         $text = (string) preg_replace('/(bot)\d+:[A-Za-z0-9_-]+/', '$1***', $text);
         $text = (string) preg_replace('/\b(sk|rk)_(live|test)_[A-Za-z0-9]+/', '$1_$2_***', $text);
+        $text = (string) preg_replace('/\bwhsec_[A-Za-z0-9+\/=]+/', 'whsec_***', $text);
+        $text = (string) preg_replace('/\bya29\.[A-Za-z0-9._-]+/', 'ya29.***', $text);
         $text = (string) preg_replace('/(Bearer\s+)[A-Za-z0-9._~+\/=-]{8,}/i', '$1***', $text);
         foreach ([config('services.telegram.bot_token'), config('services.ai.api_key'), config('billing.providers.stripe.secret'),
             config('billing.providers.zarinpal.merchant_id'), config('database.connections.pgsql.password'), config('app.key'),

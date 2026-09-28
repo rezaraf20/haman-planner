@@ -38,6 +38,9 @@ Route::get('/fonts/custom/{weight}.font', function (string $weight) {
 // Private iCal feed of planner blocks (token in the URL; read-only).
 Route::get('/calendar/feed/{token}.ics', [\App\Http\Controllers\CalendarController::class, 'feed'])->middleware('throttle:30,1,w-calendar-feed-token-ics')->name('calendar.feed');
 
+// Email verification link (signed, 60 minutes; works without an active session).
+Route::get('/email/verify/{user}/{hash}', [\App\Http\Controllers\EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:10,1,w-email-verify'])->name('email.verify');
+
 // One-click unsubscribe from optional lifecycle email (signed link; no login needed).
 Route::get('/email/unsubscribe/{user}/{preference}', [\App\Http\Controllers\EmailPreferenceController::class, 'show'])->middleware(['signed', 'throttle:20,1,w-email-unsubscribe'])->name('email.unsubscribe');
 Route::post('/email/unsubscribe/{user}/{preference}', [\App\Http\Controllers\EmailPreferenceController::class, 'update'])->middleware(['signed', 'throttle:20,1,w-email-unsubscribe-post'])->name('email.unsubscribe.apply');
@@ -78,6 +81,7 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
     Route::post('/settings/preferences', [AccountController::class, 'preferences'])->name('account.preferences');
     Route::post('/settings/security/password', [AccountController::class, 'password'])->name('account.password');
     Route::post('/settings/planning', [AccountController::class, 'planning'])->name('account.planning');
+    Route::post('/settings/email/verification', [\App\Http\Controllers\EmailVerificationController::class, 'send'])->middleware('throttle:3,10,w-email-verification-send')->name('email.verification.send');
     Route::get('/settings/calendar/{provider}/connect', [\App\Http\Controllers\CalendarController::class, 'connect'])->whereIn('provider', ['google'])->name('calendar.connect');
     Route::get('/settings/calendar/{provider}/callback', [\App\Http\Controllers\CalendarController::class, 'callback'])->whereIn('provider', ['google'])->name('calendar.callback');
     Route::post('/settings/calendar/connections/{connection}', [\App\Http\Controllers\CalendarController::class, 'update'])->name('calendar.update');

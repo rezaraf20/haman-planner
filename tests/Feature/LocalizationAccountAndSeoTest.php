@@ -92,13 +92,13 @@ final class LocalizationAccountAndSeoTest extends TestCase
         $admin = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('secret123'), 'is_active' => true, 'is_admin' => true, 'onboarded_at' => now()]);
         $ticket = SupportTicket::create(['user_id' => $admin->id, 'subject' => 'Help', 'status' => 'open']);
         $pages = ['/planner', '/settings', '/billing', '/support', '/support/'.$ticket->id, '/onboarding', '/admin', '/admin/users', '/admin/settings',
-            '/admin/subscriptions', '/admin/plans', '/admin/payments', '/admin/system', '/admin/support', '/admin/support/'.$ticket->id, '/admin/access', '/admin/integrations', '/admin/content', '/admin/payment-settings'];
+            '/admin/subscriptions', '/admin/plans', '/admin/payments', '/admin/system', '/admin/support', '/admin/support/'.$ticket->id, '/admin/access', '/admin/integrations', '/admin/content', '/admin/payment-settings', '/admin/analytics'];
         foreach (['fa', 'en'] as $locale) {
             $admin->update(['locale' => $locale]);
             foreach ($pages as $page) {
                 $html = $this->actingAs($admin->fresh())->get($page)->assertOk()->getContent();
                 $this->assertStringContainsString('dir="'.($locale === 'fa' ? 'rtl' : 'ltr').'"', $html, $page);
-                $this->assertDoesNotMatchRegularExpression('/[>"\s](common|planner|settings|billing|admin|support|onboarding|app|auth)\.[a-z_]+\.?[a-z_]*[<"\s]/', $html, "$locale $page shows a raw key");
+                $this->assertDoesNotMatchRegularExpression('/[>"\s](common|planner|settings|billing|admin|support|onboarding|app|auth|emails)\.[a-z_]+\.?[a-z_]*[<"\s]/', $html, "$locale $page shows a raw key");
                 if ($locale === 'en') {
                     $visible = strip_tags(preg_replace('#<(script|style)\b.*?</\1>#s', '', $html));
                     $this->assertDoesNotMatchRegularExpression('/[\x{0600}-\x{06FF}]{3,}/u', str_replace(['فارسی'], '', $visible), "Persian text on English $page");

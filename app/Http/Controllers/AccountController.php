@@ -74,7 +74,12 @@ final class AccountController extends Controller
             }
         }
 
-        $user->forceFill(['name' => trim($data['name']), 'email' => $data['email']])->save();
+        $emailChanged = $data['email'] !== mb_strtolower((string) $user->email);
+        $user->forceFill(['name' => trim($data['name']), 'email' => $data['email']] + ($emailChanged ? ['email_verified_at' => null] : []))->save();
+        if ($emailChanged) {
+            \App\Http\Controllers\EmailVerificationController::sendLink($user);
+            return back()->with('status', __('settings.profile_saved').' '.__('settings.verification_sent', ['email' => $user->email]));
+        }
         return back()->with('status', __('settings.profile_saved'));
     }
 
@@ -136,7 +141,9 @@ final class AccountController extends Controller
             'current_password' => ['required', 'current_password:web'],
             'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
-        $request->user()->forceFill(['password' => Hash::make($data['password'])])->save();
+        // A new remember token signs out "remember me" logins on other devices.
+        $request->user()->forceFill(['password' => Hash::make($data['password']), 'remember_token' => Str::random(60)])->save();
+        $request->session()->regenerate();
         return back()->with('status', __('settings.password_changed'));
     }
 

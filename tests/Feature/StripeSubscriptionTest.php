@@ -181,6 +181,7 @@ final class StripeSubscriptionTest extends TestCase
 
     public function test_cancel_and_resume_go_through_stripe_and_webhooks_sync_state(): void
     {
+        $this->freezeSecond();
         $sub = $this->subscribe();
         $this->post('/billing/cancel')->assertRedirect(route('billing.index'));
         Http::assertSent(fn (Request $r) => $r->url() === 'https://api.stripe.com/v1/subscriptions/sub_1' && $r['cancel_at_period_end'] === 'true');

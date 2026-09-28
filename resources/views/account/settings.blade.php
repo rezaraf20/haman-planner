@@ -15,10 +15,13 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{color:va
 <form class="card" method="post" action="{{ route('account.profile') }}">@csrf
 <h2>{{ __('settings.profile') }}</h2>
 <div class="field"><label>{{ __('settings.name') }}</label><input name="name" value="{{ old('name', $user->name) }}" maxlength="120" required></div>
-<div class="field"><label>{{ __('settings.email') }}</label><input type="email" name="email" value="{{ old('email', $user->email) }}" required></div>
+<div class="field"><label>{{ __('settings.email') }}</label><input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+<div class="help">@if ($user->email_verified_at)<span class="pill g">{{ __('settings.email_verified_badge') }}</span>@else<span class="pill y">{{ __('settings.email_unverified_badge') }}</span> <button class="btn sm" form="verify-email-form">{{ __('settings.send_verification') }}</button>@endif</div></div>
 <div class="field"><label>{{ __('settings.current_password') }}</label><input type="password" name="current_password" autocomplete="current-password"><div class="help">{{ __('settings.email_change_help') }}</div></div>
 <button class="btn primary">{{ __('settings.save_profile') }}</button>
 </form>
+
+@unless ($user->email_verified_at)<form id="verify-email-form" method="post" action="{{ route('email.verification.send') }}" hidden>@csrf</form>@endunless
 
 <form class="card" method="post" action="{{ route('account.preferences') }}">@csrf
 <h2>{{ __('settings.preferences') }}</h2>

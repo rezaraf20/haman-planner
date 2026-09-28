@@ -13,7 +13,7 @@
 @php($sub = $subs[$u->id] ?? null)
 <tr>
 <td class="muted">{{ $u->id }}</td>
-<td><b>{{ $u->name }}</b>@if($u->is_admin) <span class="pill b">{{ __('admin.admin_badge') }}</span>@endif<div class="ltr muted">{{ $u->email }}</div><div class="muted" style="font-size:11px">{{ \App\Support\Locales::label($u->preferredLocale()) }} · <span class="ltr">{{ $u->preferredTimezone() }}</span></div></td>
+<td><b>{{ $u->name }}</b>@if($u->is_admin) <span class="pill b">{{ __('admin.admin_badge') }}</span>@endif<div class="ltr muted">{{ $u->email }}@if($u->email_verified_at) <span title="{{ __('settings.email_verified_badge') }}">✓</span>@endif</div><div class="muted" style="font-size:11px">{{ \App\Support\Locales::label($u->preferredLocale()) }} · <span class="ltr">{{ $u->preferredTimezone() }}</span></div></td>
 <td>@if($u->telegram_chat_id)
 @if($u->telegram_username)<a class="ltr" href="https://t.me/{{ $u->telegram_username }}" target="_blank" rel="noopener">{{ '@'.$u->telegram_username }}</a><br>@endif
 <span class="muted ltr">ID: {{ $u->telegram_chat_id }}</span><div class="muted" style="font-size:11px">{{ __('admin.linked_on', ['date' => \App\Support\LocalDate::date($u->telegram_linked_at)]) }}</div>
@@ -26,7 +26,7 @@
 <button class="btn sm" onclick="return confirm(@js(__('admin.confirm')))">{{ __('common.confirm') }}</button></form></details></td>
 <td>{{ \App\Support\LocalDate::dateTime($u->created_at) }}</td>
 <td>{{ $u->last_seen_at ? \App\Support\LocalDate::dateTime($u->last_seen_at) : '—' }}</td>
-<td>{{ \App\Support\LocalDate::number((int) $u->tasks_count) }}</td>
+<td>{{ \App\Support\LocalDate::number((int) $u->tasks_count) }}<div class="muted" style="font-size:11px">{{ __('admin.col.ai_month') }}: {{ \App\Support\LocalDate::number((int) ($aiUsage[$u->id] ?? 0)) }}@if(isset($calendars[$u->id])) · <span title="{{ __('admin.col.calendar') }}">📅 {{ $calendars[$u->id] === 'active' ? '✓' : '!' }}</span>@endif</div></td>
 <td>@if($u->is_active)<span class="pill g">{{ __('common.active') }}</span>@else<span class="pill r">{{ __('common.inactive') }}</span>@endif</td>
 <td>@if($u->id !== auth()->id())
 <form method="post" action="{{ route('admin.users.toggle', $u) }}" style="display:inline">@csrf<input type="hidden" name="field" value="is_active"><button class="btn sm {{ $u->is_active ? 'danger' : '' }}" onclick="return confirm(@js(__('admin.confirm')))">{{ $u->is_active ? __('admin.deactivate') : __('admin.activate') }}</button></form>

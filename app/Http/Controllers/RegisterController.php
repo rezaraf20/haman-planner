@@ -71,6 +71,7 @@ final class RegisterController extends Controller
         $request->session()->regenerate();
         ProductEvents::record($user, ProductEvents::REGISTERED, ['locale' => $user->locale]);
         app(\App\Services\Notifications\LifecycleMailer::class)->send($user, 'welcome', [], 'welcome');
+        EmailVerificationController::sendLink($user);
 
         return redirect()->route('onboarding')->with('status', __('auth.registered'));
     }

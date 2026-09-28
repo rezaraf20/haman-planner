@@ -74,4 +74,10 @@ return [
     'planning_saved' => 'Planning settings saved.',
     'email_weekly_review' => 'Email me my weekly review',
     'email_product_updates' => 'Tips and reminder emails (optional)',
+    'email_verified_badge' => 'Verified',
+    'email_unverified_badge' => 'Not verified',
+    'send_verification' => 'Send verification link',
+    'verification_sent' => 'We sent a verification link to :email.',
+    'email_verified' => 'Your email address is verified. Thank you!',
+    'email_already_verified' => 'Your email address is already verified.',
 ];
