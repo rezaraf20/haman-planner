@@ -389,6 +389,23 @@ final class TelegramPlannerBotTest extends TestCase
         $this->assertSame(['chat_id' => '1001', 'message' => 'Call the client'], $r->payload);
     }
 
+    public function test_reminder_time_accepts_persian_and_rtl_shaped_input(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 9, 28, 16, 20, 0, 'Asia/Tehran'));
+        $own = $this->task($this->a, 'A task');
+        foreach (["\u{200F}۱۴:۳۰ ۰۸-۰۷-۱۴۰۵", 'فردا ساعت ۱۰', '۸ مهر ۵ عصر'] as $i => $typed) {
+            $this->cb($this->a, 'trem:'.$own->id);
+            $this->cb($this->a, 'wz:o:0');
+            $this->say($this->a, $typed);
+            $this->assertSame('text', $this->state($this->a)['steps'][$this->state($this->a)['step']] === 'message' ? 'text' : 'other', "accepted: $typed");
+            $this->say($this->a, 'msg '.$i);
+            $this->cb($this->a, 'wz:ok');
+        }
+        $times = Reminder::orderBy('id')->get()->map(fn ($r) => $r->scheduled_at->timezone('Asia/Tehran')->format('Y-m-d H:i'))->all();
+        $this->assertSame(['2026-09-30 14:30', '2026-09-29 10:00', '2026-09-30 17:00'], $times);
+        Carbon::setTestNow();
+    }
+
     public function test_all_navigation_paths_exist_without_web_redirects(): void
     {
         $screens = ['home', 'today', 'tasks', 'tomorrow', 'inbox', 'structure', 'ls:area:0', 'ls:goal:0', 'ls:project:0', 'ls:milestone:0',

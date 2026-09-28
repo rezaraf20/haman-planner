@@ -1591,40 +1591,11 @@ final class TelegramPlannerBotService
         return LocalDate::latinDigits($v);
     }
 
-    /** Parses Gregorian or Jalali (year < 1700) input in Asia/Tehran. */
+    /** Parses typed dates/times (Gregorian or Jalali, many shapes) in the user's timezone. */
     private function parseDateTime(string $v, bool $withTime): ?Carbon
     {
-        $v = str_replace('/', '-', mb_strtolower(trim($v)));
-        $now = $this->now();
-        $time = null;
-        if (preg_match('/(\d{1,2}):(\d{2})$/u', $v, $tm)) {
-            $time = [(int) $tm[1], (int) $tm[2]];
-            $v = trim(mb_substr($v, 0, mb_strlen($v) - mb_strlen($tm[0])));
-            if ($time[0] > 23 || $time[1] > 59) return null;
-        }
-        if (in_array($v, ['now', 'اکنون', 'الان'], true)) {
-            return $now->copy()->second(0);
-        }
-        if ($v === '' || in_array($v, ['today', 'امروز'], true)) {
-            if ($v === '' && $time === null) return null;
-            $date = $now->copy();
-        } elseif (in_array($v, ['tomorrow', 'فردا'], true)) {
-            $date = $now->copy()->addDay();
-        } elseif (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $v, $dm)) {
-            [$y, $mo, $d] = [(int) $dm[1], (int) $dm[2], (int) $dm[3]];
-            if ($y < 1700) {
-                if ($mo < 1 || $mo > 12 || $d < 1 || $d > 31) return null;
-                [$y, $mo, $d] = $this->jalaliToGregorian($y, $mo, $d);
-            }
-            if (!checkdate($mo, $d, $y)) return null;
-            $date = Carbon::create($y, $mo, $d, 0, 0, 0, $this->tz());
-        } else {
-            return null;
-        }
-        if ($time !== null) {
-            return $date->setTime($time[0], $time[1]);
-        }
-        return $withTime ? $date->setTime(9, 0) : $date->startOfDay();
+        $d = \App\Support\DateInputParser::parse($v, $this->tz(), $withTime, $this->user?->preferredLocale() ?? 'fa', $this->now()->toImmutable());
+        return $d ? Carbon::instance($d) : null;
     }
 
     /** @return array{0:int,1:int,2:int} */

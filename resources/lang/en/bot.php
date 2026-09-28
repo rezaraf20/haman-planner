@@ -250,9 +250,9 @@ Nothing found.',
     'custom_hint' => '
 (or type your own value)',
     'enter_date' => 'Enter :label:
-Format: 2026-09-25',
+e.g. “2026-09-30”, “Oct 7”, “tomorrow” or “Wednesday”',
     'enter_datetime' => 'Enter :label:
-Format: 2026-09-25 14:30, just 14:30, or “tomorrow 10:00”',
+e.g. “2026-09-30 14:30”, “tomorrow 10am”, “5pm”, “Oct 7 9:30”, “Wednesday 10:00” or “in 2 hours”',
     'enter_level' => 'Enter :label (0–100):',
     'enter_number' => 'Enter :label (a number):',
     'enter_text' => 'Enter :label:req:',
@@ -275,8 +275,8 @@ Format: 2026-09-25 14:30, just 14:30, or “tomorrow 10:00”',
     'invalid_int' => 'Enter a whole positive number.',
     'invalid_num' => 'Enter a valid positive number.',
     'invalid_level' => 'Enter a number from 0 to 100.',
-    'invalid_date' => 'That date isn\'t valid. Example: 2026-09-25',
-    'invalid_datetime' => 'That time isn\'t valid. Example: 2026-09-25 14:30 or 14:30',
+    'invalid_date' => 'I couldn\'t read that date. Try “2026-09-30”, “Oct 7” or “tomorrow”.',
+    'invalid_datetime' => 'I couldn\'t read that time. Try “2026-09-30 14:30”, “tomorrow 10am” or “5pm”.',
     'summary' => '
 
 ✅ Please check and confirm:
