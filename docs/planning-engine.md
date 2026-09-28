@@ -43,3 +43,27 @@ Rescheduling must preserve the original deadline and record schedule changes. Re
 
 ## Output
 A daily plan containing selected tasks, planned minutes, schedule blocks, expected completion and explicit overflow.
+## Recurring tasks
+`recurring_tasks` holds the rule (daily / weekly on chosen weekdays / monthly / yearly, every N, Gregorian or
+Jalali months, optional end date or count) and a task template. `RecurrenceService` creates real `tasks` rows for
+occurrences up to `PLANNER_RECURRENCE_HORIZON_DAYS` ahead (hourly `planner:recurring`), unique per
+(series, date). Skipping an occurrence or editing "this and future" never touches completed or edited occurrences.
+
+## Time blocking and capacity
+`schedule_blocks` (kind work/focus/break/meeting, fixed or movable) and scheduled tasks form the day. Capacity =
+the user's working hours on working days minus breaks, the planning buffer (default 20%) and, optionally, imported
+calendar busy time. Over-capacity days and overlapping items are reported, never silently changed.
+
+## Smart rescheduling and Haman AI
+`SmartReschedulingService` is deterministic: it ranks work with `TaskRanker` (importance, deadline pressure,
+overdue, dependencies — every score has a reason) and places it into free slots respecting deadlines, breaks and
+fixed blocks. Modes: plan today, plan this/next week, fix an overloaded plan, "what should I do now?". The result is a
+`plan_proposal` of explicit actions (schedule, move, defer, split, at risk, add buffer). If an AI provider is
+configured, it may only add a summary and notes to those actions; unknown task IDs are dropped. Nothing is
+applied until the user confirms; applying re-validates each action and logs it with actor "ai".
+
+## Insights and weekly review
+Plan-vs-actual uses completed tasks with both estimate and logged time (minimum `PLANNER_INSIGHTS_MIN_SAMPLES`),
+failure patterns use recorded failure reasons; below the minimum the app says there is not enough data. The weekly
+review stores metrics (completed, missed, rescheduled, planned vs actual, blockers, projects needing attention)
+and rule-based recommendations; an optional AI summary is added on top and never replaces the numbers.

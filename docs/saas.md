@@ -59,9 +59,12 @@ $entitlements->consume($user, 'ai_requests');      // atomic monthly metering, r
 $entitlements->ensureCanCreate($user, 'open_tasks');
 ```
 
-- Metrics: `ai_requests` (monthly), `active_goals`, `active_projects`, `open_tasks` (counts of non-closed rows).
-  A limit only blocks **creating** more; existing data is never hidden or removed.
-- Features: `telegram`, `ai_planner`, `advanced_analytics`, `priority_support`.
+- Metrics: `ai_requests` (monthly), `active_goals`, `active_projects`, `open_tasks` (counts of non-closed rows),
+  `attachment_storage_mb` (total size of uploaded files). A limit only blocks **creating** more; existing data is
+  never hidden or removed.
+- Features: `telegram`, `ai_planner`, `advanced_analytics`, `priority_support`, `recurring_tasks`, `calendar`,
+  `advanced_ai_planning`, `attachments`. The upgrade migration switched the four new features **on** for every
+  existing plan, so nobody loses anything; turn them off per plan in Admin → Plans if you want to sell them.
 - Admins are never limited. If no plan exists, nothing is limited (so the feature is inert until seeded).
 - Plan codes are never hard-coded in business logic; the effective plan is the user's current subscription
   or the plan marked *default*.
@@ -83,14 +86,43 @@ limits are unlimited. Change this in Admin → Plans if you want different defau
 - A payment becomes `paid` **only** after the provider confirms it (Zarinpal `verify` code 100/101; Stripe session
   `payment_status=paid` with the exact amount, currency and reference). There is no local "simulate success" path.
 - The callback URL is signed; completion is idempotent (row lock, activates at most once).
-- No automatic recurring charges: each period is paid explicitly. `billing:lifecycle` (hourly) expires ended
+- Zarinpal and Stripe-without-webhook: each period is paid explicitly. `billing:lifecycle` (hourly) expires ended
   periods and sends one renewal reminder `BILLING_RENEWAL_REMINDER_DAYS` before the end (Telegram + email,
   if the user allows billing emails).
+- **Stripe auto-renewing subscriptions** (when a webhook signing secret is configured) — see below.
 - Trials: a plan with `trial_days > 0` can be tried once per account, without payment details.
 - Cancel keeps access until the end of the current period; resume undoes it.
 - Admin → Users → *Grant* gives a plan for N months without payment (offline payments, partners).
 - Adding a provider: implement `PaymentGateway` (`start`, `verify`, `currency`, `isConfigured`) and register it
-  in `BillingService::gateways()`.
+  in `BillingService::gateways()`. A provider that can renew by itself also implements
+  `RecurringGateway` (`supportsRecurring`, `setCancelAtPeriodEnd`, `cancelNow`).
+
+### Stripe subscriptions (auto-renewal)
+
+When `STRIPE_WEBHOOK_SECRET` (or Admin → Payment settings → *Webhook signing secret*) is set, Stripe checkouts use
+`mode=subscription`. Without it, Stripe keeps the original one-time behaviour.
+
+1. Stripe dashboard → Developers → Webhooks → *Add endpoint* → `https://<APP_URL>/api/billing/webhook/stripe`.
+2. Events: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`,
+   `customer.subscription.updated`, `customer.subscription.deleted`.
+3. Copy the signing secret (`whsec_…`) into the panel (stored encrypted) or `.env`.
+
+How it works:
+
+- The browser redirect still activates the first period, but only after the server fetches the Checkout Session
+  from Stripe (amount, currency, reference and subscription ID must match). If the browser never comes back,
+  `checkout.session.completed` does the same verification.
+- Webhooks are accepted only with a valid `Stripe-Signature` (HMAC-SHA256, 5-minute tolerance); anything else
+  gets HTTP 400 and changes nothing. Each event ID is processed once (`webhook_events`); failed processing returns
+  500 so Stripe retries. Payloads are never stored or logged.
+- `invoice.paid` for a renewal records a paid payment + invoice (idempotent per Stripe invoice) and extends the
+  period. `invoice.payment_failed` sets the subscription to `past_due`: access continues for
+  `BILLING_PAST_DUE_GRACE_DAYS` (7) after the period end while Stripe retries, and the customer gets one email per
+  failed invoice. `customer.subscription.updated/deleted` mirror cancellations made in Stripe.
+- Cancel/resume in the app call Stripe first (`cancel_at_period_end`); if Stripe fails, nothing changes locally.
+  Switching plans cancels the old Stripe subscription immediately. Auto-renewing periods get a
+  `BILLING_WEBHOOK_GRACE_DAYS` (3) grace before the local job expires them, in case a renewal webhook is late.
+- No card data is ever handled by the app; only Stripe IDs (`sub_…`, `cus_…`, `in_…`) are stored.
 
 ### Enabling payments
 
@@ -129,9 +161,71 @@ billing, admin and API paths. Every non-public response carries `X-Robots-Tag: n
 ## 8. Product analytics
 
 `product_events` records a small set of first-party events (no third-party trackers, no page views, no content):
-`registered`, `logged_in`, `onboarding_completed`, `first_goal`, `first_task`, `first_ai_request`,
-`telegram_connected`, `trial_started`, `subscription_started`, `subscription_upgraded`, `subscription_canceled`,
-`account_deleted`. Admin → Overview shows the activation funnel built from them.
+`registered`, `logged_in`, `onboarding_started/completed`, `first_goal`, `first_project`, `first_task`,
+`first_task_completed`, `first_ai_request`, `first_plan_generated/applied`, `telegram_connected`,
+`calendar_connected`, `trial_started`, `checkout_started`, `subscription_started/upgraded/canceled`,
+`payment_failed`, `account_deleted`. Admin → Overview shows the activation funnel built from them.
+
+`user_activity_days` stores one row per user per active day (web, API or Telegram while signed in). **Admin →
+Analytics** (`App\Services\Analytics\ProductAnalytics`) computes, only from recorded data:
+
+| Metric | Definition |
+|---|---|
+| DAU / WAU / MAU | distinct active users today / last 7 / last 30 days (WAU/MAU hidden until 7/30 days of tracking exist) |
+| Activation | users who signed up 7–37 days ago and created a task within 7 days |
+| Trial → paid | trials ended in the last 90 days followed by a paid payment |
+| Sign-up → paid | users who signed up in the last 90 days with ≥1 paid payment |
+| Churn (30 days) | paid subscribers 30 days ago who no longer have a paid subscription |
+| Retention W1 / M1 | active on days 7–13 / 28–34 after sign-up (cohorts after tracking began) |
+| MRR / ARPU | last paid amount of each active/past-due paid subscription (yearly ÷ 12), per currency; ARPU = MRR ÷ subscriptions |
+
+Empty cohorts show "not enough data" instead of 0 %. Currencies are never converted; trials and manual grants
+are not revenue. Activity tracking starts with this release, so retention and MAU fill in over the first month.
+
+## 11. Lifecycle emails
+
+`App\Services\Notifications\LifecycleMailer` sends queued, localized (fa RTL / en LTR) HTML emails:
+
+| Type | When | Can be turned off |
+|---|---|---|
+| welcome, verify_email | sign-up / email change / "send verification link" | no (account) |
+| trial_started, trial_ending | trial start / `BILLING_RENEWAL_REMINDER_DAYS` before the end | billing emails |
+| subscription_started, payment_failed, subscription_canceled | billing events | no (essential) |
+| renewal_reminder | before a manually renewed period ends | billing emails |
+| weekly_review | first day of the user's week after 08:00 local time | opt-in (Settings) |
+| inactive_reminder | once after 7 days without activity (not for accounts idle > 30 days) | tips & reminders |
+
+Each message is recorded in `notification_deliveries` (type + time, no content) with a dedupe key, so it is sent at
+most once even if a job repeats. Optional emails carry a signed one-click unsubscribe link (and a
+`List-Unsubscribe` header). `planner:lifecycle-emails` runs hourly. Mail needs `MAIL_*`; without it nothing breaks.
+
+## 12. Security
+
+- `Content-Security-Policy`: self-hosted assets only (`default-src 'self'`, no third-party scripts, `object-src
+  'none'`, `frame-ancestors 'self'`, `base-uri 'self'`); `form-action` allows the payment/OAuth providers the
+  checkout redirects to. Inline scripts are still allowed because the existing pages use them.
+  `CSP_REPORT_ONLY=true` to observe, `CSP_ENABLED=false` to switch off.
+- HSTS on HTTPS requests, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP.
+- Session cookies are `Secure` automatically when `APP_URL` is `https://` (override with `SESSION_SECURE_COOKIE`);
+  `FORCE_HTTPS=true` redirects plain-HTTP page requests in production.
+- Email verification (signed 60-minute link bound to the address; changing the email resets it). It is a reminder,
+  not a gate, so existing accounts keep working.
+- Changing the password rotates the remember-me token; logout sends `Clear-Site-Data: "cache"`.
+- Observability: every web/API request has an `X-Request-Id` that is added to all its log lines and carried into
+  queued jobs; jobs log their job ID; AI interactions store a request ID; billing logs carry the payment/event ID.
+  Tokens, keys and webhook secrets are masked in Admin → System.
+
+## 13. Planning, calendar and files
+
+- Recurring tasks, time blocking, the Haman AI planner and weekly reviews are described in
+  [planning-engine.md](planning-engine.md). AI proposals are always shown first and applied only on confirmation;
+  the AI cannot add tasks or IDs that do not exist.
+- Google Calendar: configure the OAuth client in Admin → Integrations (or `GOOGLE_CALENDAR_*`). Tokens are stored
+  encrypted; a revoked grant marks the connection instead of failing jobs. `calendar:sync` runs every 15 minutes.
+  The private iCal feed (Settings → Calendar) needs no Google account.
+- Attachments are stored on the `attachments` disk under random names, the type is detected from the file content
+  (the client's name/MIME are not trusted), downloads are sent as attachments with `nosniff` and a sandbox CSP, and
+  files are deleted with their task/project or account. In Docker they live on the `planner_storage` volume.
 
 ## 9. Public page content
 

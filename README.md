@@ -60,6 +60,24 @@ Proprietary. See [LICENSE](LICENSE).
 - Bilingual landing, pricing, privacy and terms pages with SEO metadata, sitemap and robots.txt
 - Admin: business overview, users, subscriptions, plans, payments, support tickets, system health
 
+## Smart planning & production features
+
+- **Recurring tasks** — daily/weekly/monthly/yearly rules (Gregorian or Jalali months), skip one occurrence,
+  edit "this and future", occurrences created lazily ahead of time.
+- **Time blocking** — week calendar with work blocks and scheduled tasks, drag to move, conflict and
+  over-capacity warnings based on each user's working hours and planning buffer.
+- **Calendar** — Google Calendar (optional): busy time imported, planner blocks exported, one-way and safe;
+  a private iCal feed works without any external account.
+- **Haman AI planning** — "plan my day / week / fix my plan / what now?" in Persian or English. A
+  deterministic engine builds the proposal from real data; the AI (if configured) only annotates it. Nothing
+  changes until the user confirms. Plan-vs-actual and failure-pattern insights, weekly review.
+- **PWA** (installable, offline page, never caches private data), **activity timeline**, **attachments**
+  (type-sniffed, private, quota per plan).
+- **Stripe auto-renewing subscriptions** with signed, idempotent webhooks (Zarinpal and one-time payments unchanged),
+  **lifecycle emails** (fa/en, deduplicated, one-click unsubscribe), **product analytics** (DAU/WAU/MAU,
+  activation, conversion, churn, retention, MRR/ARPU — only from recorded data).
+- **Security** — CSP, HSTS, secure cookies over HTTPS, email verification, request/job/AI/payment IDs in logs.
+
 Details: [docs/saas.md](docs/saas.md) · Deployment and upgrades: [docs/deployment.md](docs/deployment.md)
 
 ## Production checklist
@@ -76,5 +94,7 @@ Before production, configure:
 9. `MAIL_*` for password-reset and billing emails.
 10. `LEGAL_ENTITY_NAME`, `SUPPORT_EMAIL`, and a lawyer-reviewed Privacy Policy and Terms.
 11. Plan prices (Admin → Plans), then `ZARINPAL_*` and/or `STRIPE_*` to accept payments.
+12. Optional: `STRIPE_WEBHOOK_SECRET` for auto-renewing Stripe subscriptions, `GOOGLE_CALENDAR_*` for calendar sync.
+13. `APP_URL` with `https://` (secure cookies) and the `planner_storage` volume for attachments.
 
 Never commit secrets to the repository.

@@ -10,6 +10,10 @@ Run from a trusted host with PostgreSQL client tools:
 
 `pg_dump --format=custom --no-owner --file=haman-planner-$(date +%F).dump "$DATABASE_URL"`
 
+Uploaded attachments live in the `planner_storage` Docker volume (`storage/app/attachments`); back it up with the database, e.g.
+`docker run --rm -v haman-planner_planner_storage:/data -v "$PWD":/backup alpine tar czf /backup/storage-$(date +%F).tgz -C /data .`
+(the volume name is `<compose project>_planner_storage`; check with `docker volume ls`).
+
 Keep backups encrypted, outside the application host when possible, and use a retention policy.
 
 Recommended baseline:
