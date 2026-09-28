@@ -117,11 +117,17 @@ How it works:
   500 so Stripe retries. Payloads are never stored or logged.
 - `invoice.paid` for a renewal records a paid payment + invoice (idempotent per Stripe invoice) and extends the
   period. `invoice.payment_failed` sets the subscription to `past_due`: access continues for
-  `BILLING_PAST_DUE_GRACE_DAYS` (7) after the period end while Stripe retries, and the customer gets one email per
-  failed invoice. `customer.subscription.updated/deleted` mirror cancellations made in Stripe.
+  `BILLING_PAST_DUE_GRACE_DAYS` (7) counted from the failure while Stripe retries (the unpaid new period is not
+  granted), and the customer gets one email per failed invoice. `customer.subscription.updated/deleted` mirror
+  cancellations made in Stripe; because Stripe does not deliver events in order, the handler re-reads the
+  subscription from Stripe and applies its current state, and a period end never moves backwards. If a checkout's
+  browser redirect failed verification, `checkout.session.completed` verifies it again. A renewal for a subscription
+  that already ended locally (e.g. replaced by another plan) is cancelled at Stripe instead of being revived.
 - Cancel/resume in the app call Stripe first (`cancel_at_period_end`); if Stripe fails, nothing changes locally.
-  Switching plans cancels the old Stripe subscription immediately. Auto-renewing periods get a
-  `BILLING_WEBHOOK_GRACE_DAYS` (3) grace before the local job expires them, in case a renewal webhook is late.
+  Switching plans cancels the old Stripe subscription immediately. Auto-renewing periods keep access for
+  `BILLING_WEBHOOK_GRACE_DAYS` (3) after the period end, in case a renewal webhook is late. A second checkout for a
+  plan that already renews automatically is refused, and the webhook secret cannot be cleared in the panel while
+  auto-renewing subscriptions exist.
 - No card data is ever handled by the app; only Stripe IDs (`sub_…`, `cus_…`, `in_…`) are stored.
 
 ### Enabling payments

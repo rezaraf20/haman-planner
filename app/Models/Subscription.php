@@ -38,16 +38,22 @@ final class Subscription extends Model
     public function payments(): HasMany { return $this->hasMany(Payment::class); }
 
     /**
-     * Subscriptions that currently grant their plan: trialing/active, canceled but still inside the
-     * paid period, or past_due (the provider is retrying the renewal charge) within the grace window.
+     * Subscriptions that currently grant their plan:
+     *  - trialing/active, or canceled but still inside the paid period;
+     *  - provider-managed (auto_renew) ones for a short grace after the period end, so a late renewal
+     *    webhook never drops a paying customer to the free plan;
+     *  - past_due (the provider is retrying a failed renewal) for a grace counted from the failure.
      */
     public function scopeCurrent(Builder $q): Builder
     {
+        $now = now();
         return $q->where(fn ($outer) => $outer
             ->where(fn ($w) => $w->whereIn('status', self::LIVE)
-                ->where(fn ($p) => $p->whereNull('current_period_end')->orWhere('current_period_end', '>', now())))
+                ->where(fn ($p) => $p->whereNull('current_period_end')->orWhere('current_period_end', '>', $now)
+                    ->orWhere(fn ($a) => $a->where('auto_renew', true)->where('current_period_end', '>', $now->copy()->subDays(self::webhookGraceDays())))))
             ->orWhere(fn ($w) => $w->where('status', 'past_due')
-                ->where('current_period_end', '>', now()->subDays(self::pastDueGraceDays()))));
+                ->where(fn ($p) => $p->where('past_due_at', '>', $now->copy()->subDays(self::pastDueGraceDays()))
+                    ->orWhere(fn ($n) => $n->whereNull('past_due_at')->where('current_period_end', '>', $now->copy()->subDays(self::pastDueGraceDays()))))));
     }
 
     public static function pastDueGraceDays(): int
@@ -55,13 +61,30 @@ final class Subscription extends Model
         return max(0, (int) config('billing.past_due_grace_days', 7));
     }
 
+    public static function webhookGraceDays(): int
+    {
+        return max(0, (int) config('billing.webhook_grace_days', 3));
+    }
+
+    /** When a past_due subscription loses access (grace counted from the failed renewal). */
+    public function pastDueUntil(): ?\Illuminate\Support\Carbon
+    {
+        $from = $this->past_due_at ?? $this->current_period_end;
+        return $from?->copy()->addDays(self::pastDueGraceDays());
+    }
+
     public function isCurrent(): bool
     {
         if ($this->status === 'past_due') {
-            return $this->current_period_end !== null && $this->current_period_end->gt(now()->subDays(self::pastDueGraceDays()));
+            return ($until = $this->pastDueUntil()) !== null && $until->isFuture();
         }
-        return in_array($this->status, self::LIVE, true)
-            && ($this->current_period_end === null || $this->current_period_end->isFuture());
+        if (!in_array($this->status, self::LIVE, true)) {
+            return false;
+        }
+        if ($this->current_period_end === null || $this->current_period_end->isFuture()) {
+            return true;
+        }
+        return $this->auto_renew && $this->current_period_end->copy()->addDays(self::webhookGraceDays())->isFuture();
     }
 
     public function onTrial(): bool

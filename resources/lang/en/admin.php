@@ -429,4 +429,5 @@ return [
     'storage_value' => ':free free · attachments :used',
     'webhook_value' => 'last: :last · failed (7 days): :failed',
     'calendar_value' => ':n connected · :errors need attention',
+    'pay_webhook_in_use' => 'Auto-renewing Stripe subscriptions exist; the webhook signing secret cannot be removed or they would stop being renewed here. Replace it with the new secret instead.',
 ];

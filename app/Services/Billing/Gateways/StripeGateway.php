@@ -88,6 +88,11 @@ final class StripeGateway implements RecurringGateway
             return new PaymentVerification(false, null, 'session_mismatch');
         }
         $response = Http::timeout(20)->withToken($this->secret())->get(self::API.'checkout/sessions/'.rawurlencode($sessionId));
+        if ($response->serverError() || $response->status() === 429) {
+            // Temporary provider problem: the payment stays pending and is verified again later
+            // (next callback hit or the checkout.session.completed webhook).
+            throw new GatewayException('Stripe verification temporarily failed: HTTP '.$response->status());
+        }
         if ($response->failed()) {
             return new PaymentVerification(false, null, 'verify_failed: HTTP '.$response->status());
         }
@@ -117,9 +122,24 @@ final class StripeGateway implements RecurringGateway
         }
     }
 
+    /** Current state of a subscription straight from Stripe (webhook events can arrive out of order). */
+    public function retrieveSubscription(string $id): array
+    {
+        $r = Http::timeout(20)->withToken($this->secret())->get(self::API.'subscriptions/'.rawurlencode($id));
+        if ($r->failed() || !is_array($r->json())) {
+            throw new GatewayException('Stripe subscription lookup failed: HTTP '.$r->status());
+        }
+        return (array) $r->json();
+    }
+
     public function cancelNow(Subscription $subscription): void
     {
-        $r = Http::timeout(20)->withToken($this->secret())->delete(self::API.'subscriptions/'.rawurlencode((string) $subscription->provider_reference));
+        $this->cancelById((string) $subscription->provider_reference);
+    }
+
+    public function cancelById(string $id): void
+    {
+        $r = Http::timeout(20)->withToken($this->secret())->delete(self::API.'subscriptions/'.rawurlencode($id));
         if ($r->failed() && $r->status() !== 404) {
             throw new GatewayException('Stripe subscription cancel failed: '.($r->json('error.message') ?? $r->status()));
         }

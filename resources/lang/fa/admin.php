@@ -429,4 +429,5 @@ return [
     'storage_value' => ':free آزاد · پیوست‌ها :used',
     'webhook_value' => 'آخرین: :last · ناموفق (۷ روز): :failed',
     'calendar_value' => ':n اتصال · :errors نیازمند بررسی',
+    'pay_webhook_in_use' => 'اشتراک‌های Stripe با تمدید خودکار وجود دارند؛ حذف Webhook signing secret باعث می‌شود تمدیدها اینجا ثبت نشوند. به‌جای حذف، secret جدید را وارد کنید.',
 ];

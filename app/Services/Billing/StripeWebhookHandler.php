@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  */
 final class StripeWebhookHandler
 {
-    public function __construct(private readonly BillingService $billing) {}
+    public function __construct(private readonly BillingService $billing, private readonly \App\Services\Billing\Gateways\StripeGateway $stripe) {}
 
     /** @return string processed | ignored | duplicate | failed */
     public function handle(array $event): string
@@ -69,7 +69,16 @@ final class StripeWebhookHandler
         $paymentId = (int) ($session['metadata']['payment_id'] ?? $session['client_reference_id'] ?? 0);
         $sessionId = (string) ($session['id'] ?? '');
         $payment = $paymentId > 0 ? Payment::query()->where('provider', 'stripe')->find($paymentId) : null;
-        if (!$payment || $payment->status !== 'pending' || $sessionId === '' || $payment->provider_reference !== $sessionId) {
+        if (!$payment || $sessionId === '' || $payment->provider_reference !== $sessionId) {
+            return 'ignored';
+        }
+        // Stripe says this checkout completed. If the browser callback marked it failed (e.g. a bad
+        // session_id in the redirect), verify again with Stripe instead of leaving a paying customer without access.
+        if ($payment->status === 'failed') {
+            Payment::query()->whereKey($payment->id)->where('status', 'failed')->update(['status' => 'pending', 'failure_reason' => null]);
+            $payment->refresh();
+        }
+        if ($payment->status !== 'pending') {
             return 'ignored';
         }
         $result = $this->billing->completeCheckout($payment, Request::create('/', 'GET', ['session_id' => $sessionId]));
@@ -85,9 +94,20 @@ final class StripeWebhookHandler
         if (($invoice['billing_reason'] ?? null) === 'subscription_create') {
             return 'ignored';
         }
-        $sub = $this->subscriptionFor(self::invoiceSubscriptionId($invoice));
+        $providerId = self::invoiceSubscriptionId($invoice);
+        $sub = $this->subscriptionFor($providerId);
         $invoiceId = (string) ($invoice['id'] ?? '');
+        if ($providerId !== null && !$sub) {
+            Log::warning('Stripe renewal for an unknown subscription', ['subscription' => $providerId, 'invoice' => $invoiceId]);
+        }
         if (!$sub || $invoiceId === '' || (int) ($invoice['amount_paid'] ?? 0) <= 0) {
+            return 'ignored';
+        }
+        if ($sub->status === 'expired') {
+            // Replaced or ended locally but still billing at Stripe (e.g. a failed cancel on plan switch):
+            // stop it there instead of reviving it here.
+            Log::warning('Stripe renewed a subscription that ended locally; cancelling it at Stripe', ['subscription' => $providerId, 'invoice' => $invoiceId]);
+            $this->stripe->cancelById((string) $providerId);
             return 'ignored';
         }
         $this->billing->recordRenewal($sub, $invoiceId, (int) $invoice['amount_paid'], (string) ($invoice['currency'] ?? 'usd'), self::invoicePeriodEnd($invoice));
@@ -110,6 +130,8 @@ final class StripeWebhookHandler
         if (!$sub || $sub->status === 'expired') {
             return 'ignored';
         }
+        // Events are not delivered in order: apply Stripe's current state, not the event snapshot.
+        $s = $this->stripe->retrieveSubscription((string) $s['id']);
         $state = match ((string) ($s['status'] ?? '')) {
             'active', 'trialing' => 'active',
             'past_due', 'unpaid' => 'past_due',

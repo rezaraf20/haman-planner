@@ -86,6 +86,11 @@ final class BillingService
         if ($amount === null || $amount <= 0) {
             throw new BillingException('billing.errors.plan_unavailable');
         }
+        // An auto-renewing subscription renews by itself: paying again for the same plan would double-charge.
+        $current = $this->entitlements->currentSubscription($user);
+        if ($current && $current->auto_renew && $current->plan_id === $plan->id && in_array($current->status, ['active', 'canceled'], true)) {
+            throw new BillingException('billing.errors.already_auto_renewing');
+        }
 
         $payment = Payment::create([
             'user_id' => $user->id,
@@ -262,7 +267,7 @@ final class BillingService
     {
         return DB::transaction(function () use ($sub, $invoiceReference, $amount, $currency, $periodEnd) {
             $locked = Subscription::query()->whereKey($sub->id)->lockForUpdate()->first();
-            if (!$locked || Payment::query()->where('provider', $locked->provider)->where('provider_reference', $invoiceReference)->exists()) {
+            if (!$locked || $locked->status === 'expired' || Payment::query()->where('provider', $locked->provider)->where('provider_reference', $invoiceReference)->exists()) {
                 return null;
             }
             $user = User::query()->find($locked->user_id);
@@ -272,6 +277,9 @@ final class BillingService
             }
             $base = $locked->current_period_end && $locked->current_period_end->isFuture() ? Carbon::instance($locked->current_period_end) : now();
             $end = $periodEnd && $periodEnd->isFuture() ? $periodEnd : self::addInterval($base, (string) ($locked->billing_interval ?: 'monthly'));
+            if ($locked->current_period_end && $locked->current_period_end->gt($end)) {
+                $end = Carbon::instance($locked->current_period_end); // never move the period backwards
+            }
             $payment = Payment::create([
                 'user_id' => $user->id, 'subscription_id' => $locked->id, 'plan_id' => $plan->id,
                 'billing_interval' => $locked->billing_interval, 'provider' => $locked->provider,
@@ -317,10 +325,13 @@ final class BillingService
     public function syncProviderState(Subscription $sub, string $providerStatus, bool $cancelAtPeriodEnd, ?Carbon $periodEnd): void
     {
         $attrs = ['cancel_at_period_end' => $cancelAtPeriodEnd];
-        if ($periodEnd) {
+        // While past_due the provider has already advanced its period, but nothing was paid for it:
+        // keep the paid period locally (access continues only for the grace from the failure).
+        if ($periodEnd && $providerStatus !== 'past_due') {
             $attrs['current_period_end'] = $periodEnd;
         }
         $wasCanceled = $sub->status === 'canceled';
+        $wasPastDue = $sub->status === 'past_due';
         if ($providerStatus === 'canceled') {
             $this->endProviderSubscription($sub);
             return;
@@ -337,9 +348,12 @@ final class BillingService
         $sub->update($attrs);
         if ($sub->user) {
             $this->entitlements->forget($sub->user);
+            if (!$wasPastDue && $sub->status === 'past_due') {
+                ProductEvents::record($sub->user, ProductEvents::PAYMENT_FAILED, ['plan' => $sub->plan?->code, 'provider' => $sub->provider]);
+            }
             if (!$wasCanceled && $sub->status === 'canceled') {
                 ProductEvents::record($sub->user, ProductEvents::SUBSCRIPTION_CANCELED, ['plan' => $sub->plan?->code, 'source' => 'provider']);
-                $this->notify($sub->user, 'subscription_canceled', 'sub-cancel-'.$sub->id.'-'.$sub->canceled_at?->timestamp, $this->cancelParams($sub));
+                $this->notify($sub->user, 'subscription_canceled', 'sub-cancel-'.$sub->id.'-'.$sub->current_period_end?->timestamp, $this->cancelParams($sub));
             }
         }
     }
@@ -436,10 +450,14 @@ final class BillingService
             throw new BillingException('billing.errors.nothing_to_cancel');
         }
         $this->tellProvider($sub, true);
+        $sub->refresh();
+        if ($sub->status === 'canceled') {
+            return $sub; // the provider's webhook already recorded the cancellation (and told the customer)
+        }
         $sub->update(['status' => 'canceled', 'cancel_at_period_end' => true, 'canceled_at' => now()]);
         $this->entitlements->forget($user);
         ProductEvents::record($user, ProductEvents::SUBSCRIPTION_CANCELED, ['plan' => $sub->plan?->code]);
-        $this->notify($user, 'subscription_canceled', 'sub-cancel-'.$sub->id.'-'.$sub->canceled_at?->timestamp, $this->cancelParams($sub));
+        $this->notify($user, 'subscription_canceled', 'sub-cancel-'.$sub->id.'-'.$sub->current_period_end?->timestamp, $this->cancelParams($sub));
         return $sub;
     }
 
@@ -504,7 +522,8 @@ final class BillingService
             ->whereNotNull('current_period_end')->where('current_period_end', '<=', now()->subDays(max(0, (int) config('billing.webhook_grace_days', 3))))
             ->update(['status' => 'expired', 'ended_at' => now()]);
         $expired += Subscription::query()->where('status', 'past_due')
-            ->whereNotNull('current_period_end')->where('current_period_end', '<=', now()->subDays(Subscription::pastDueGraceDays()))
+            ->where(fn ($q) => $q->where('past_due_at', '<=', now()->subDays(Subscription::pastDueGraceDays()))
+                ->orWhere(fn ($n) => $n->whereNull('past_due_at')->where('current_period_end', '<=', now()->subDays(Subscription::pastDueGraceDays()))))
             ->update(['status' => 'expired', 'ended_at' => now()]);
 
         $reminded = 0;

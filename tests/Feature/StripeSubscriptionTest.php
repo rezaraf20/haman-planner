@@ -47,6 +47,9 @@ final class StripeSubscriptionTest extends TestCase
                 return Http::response($this->stripe['session']);
             }
             if (str_starts_with($url, 'https://api.stripe.com/v1/checkout/sessions/')) {
+                if (isset($this->stripe['verify_status'])) {
+                    return Http::response(['error' => ['message' => 'unavailable']], $this->stripe['verify_status']);
+                }
                 return Http::response(($this->stripe['verify'] ?? []) + ['id' => 'cs_sub_1', 'mode' => 'subscription', 'payment_status' => 'paid', 'amount_total' => 600, 'currency' => 'usd',
                     'client_reference_id' => (string) Payment::latest('id')->value('id'), 'subscription' => 'sub_1', 'customer' => 'cus_1', 'invoice' => 'in_first']);
             }
@@ -54,7 +57,14 @@ final class StripeSubscriptionTest extends TestCase
                 if (!empty($this->stripe['subscriptions_fail'])) {
                     return Http::response(['error' => ['message' => 'boom']], 500);
                 }
-                return Http::response(['id' => basename(parse_url($url, PHP_URL_PATH)), 'cancel_at_period_end' => $r['cancel_at_period_end'] ?? null]);
+                $id = basename(parse_url($url, PHP_URL_PATH));
+                $state = $this->stripe['subs'][$id] ?? ['id' => $id, 'status' => 'active', 'cancel_at_period_end' => false];
+                if ($r->method() === 'POST') {
+                    $state['cancel_at_period_end'] = $r['cancel_at_period_end'] === 'true';
+                } elseif ($r->method() === 'DELETE') {
+                    $state['status'] = 'canceled';
+                }
+                return Http::response($this->stripe['subs'][$id] = $state);
             }
             return Http::response([], 404);
         });
@@ -161,6 +171,12 @@ final class StripeSubscriptionTest extends TestCase
     public function test_failed_renewal_keeps_access_during_grace_then_expires(): void
     {
         $sub = $this->subscribe();
+        $end = $sub->current_period_end->copy();
+        // The renewal charge fails at the period end; Stripe moves its own period forward and reports past_due.
+        $this->travelTo($end->copy()->addHour());
+        $this->stripe['subs']['sub_1'] = ['id' => 'sub_1', 'status' => 'past_due', 'cancel_at_period_end' => false, 'items' => ['data' => [['current_period_end' => $end->copy()->addMonth()->timestamp]]]];
+        $this->webhook($this->event('evt_f0', 'customer.subscription.updated', ['id' => 'sub_1']))->assertJson(['status' => 'processed']);
+        $this->assertSame($end->timestamp, $sub->fresh()->current_period_end->timestamp, 'unpaid period is not granted');
         $this->webhook($this->event('evt_f1', 'invoice.payment_failed', ['id' => 'in_f', 'subscription' => 'sub_1', 'billing_reason' => 'subscription_cycle']))->assertJson(['status' => 'processed']);
         $this->webhook($this->event('evt_f2', 'invoice.payment_failed', ['id' => 'in_f', 'subscription' => 'sub_1', 'billing_reason' => 'subscription_cycle']))->assertOk();
         $this->assertSame('past_due', $sub->fresh()->status);
@@ -168,12 +184,13 @@ final class StripeSubscriptionTest extends TestCase
         $this->assertSame(1, \DB::table('notification_deliveries')->where('type', 'payment_failed')->count(), 'one email per failed invoice');
         $this->assertSame(1, \App\Models\ProductEvent::where('event', 'payment_failed')->count());
 
-        $this->travelTo($sub->current_period_end->copy()->addDays(3));
+        $this->travelTo($end->copy()->addDays(3));
+        app(Entitlements::class)->forget($this->user);
         $this->assertSame('pro', app(Entitlements::class)->plan($this->user)->code, 'grace period');
         $this->assertSame(0, app(BillingService::class)->processLifecycle()['expired']);
         $this->get('/billing')->assertOk()->assertSee(__('billing.status.past_due', [], 'en'));
 
-        $this->travelTo($sub->current_period_end->copy()->addDays(8));
+        $this->travelTo($end->copy()->addDays(8));
         $this->assertSame(1, app(BillingService::class)->processLifecycle()['expired']);
         app(Entitlements::class)->forget($this->user);
         $this->assertSame('free', app(Entitlements::class)->plan($this->user)->code);
@@ -192,7 +209,8 @@ final class StripeSubscriptionTest extends TestCase
         Http::assertSent(fn (Request $r) => $r->url() === 'https://api.stripe.com/v1/subscriptions/sub_1' && $r['cancel_at_period_end'] === 'false');
         $this->assertSame('active', $sub->fresh()->status);
 
-        // Canceled from the Stripe dashboard / customer portal.
+        // Canceled from the Stripe dashboard / customer portal (the handler re-reads Stripe's current state).
+        $this->stripe['subs']['sub_1'] = ['id' => 'sub_1', 'status' => 'active', 'cancel_at_period_end' => true, 'items' => ['data' => [['current_period_end' => now()->addDays(20)->timestamp]]]];
         $this->webhook($this->event('evt_u1', 'customer.subscription.updated', ['id' => 'sub_1', 'status' => 'active', 'cancel_at_period_end' => true,
             'items' => ['data' => [['current_period_end' => now()->addDays(20)->timestamp]]]]))->assertJson(['status' => 'processed']);
         $this->assertSame('canceled', $sub->fresh()->status);
@@ -203,6 +221,69 @@ final class StripeSubscriptionTest extends TestCase
         $this->assertSame('expired', $sub->fresh()->status);
         app(Entitlements::class)->forget($this->user);
         $this->assertSame('free', app(Entitlements::class)->plan($this->user)->code);
+    }
+
+    public function test_late_renewal_webhook_does_not_drop_access_and_period_never_moves_back(): void
+    {
+        $sub = $this->subscribe();
+        $end = $sub->current_period_end->copy();
+        $this->travelTo($end->copy()->addDay());
+        app(Entitlements::class)->forget($this->user);
+        $this->assertSame('pro', app(Entitlements::class)->plan($this->user)->code, 'auto-renewing: short grace for a late webhook');
+        $this->assertSame(0, app(BillingService::class)->processLifecycle()['expired']);
+
+        $this->webhook($this->event('evt_late', 'invoice.paid', ['id' => 'in_late', 'subscription' => 'sub_1', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 600, 'currency' => 'usd',
+            'lines' => ['data' => [['period' => ['end' => $end->copy()->addMonth()->timestamp]]]]]))->assertJson(['status' => 'processed']);
+        $this->assertSame($end->copy()->addMonth()->timestamp, $sub->fresh()->current_period_end->timestamp);
+        // An old, re-delivered update event cannot roll the period back: Stripe's current state is applied.
+        $this->stripe['subs']['sub_1'] = ['id' => 'sub_1', 'status' => 'active', 'cancel_at_period_end' => false, 'items' => ['data' => [['current_period_end' => $end->copy()->addMonth()->timestamp]]]];
+        $this->webhook($this->event('evt_old', 'customer.subscription.updated', ['id' => 'sub_1', 'status' => 'active', 'cancel_at_period_end' => false, 'current_period_end' => $end->timestamp]))->assertOk();
+        $this->assertSame($end->copy()->addMonth()->timestamp, $sub->fresh()->current_period_end->timestamp);
+
+        $this->travelTo($end->copy()->addMonth()->addDays(4));
+        $this->assertSame(1, app(BillingService::class)->processLifecycle()['expired'], 'no renewal at all → expires after the grace');
+    }
+
+    public function test_browser_callback_failure_is_recovered_by_the_webhook(): void
+    {
+        $pro = Plan::where('code', 'pro')->first();
+        $this->actingAs($this->user)->post('/billing/checkout', ['plan' => $pro->id, 'interval' => 'monthly', 'provider' => 'stripe']);
+        $payment = Payment::first();
+        // Redirect arrives with a wrong session id → marked failed.
+        $this->get(URL::temporarySignedRoute('billing.callback', now()->addDay(), ['payment' => $payment->id]).'&session_id=cs_wrong');
+        $this->assertSame('failed', $payment->fresh()->status);
+        // Stripe reports the completed checkout: verified again with Stripe and activated.
+        $this->webhook($this->event('evt_rec', 'checkout.session.completed', ['id' => 'cs_sub_1', 'metadata' => ['payment_id' => (string) $payment->id]]))->assertJson(['status' => 'processed']);
+        $this->assertSame('paid', $payment->fresh()->status);
+        $this->assertSame('pro', app(Entitlements::class)->plan($this->user)->code);
+    }
+
+    public function test_temporary_stripe_error_keeps_the_payment_pending(): void
+    {
+        $pro = Plan::where('code', 'pro')->first();
+        $this->actingAs($this->user)->post('/billing/checkout', ['plan' => $pro->id, 'interval' => 'monthly', 'provider' => 'stripe']);
+        $payment = Payment::first();
+        $this->stripe['verify_status'] = 503;
+        $this->get(URL::temporarySignedRoute('billing.callback', now()->addDay(), ['payment' => $payment->id]).'&session_id=cs_sub_1');
+        $this->assertSame('pending', $payment->fresh()->status);
+        $this->webhook($this->event('evt_tmp', 'checkout.session.completed', ['id' => 'cs_sub_1', 'metadata' => ['payment_id' => (string) $payment->id]]))->assertStatus(500);
+        unset($this->stripe['verify_status']);
+        $this->webhook($this->event('evt_tmp', 'checkout.session.completed', ['id' => 'cs_sub_1', 'metadata' => ['payment_id' => (string) $payment->id]]))->assertJson(['status' => 'processed']);
+        $this->assertSame('paid', $payment->fresh()->status);
+    }
+
+    public function test_no_second_checkout_for_an_auto_renewing_plan_and_ended_subscriptions_are_not_revived(): void
+    {
+        $sub = $this->subscribe();
+        $pro = Plan::where('code', 'pro')->first();
+        $this->from('/billing')->post('/billing/checkout', ['plan' => $pro->id, 'interval' => 'monthly', 'provider' => 'stripe'])->assertSessionHasErrors('billing');
+        $this->assertSame(1, Payment::count());
+
+        // Ended locally (e.g. switched plan while the Stripe cancel failed) but Stripe renews it: cancel it there.
+        $sub->update(['status' => 'expired', 'ended_at' => now()]);
+        $this->webhook($this->event('evt_z', 'invoice.paid', ['id' => 'in_z', 'subscription' => 'sub_1', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 600, 'currency' => 'usd']))->assertJson(['status' => 'ignored']);
+        $this->assertSame('expired', $sub->fresh()->status);
+        Http::assertSent(fn (Request $r) => $r->method() === 'DELETE' && $r->url() === 'https://api.stripe.com/v1/subscriptions/sub_1');
     }
 
     public function test_stripe_failure_on_cancel_does_not_change_local_state(): void
@@ -255,5 +336,11 @@ final class StripeSubscriptionTest extends TestCase
         $html = $this->get(route('admin.payment-settings'))->assertOk()->getContent();
         $this->assertStringNotContainsString('whsec_Panel123', $html);
         $this->assertStringContainsString('/api/billing/webhook/stripe', $html);
+
+        // Clearing the secret is refused while auto-renewing subscriptions depend on it.
+        Subscription::create(['user_id' => $this->user->id, 'plan_id' => Plan::where('code', 'pro')->value('id'), 'status' => 'active', 'billing_interval' => 'monthly',
+            'current_period_end' => now()->addMonth(), 'provider' => 'stripe', 'provider_reference' => 'sub_x', 'auto_renew' => true]);
+        $this->post(route('admin.payment-settings.save'), ['stripe_enabled' => 1, 'clear_stripe_webhook_secret' => 1])->assertSessionHasErrors('stripe_webhook_secret');
+        $this->assertSame('whsec_Panel123', \App\Support\PaymentSettings::get('stripe_webhook_secret'));
     }
 }

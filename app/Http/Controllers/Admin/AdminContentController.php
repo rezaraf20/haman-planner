@@ -90,6 +90,10 @@ final class AdminContentController extends Controller
             'stripe_secret.regex' => __('admin.pay_stripe_invalid'),
         ]);
 
+        if ($request->boolean('clear_stripe_webhook_secret')
+            && \App\Models\Subscription::query()->where('provider', 'stripe')->where('auto_renew', true)->whereIn('status', ['active', 'canceled', 'past_due'])->exists()) {
+            return back()->withErrors(['stripe_webhook_secret' => __('admin.pay_webhook_in_use')]);
+        }
         PaymentSettings::put([
             'zarinpal_enabled' => $request->boolean('zarinpal_enabled'),
             'zarinpal_sandbox' => $request->boolean('zarinpal_sandbox'),

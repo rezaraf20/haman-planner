@@ -39,7 +39,7 @@ final class User extends Authenticatable
         'locale', 'timezone', 'preferences', 'onboarded_at',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'calendar_feed_token'];
 
     protected function casts(): array
     {
