@@ -247,6 +247,9 @@ return [
         'last_30_days' => 'Last 30 days',
         'details' => 'Details',
         'no_data_yet' => 'No data yet.',
+        'val_yes' => 'Yes',
+        'val_no' => 'No',
+        'val_partial' => 'Partly',
     ],
     'home' => [
         'title' => 'Today',
@@ -423,6 +426,12 @@ return [
             'icon' => 'search',
             'title' => 'Search your planner',
             'text' => 'Type at least two letters.',
+        ],
+        'recurring' => [
+            'icon' => 'repeat',
+            'title' => 'No routines yet',
+            'text' => 'A recurring task creates the next occurrence by itself — daily, on chosen weekdays, monthly or yearly.',
+            'cta' => '',
         ],
     ],
 ];

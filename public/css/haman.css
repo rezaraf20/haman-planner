@@ -361,3 +361,5 @@ div.err, p.err, .alert.danger { background: var(--danger-bg); color: var(--dange
 .kvgrid > div { display: flex; justify-content: space-between; gap: var(--s3); padding: 9px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
 .kvgrid dt { color: var(--text-2); } .kvgrid dd { margin: 0; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; }
 @media (max-width: 760px) { .kvgrid { grid-template-columns: minmax(0, 1fr); } }
+
+.toolbar select, .toolbar input:not([type=checkbox]):not(.search) { min-height: 38px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface); }

@@ -28,7 +28,7 @@
 .sub a:hover{color:var(--text);text-decoration:none}
 .sub a.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
 .msg{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;margin:10px 0;background:var(--surface);white-space:pre-wrap;line-height:1.9}.msg.staff{background:var(--info-bg);border-color:var(--info-line)}.msg .meta{font-size:var(--fs-sm);color:var(--text-3);margin-bottom:6px;white-space:normal}
-@media(max-width:760px){.top nav{margin-inline-start:0;width:100%;overflow-x:auto;flex-wrap:nowrap}.wrap{padding:0 16px;margin-top:16px}}
+@media(max-width:760px){.top nav{margin-inline-start:0;width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.top nav a,.top nav button{white-space:nowrap}.sub{flex-wrap:nowrap;scrollbar-width:none}.wrap{padding:0 16px;margin-top:16px}}
 @stack('styles')
 </style>
 </head>
