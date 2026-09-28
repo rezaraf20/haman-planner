@@ -78,6 +78,31 @@ Route::middleware([
 
     Route::apiResource('schedule-blocks', ScheduleBlockController::class);
 
+    // Haman AI planning (proposals are applied only on explicit confirmation)
+    Route::post('/planning/proposals', [\App\Http\Controllers\Api\PlanningController::class, 'propose'])->middleware('throttle:20,1');
+    Route::get('/planning/proposals/{planProposal}', [\App\Http\Controllers\Api\PlanningController::class, 'show']);
+    Route::post('/planning/proposals/{planProposal}/apply', [\App\Http\Controllers\Api\PlanningController::class, 'apply']);
+    Route::post('/planning/proposals/{planProposal}/dismiss', [\App\Http\Controllers\Api\PlanningController::class, 'dismiss']);
+    Route::get('/planning/what-now', [\App\Http\Controllers\Api\PlanningController::class, 'whatNow']);
+    Route::get('/planning/insights', [\App\Http\Controllers\Api\PlanningController::class, 'insights']);
+    Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1');
+    Route::get('/reviews/{review}/details', [\App\Http\Controllers\Api\PlanningController::class, 'showReview']);
+
+    // Time blocking
+    Route::get('/schedule', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
+    Route::post('/schedule/place', [\App\Http\Controllers\Api\ScheduleController::class, 'place']);
+    Route::patch('/schedule/{type}/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'move'])->whereIn('type', ['block', 'task'])->whereNumber('id');
+    Route::post('/tasks/{task}/unschedule', [\App\Http\Controllers\Api\ScheduleController::class, 'unschedule']);
+
+    // Recurring tasks (series); occurrences are ordinary tasks.
+    Route::post('/recurring-tasks/preview', [\App\Http\Controllers\Api\RecurringTaskController::class, 'preview']);
+    Route::get('/recurring-tasks', [\App\Http\Controllers\Api\RecurringTaskController::class, 'index']);
+    Route::post('/recurring-tasks', [\App\Http\Controllers\Api\RecurringTaskController::class, 'store']);
+    Route::get('/recurring-tasks/{recurringTask}', [\App\Http\Controllers\Api\RecurringTaskController::class, 'show']);
+    Route::put('/recurring-tasks/{recurringTask}', [\App\Http\Controllers\Api\RecurringTaskController::class, 'update']);
+    Route::post('/recurring-tasks/{recurringTask}/stop', [\App\Http\Controllers\Api\RecurringTaskController::class, 'stop']);
+    Route::post('/tasks/{task}/skip', [\App\Http\Controllers\Api\RecurringTaskController::class, 'skip']);
+
     Route::get('/search', SearchController::class);
     Route::get('/tasks/{task}/dependencies', [DependencyController::class, 'index']);
     Route::post('/tasks/{task}/dependencies', [DependencyController::class, 'store']);

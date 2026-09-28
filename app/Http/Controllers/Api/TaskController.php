@@ -131,7 +131,23 @@ final class TaskController extends Controller
             $data['progress'] = 100;
         }
 
-        $task->update($data);
+        $plannedBefore = [$task->planned_start?->toIso8601String(), $task->planned_end?->toIso8601String()];
+        $task->fill($data);
+        // Recurring occurrences: remember that this one was changed on its own, so later
+        // "edit all future occurrences" updates leave it alone.
+        if ($task->isOccurrence() && $task->recurrence_exception !== 'skipped') {
+            if ($task->isDirty(\App\Models\RecurringTask::TEMPLATE_FIELDS)) {
+                $task->recurrence_exception = 'edited';
+            } elseif ($task->isDirty(['planned_start', 'planned_end']) && $task->recurrence_exception === null) {
+                $task->recurrence_exception = 'moved';
+            }
+        }
+        $task->save();
+        if ($plannedBefore[0] !== null && $plannedBefore !== [$task->planned_start?->toIso8601String(), $task->planned_end?->toIso8601String()]) {
+            app(\App\Services\Planner\ActivityLogger::class)->log('rescheduled', Task::class, $task->id,
+                ['planned_start' => $plannedBefore[0], 'planned_end' => $plannedBefore[1]],
+                ['planned_start' => $task->planned_start?->toIso8601String(), 'planned_end' => $task->planned_end?->toIso8601String()]);
+        }
 
         if ($task->status === 'completed') {
             $this->planner->complete($task);

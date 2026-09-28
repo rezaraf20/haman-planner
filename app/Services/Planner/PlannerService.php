@@ -29,8 +29,11 @@ final class PlannerService
     public function complete(Task $task): Task
     {
         $before = $task->toArray();
-        $task->update(['status' => 'completed', 'progress' => 100, 'completed_at' => now()]);
+        $task->update(['status' => 'completed', 'progress' => 100, 'completed_at' => $task->completed_at ?? now()]);
         $this->activity->log('completed', Task::class, $task->id, $before, $task->fresh()->toArray());
+        if ($task->user_id) {
+            \App\Services\Analytics\ProductEvents::record(\App\Models\User::find($task->user_id), \App\Services\Analytics\ProductEvents::FIRST_TASK_COMPLETED, [], true);
+        }
         return $task->refresh();
     }
 

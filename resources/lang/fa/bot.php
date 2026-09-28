@@ -1,68 +1,179 @@
 <?php
 return [
-    // Linking & access
     'link_invalid' => 'کد اتصال نامعتبر یا منقضی شده است.',
     'link_other_chat' => 'این حساب قبلاً به Telegram دیگری متصل شده است.',
-    'linked' => "اتصال با موفقیت انجام شد. سلام :name 👋\n\n🤖 Haman Planner",
-    'hello' => "سلام :name 👋\n\n🤖 Haman Planner\nیک بخش را انتخاب کن:",
-    'home' => "🤖 Haman Planner\n\nیک بخش را انتخاب کن:",
-    'use_menu' => "🤖 Haman Planner\n\nاز منوی دکمه‌ای انتخاب کن:",
+    'linked' => 'اتصال با موفقیت انجام شد. سلام :name 👋
+
+🤖 Haman Planner',
+    'hello' => 'سلام :name 👋
+
+🤖 Haman Planner
+یک بخش را انتخاب کن:',
+    'home' => '🤖 Haman Planner
+
+یک بخش را انتخاب کن:',
+    'use_menu' => '🤖 Haman Planner
+
+از منوی دکمه‌ای انتخاب کن:',
     'no_access' => 'دسترسی ندارید.',
     'not_active' => 'دسترسی فعال نیست.',
-    'link_help' => "این Telegram هنوز به حسابی در Haman Planner متصل نیست.\n\n۱. در :url/register ثبت‌نام کن (یا اگر حساب داری وارد شو).\n۲. در «حساب و تنظیمات» دکمه «ساخت کد اتصال Telegram» را بزن.\n۳. کد را این‌جا به شکل /start CODE بفرست (یا روی دکمه اتصال یک‌کلیکی بزن).",
+    'link_help' => 'این Telegram هنوز به حسابی در Haman Planner متصل نیست.
+
+۱. در :url/register ثبت‌نام کن (یا اگر حساب داری وارد شو).
+۲. در «حساب و تنظیمات» دکمه «ساخت کد اتصال Telegram» را بزن.
+۳. کد را این‌جا به شکل /start CODE بفرست (یا روی دکمه اتصال یک‌کلیکی بزن).',
     'error' => '❌ خطا در اجرای عملیات. دوباره تلاش کن.',
     'update_failed' => 'خطا در پردازش درخواست. لطفاً دوباره تلاش کن.',
     'voice_disabled' => 'فعلاً پیام صوتی پشتیبانی نمی‌شود. از دکمه‌های ربات استفاده کن.',
-    'upgrade_hint' => "\n\nپلن‌ها: :url",
+    'upgrade_hint' => '
+
+پلن‌ها: :url',
     'reminder_for_task' => '⏰ یادآوری: :title',
     'reminder_generic' => '⏰ یادآوری Haman Planner',
     'cancel_words' => ['لغو', 'cancel'],
-
-    // Buttons
     'btn' => [
-        'home' => '🏠 خانه', 'back' => '⬅️ بازگشت', 'cancel' => '❌ لغو', 'no' => '❌ خیر', 'yes' => '🗑 بله', 'yes_delete' => '🗑 بله، حذف شود',
-        'prev_page' => '◀️ قبلی', 'next_page' => 'بعدی ▶️', 'edit' => '✏️ ویرایش', 'delete' => '🗑 حذف', 'view_task' => '📋 مشاهده کار',
-        'done' => '✅ انجام شد', 'defer' => '⏸ تعویق', 'cancel_task' => '🚫 لغو', 'log_work' => '◷ ثبت اجرا', 'schedule' => '□ زمان‌بندی',
-        'deps' => '⇄ وابستگی‌ها', 'remind' => '⏰ یادآور', 'slipped' => '⚠ شکست', 'cancel_reminder' => '🚫 لغو یادآور',
-        'clear' => '🧹 خالی کردن', 'no_value' => '∅ بدون مقدار', 'skip' => '⏭ رد کردن', 'wz_back' => '⬅️ قبلی',
-        'finish' => '✅ پایان و بازبینی', 'save' => '✅ ثبت', 'search_again' => '⌕ جستجوی دوباره',
+        'home' => '🏠 خانه',
+        'back' => '⬅️ بازگشت',
+        'cancel' => '❌ لغو',
+        'no' => '❌ خیر',
+        'yes' => '🗑 بله',
+        'yes_delete' => '🗑 بله، حذف شود',
+        'prev_page' => '◀️ قبلی',
+        'next_page' => 'بعدی ▶️',
+        'edit' => '✏️ ویرایش',
+        'delete' => '🗑 حذف',
+        'view_task' => '📋 مشاهده کار',
+        'done' => '✅ انجام شد',
+        'defer' => '⏸ تعویق',
+        'cancel_task' => '🚫 لغو',
+        'log_work' => '◷ ثبت اجرا',
+        'schedule' => '□ زمان‌بندی',
+        'deps' => '⇄ وابستگی‌ها',
+        'remind' => '⏰ یادآور',
+        'slipped' => '⚠ شکست',
+        'cancel_reminder' => '🚫 لغو یادآور',
+        'clear' => '🧹 خالی کردن',
+        'no_value' => '∅ بدون مقدار',
+        'skip' => '⏭ رد کردن',
+        'wz_back' => '⬅️ قبلی',
+        'finish' => '✅ پایان و بازبینی',
+        'save' => '✅ ثبت',
+        'search_again' => '⌕ جستجوی دوباره',
     ],
     'menu' => [
-        'today' => '◉ امروز', 'tasks' => '✓ کارها', 'inbox' => '▣ Inbox', 'search' => '⌕ جستجو', 'structure' => '🏗 ساختار',
-        'execution' => '⚙ اجرا', 'analysis' => '📊 تحلیل', 'knowledge' => '🧠 دانش و AI',
-        'new_task' => '➕ ایجاد کار', 'tomorrow' => '📆 فردا', 'all_open' => '📋 همه کارهای باز',
-        'areas' => '◈ حوزه‌ها', 'goals' => '◎ اهداف', 'projects' => '▤ پروژه‌ها', 'milestones' => '◇ Milestoneها',
-        'daily' => '☀ برنامه روزانه', 'calendar' => '□ تقویم', 'worklog' => '◷ لاگ اجرا', 'dependencies' => '⇄ وابستگی‌ها',
-        'reminders' => '◌ یادآورها', 'failures' => '⚠ علل شکست', 'reviews' => '↻ مرورها', 'analytics' => '◫ آمار', 'reports' => '▥ گزارش‌ها',
-        'notes' => '▤ یادداشت‌ها', 'decisions' => '◆ تصمیم‌ها', 'ai' => '✦ برنامه‌ریز هوشمند', 'ai_history' => '✧ تاریخچه AI',
-        'pending' => '⌛ اقدام‌های در انتظار', 'activity' => '◌ گزارش فعالیت',
+        'today' => '◉ امروز',
+        'tasks' => '✓ کارها',
+        'inbox' => '▣ Inbox',
+        'search' => '⌕ جستجو',
+        'structure' => '🏗 ساختار',
+        'execution' => '⚙ اجرا',
+        'analysis' => '📊 تحلیل',
+        'knowledge' => '🧠 دانش و AI',
+        'new_task' => '➕ ایجاد کار',
+        'tomorrow' => '📆 فردا',
+        'all_open' => '📋 همه کارهای باز',
+        'areas' => '◈ حوزه‌ها',
+        'goals' => '◎ اهداف',
+        'projects' => '▤ پروژه‌ها',
+        'milestones' => '◇ Milestoneها',
+        'daily' => '☀ برنامه روزانه',
+        'calendar' => '□ تقویم',
+        'worklog' => '◷ لاگ اجرا',
+        'dependencies' => '⇄ وابستگی‌ها',
+        'reminders' => '◌ یادآورها',
+        'failures' => '⚠ علل شکست',
+        'reviews' => '↻ مرورها',
+        'analytics' => '◫ آمار',
+        'reports' => '▥ گزارش‌ها',
+        'notes' => '▤ یادداشت‌ها',
+        'decisions' => '◆ تصمیم‌ها',
+        'ai' => '✦ برنامه‌ریز هوشمند',
+        'ai_history' => '✧ تاریخچه AI',
+        'pending' => '⌛ اقدام‌های در انتظار',
+        'activity' => '◌ گزارش فعالیت',
+        'what_now' => '◎ الان چی کار کنم؟',
+        'plan_day' => '✦ برنامه‌ی امروز',
+        'plan_week' => '✦ برنامه‌ی هفته',
+        'plan_fix' => '✦ درست کردن برنامه',
     ],
     'section' => [
-        'tasks' => '✓ کارها', 'structure' => '🏗 ساختار', 'execution' => '⚙ اجرا', 'analysis' => '📊 تحلیل', 'knowledge' => '🧠 دانش و AI',
+        'tasks' => '✓ کارها',
+        'structure' => '🏗 ساختار',
+        'execution' => '⚙ اجرا',
+        'analysis' => '📊 تحلیل',
+        'knowledge' => '🧠 دانش و AI',
     ],
     'plural' => [
-        'area' => '◈ حوزه‌ها', 'goal' => '◎ اهداف', 'project' => '▤ پروژه‌ها', 'milestone' => '◇ Milestoneها', 'task' => '✓ کارهای باز',
-        'note' => '▤ یادداشت‌ها', 'decision' => '◆ تصمیم‌ها', 'reminder' => '◌ یادآورها',
+        'area' => '◈ حوزه‌ها',
+        'goal' => '◎ اهداف',
+        'project' => '▤ پروژه‌ها',
+        'milestone' => '◇ Milestoneها',
+        'task' => '✓ کارهای باز',
+        'note' => '▤ یادداشت‌ها',
+        'decision' => '◆ تصمیم‌ها',
+        'reminder' => '◌ یادآورها',
     ],
-
-    // Field labels in wizards
     'fields' => [
-        'name' => 'نام', 'type' => 'نوع', 'status' => 'وضعیت', 'description' => 'توضیحات', 'sort_order' => 'ترتیب', 'title' => 'عنوان',
-        'area_id' => 'حوزه', 'goal_id' => 'هدف', 'project_id' => 'پروژه', 'milestone_id' => 'Milestone', 'task_id' => 'کار',
-        'importance' => 'اهمیت (0-100)', 'weight' => 'وزن', 'start_date' => 'تاریخ شروع', 'target_date' => 'تاریخ هدف',
-        'success_criteria' => 'معیار موفقیت', 'progress' => 'پیشرفت %', 'estimated_minutes' => 'زمان برآوردی (دقیقه)', 'priority' => 'اولویت',
-        'deadline' => 'مهلت', 'planned_start' => 'شروع برنامه', 'planned_end' => 'پایان برنامه', 'energy_needed' => 'انرژی لازم (0-100)',
-        'focus_needed' => 'تمرکز لازم (0-100)', 'failure_reason' => 'علت شکست', 'content' => 'متن', 'decision' => 'تصمیم', 'rationale' => 'دلیل',
-        'decided_at' => 'زمان تصمیم (پیش‌فرض: اکنون)', 'scheduled_at' => 'زمان یادآوری', 'message' => 'پیام',
-        'exec_started' => 'زمان شروع (پیش‌فرض: اکنون)', 'exec_ended' => 'زمان پایان (یا رد کن و مدت را وارد کن)', 'duration' => 'مدت (دقیقه)',
-        'focus_level' => 'سطح تمرکز (0-100)', 'energy_level' => 'سطح انرژی (0-100)', 'result' => 'نتیجه', 'blocker' => 'مانع', 'notes' => 'یادداشت',
-        'depends_on' => 'وابسته به کار', 'dep_type' => 'نوع وابستگی', 'starts_at' => 'شروع', 'ends_at' => 'پایان',
-        'plan_date' => 'تاریخ برنامه (پیش‌فرض: امروز)', 'available_minutes' => 'دقایق در دسترس', 'planned_minutes' => 'دقایق برنامه‌ریزی‌شده',
-        'completed_minutes' => 'دقایق تکمیل‌شده', 'buffer_minutes' => 'دقایق بافر', 'plan_focus' => 'تمرکز (0-100)', 'plan_energy' => 'انرژی (0-100)',
+        'name' => 'نام',
+        'type' => 'نوع',
+        'status' => 'وضعیت',
+        'description' => 'توضیحات',
+        'sort_order' => 'ترتیب',
+        'title' => 'عنوان',
+        'area_id' => 'حوزه',
+        'goal_id' => 'هدف',
+        'project_id' => 'پروژه',
+        'milestone_id' => 'Milestone',
+        'task_id' => 'کار',
+        'importance' => 'اهمیت (0-100)',
+        'weight' => 'وزن',
+        'start_date' => 'تاریخ شروع',
+        'target_date' => 'تاریخ هدف',
+        'success_criteria' => 'معیار موفقیت',
+        'progress' => 'پیشرفت %',
+        'estimated_minutes' => 'زمان برآوردی (دقیقه)',
+        'priority' => 'اولویت',
+        'deadline' => 'مهلت',
+        'planned_start' => 'شروع برنامه',
+        'planned_end' => 'پایان برنامه',
+        'energy_needed' => 'انرژی لازم (0-100)',
+        'focus_needed' => 'تمرکز لازم (0-100)',
+        'failure_reason' => 'علت شکست',
+        'content' => 'متن',
+        'decision' => 'تصمیم',
+        'rationale' => 'دلیل',
+        'decided_at' => 'زمان تصمیم (پیش‌فرض: اکنون)',
+        'scheduled_at' => 'زمان یادآوری',
+        'message' => 'پیام',
+        'exec_started' => 'زمان شروع (پیش‌فرض: اکنون)',
+        'exec_ended' => 'زمان پایان (یا رد کن و مدت را وارد کن)',
+        'duration' => 'مدت (دقیقه)',
+        'focus_level' => 'سطح تمرکز (0-100)',
+        'energy_level' => 'سطح انرژی (0-100)',
+        'result' => 'نتیجه',
+        'blocker' => 'مانع',
+        'notes' => 'یادداشت',
+        'depends_on' => 'وابسته به کار',
+        'dep_type' => 'نوع وابستگی',
+        'starts_at' => 'شروع',
+        'ends_at' => 'پایان',
+        'plan_date' => 'تاریخ برنامه (پیش‌فرض: امروز)',
+        'available_minutes' => 'دقایق در دسترس',
+        'planned_minutes' => 'دقایق برنامه‌ریزی‌شده',
+        'completed_minutes' => 'دقایق تکمیل‌شده',
+        'buffer_minutes' => 'دقایق بافر',
+        'plan_focus' => 'تمرکز (0-100)',
+        'plan_energy' => 'انرژی (0-100)',
     ],
-    'actions' => ['created' => 'ایجاد', 'updated' => 'ویرایش', 'deleted' => 'حذف', 'completed' => 'تکمیل', 'deferred' => 'تعویق', 'cancelled' => 'لغو', 'logged' => 'ثبت'],
-
-    // Lists & views
+    'actions' => [
+        'created' => 'ایجاد',
+        'updated' => 'ویرایش',
+        'deleted' => 'حذف',
+        'completed' => 'تکمیل',
+        'deferred' => 'تعویق',
+        'cancelled' => 'لغو',
+        'logged' => 'ثبت',
+    ],
     'empty' => 'موردی وجود ندارد.',
     'create_entity' => '➕ ایجاد :entity',
     'not_owned' => 'مورد پیدا نشد یا به شما تعلق ندارد.',
@@ -72,11 +183,19 @@ return [
     'health' => 'سلامت: :health',
     'attempts' => 'تلاش‌ها: :n/:max',
     'no_details' => 'اطلاعاتی ثبت نشده.',
-    'edit_menu' => "✏️ ویرایش :entity «:title»\n\nیک فیلد را انتخاب کن:",
+    'edit_menu' => '✏️ ویرایش :entity «:title»
+
+یک فیلد را انتخاب کن:',
     'invalid_field' => 'فیلد یا مورد نامعتبر است.',
-    'warn_project' => "\n\n⚠️ Milestoneهای این پروژه هم حذف می‌شوند.",
-    'warn_detach' => "\n\nموارد وابسته حذف نمی‌شوند؛ فقط ارتباطشان خالی می‌شود.",
-    'warn_task' => "\n\n⚠️ لاگ‌های اجرا و وابستگی‌های این کار هم حذف می‌شوند.",
+    'warn_project' => '
+
+⚠️ Milestoneهای این پروژه هم حذف می‌شوند.',
+    'warn_detach' => '
+
+موارد وابسته حذف نمی‌شوند؛ فقط ارتباطشان خالی می‌شود.',
+    'warn_task' => '
+
+⚠️ لاگ‌های اجرا و وابستگی‌های این کار هم حذف می‌شوند.',
     'confirm_delete' => '⚠️ حذف :entity «:title»؟',
     'task_not_found' => 'کار پیدا نشد یا به شما تعلق ندارد.',
     'task_done' => '✅ کار انجام شد.',
@@ -86,46 +205,65 @@ return [
     'reminder_canceled' => '🚫 یادآور لغو شد.',
     'task_fallback' => 'کار',
     'focus_block' => 'تمرکز',
-
-    // Today / tomorrow / inbox
     'today_title' => '◉ امروز — :date',
     'today_tasks' => '✓ کارهای امروز (:count):',
     'today_empty' => 'کاری برای امروز برنامه‌ریزی نشده.',
-    'overdue' => "\n⚠️ عقب‌افتاده (:count):",
+    'overdue' => '
+⚠️ عقب‌افتاده (:count):',
     'due_short' => 'مهلت :date',
-    'blocks' => "\n□ بلوک‌های زمانی:",
-    'done_today' => "\n✔️ انجام‌شده امروز: :count",
+    'blocks' => '
+□ بلوک‌های زمانی:',
+    'done_today' => '
+✔️ انجام‌شده امروز: :count',
     'tomorrow_title' => '📆 فردا — :date',
     'tomorrow_empty' => 'کاری برای فردا برنامه‌ریزی نشده.',
     'inbox_title' => '▣ Inbox (:count)',
     'inbox_empty' => 'Inbox خالی است.',
+    'search_prompt' => '⌕ جستجو
 
-    // Search
-    'search_prompt' => "⌕ جستجو\n\nعبارت جستجو را بنویس (حداقل ۲ حرف):",
+عبارت جستجو را بنویس (حداقل ۲ حرف):',
     'search_short' => 'عبارت جستجو باید حداقل ۲ حرف باشد. دوباره بنویس:',
     'search_results' => '⌕ نتایج «:q»',
-    'no_results' => "\nنتیجه‌ای پیدا نشد.",
-
-    // Wizard
+    'no_results' => '
+نتیجه‌ای پیدا نشد.',
     'ref_not_owned' => 'مورد انتخاب‌شده پیدا نشد یا به شما تعلق ندارد.',
     'wz' => [
-        'create' => '➕ ایجاد :entity', 'edit' => '✏️ ویرایش :entity', 'exec' => '◷ ثبت اجرا', 'dep' => '⇄ ایجاد وابستگی',
-        'sched' => '□ ایجاد بلوک زمانی', 'dplan' => '☀ ثبت برنامه روزانه', 'fail' => '⚠ ثبت علت شکست',
+        'create' => '➕ ایجاد :entity',
+        'edit' => '✏️ ویرایش :entity',
+        'exec' => '◷ ثبت اجرا',
+        'dep' => '⇄ ایجاد وابستگی',
+        'sched' => '□ ایجاد بلوک زمانی',
+        'dplan' => '☀ ثبت برنامه روزانه',
+        'fail' => '⚠ ثبت علت شکست',
     ],
     'current_value' => 'مقدار فعلی: :value',
     'pick' => 'انتخاب :label:req:',
     'required_suffix' => ' (الزامی)',
-    'filter_line' => "\nفیلتر: «:filter»",
-    'filter_hint' => "\n(برای فیلتر، بخشی از عنوان را بنویس)",
-    'none_found' => "\n\nموردی پیدا نشد.",
+    'filter_line' => '
+فیلتر: «:filter»',
+    'filter_hint' => '
+(برای فیلتر، بخشی از عنوان را بنویس)',
+    'none_found' => '
+
+موردی پیدا نشد.',
     'make_project_first' => ' ابتدا یک پروژه بساز.',
-    'custom_hint' => "\n(یا مقدار دلخواه را بنویس)",
-    'enter_date' => ":label را وارد کن:\nقالب: 1405-07-03 یا 2026-09-25",
-    'enter_datetime' => ":label را وارد کن:\nقالب: 1405-07-03 14:30 یا 2026-09-25 14:30 یا فقط 14:30 یا «فردا 10:00»",
+    'custom_hint' => '
+(یا مقدار دلخواه را بنویس)',
+    'enter_date' => ':label را وارد کن:
+قالب: 1405-07-03 یا 2026-09-25',
+    'enter_datetime' => ':label را وارد کن:
+قالب: 1405-07-03 14:30 یا 2026-09-25 14:30 یا فقط 14:30 یا «فردا 10:00»',
     'enter_level' => ':label را وارد کن (عدد 0 تا 100):',
     'enter_number' => ':label را وارد کن (عدد):',
     'enter_text' => ':label را بنویس:req:',
-    'quick' => ['today' => 'امروز', 'tomorrow' => 'فردا', 'week' => '+۷ روز', 'now' => 'اکنون', 'hour' => '+۱ ساعت', 'tom9' => 'فردا ۹:۰۰'],
+    'quick' => [
+        'today' => 'امروز',
+        'tomorrow' => 'فردا',
+        'week' => '+۷ روز',
+        'now' => 'اکنون',
+        'hour' => '+۱ ساعت',
+        'tom9' => 'فردا ۹:۰۰',
+    ],
     'expired' => '⌛ این مرحله منقضی شده است. دوباره شروع کن.',
     'required_missing' => 'فیلدهای الزامی هنوز کامل نشده‌اند.',
     'field_required' => 'این فیلد الزامی است.',
@@ -139,7 +277,11 @@ return [
     'invalid_level' => 'عددی بین 0 تا 100 وارد کن.',
     'invalid_date' => 'تاریخ نامعتبر است. مثال: 1405-07-03 یا 2026-09-25',
     'invalid_datetime' => 'زمان نامعتبر است. مثال: 1405-07-03 14:30 یا 14:30',
-    'summary' => "\n\n✅ خلاصه برای تأیید:\n\n",
+    'summary' => '
+
+✅ خلاصه برای تأیید:
+
+',
     'ref_gone' => '⚠️ یکی از موارد انتخاب‌شده دیگر در دسترس نیست. عملیات لغو شد.',
     'end_before_start' => 'پایان برنامه نمی‌تواند قبل از شروع باشد.',
     'created' => '✅ :entity ثبت شد.',
@@ -154,8 +296,6 @@ return [
     'dplan_saved' => '✅ برنامه روزانه ذخیره شد.',
     'invalid_data' => 'اطلاعات نامعتبر است.',
     'failure_saved' => '⚠ علت شکست ثبت شد.',
-
-    // Daily plan
     'daily_title' => '☀ برنامه روزانه — :date',
     'dp_available' => 'در دسترس: :minutes دقیقه',
     'dp_planned' => 'برنامه‌ریزی‌شده: :minutes دقیقه',
@@ -163,26 +303,31 @@ return [
     'dp_buffer' => 'بافر: :minutes دقیقه',
     'focus_energy' => 'تمرکز: :focus | انرژی: :energy',
     'dp_notes' => 'یادداشت: :notes',
-    'dp_blocks' => "\nبلوک‌ها:",
+    'dp_blocks' => '
+بلوک‌ها:',
     'dp_none' => 'برای این روز برنامه‌ای ثبت نشده.',
-    'dp_recent' => "\nبرنامه‌های اخیر:",
+    'dp_recent' => '
+برنامه‌های اخیر:',
     'dp_recent_line' => '• :date — :planned/:available دقیقه',
     'dp_edit_today' => '✏️ ویرایش برنامه امروز',
     'dp_new_today' => '➕ ثبت برنامه امروز',
     'dp_other' => '➕ برنامه برای تاریخ دیگر',
-
-    // Calendar & blocks
     'cal_title' => '□ تقویم — امروز و ۷ روز آینده',
     'cal_today' => '◉ امروز',
     'new_block' => '➕ بلوک زمانی',
     'block_not_found' => 'بلوک پیدا نشد یا به شما تعلق ندارد.',
     'block_title' => '□ بلوک زمانی #:id',
-    'lbl_task' => 'کار: :v', 'lbl_start' => 'شروع: :v', 'lbl_end' => 'پایان: :v', 'lbl_status' => 'وضعیت: :v', 'lbl_source' => 'منبع: :v',
-    'lbl_duration' => 'مدت: :minutes دقیقه', 'lbl_result' => 'نتیجه: :v', 'lbl_blocker' => 'مانع: :v', 'lbl_notes' => 'یادداشت: :v',
+    'lbl_task' => 'کار: :v',
+    'lbl_start' => 'شروع: :v',
+    'lbl_end' => 'پایان: :v',
+    'lbl_status' => 'وضعیت: :v',
+    'lbl_source' => 'منبع: :v',
+    'lbl_duration' => 'مدت: :minutes دقیقه',
+    'lbl_result' => 'نتیجه: :v',
+    'lbl_blocker' => 'مانع: :v',
+    'lbl_notes' => 'یادداشت: :v',
     'delete_block' => '🗑 حذف بلوک',
     'confirm_delete_block' => '⚠️ این بلوک زمانی حذف شود؟',
-
-    // Work log
     'exec_title' => '◷ لاگ اجرا',
     'exec_empty' => 'اجرایی ثبت نشده.',
     'exec_line' => '• :date — :task — :minutes دقیقه',
@@ -190,8 +335,6 @@ return [
     'exec_not_found' => 'لاگ اجرا پیدا نشد یا به شما تعلق ندارد.',
     'exec_view_title' => '◷ لاگ اجرا #:id',
     'confirm_delete_exec' => '⚠️ این لاگ اجرا حذف شود؟',
-
-    // Dependencies
     'deps_title' => '⇄ وابستگی‌ها',
     'deps_empty' => 'وابستگی‌ای ثبت نشده.',
     'new_dep' => '➕ ایجاد وابستگی',
@@ -203,15 +346,11 @@ return [
     'add_dep' => '➕ افزودن وابستگی',
     'dep_not_found' => 'وابستگی پیدا نشد یا به شما تعلق ندارد.',
     'confirm_delete_dep' => '⚠️ حذف وابستگی «:a» :type «:b»؟',
-
-    // Failure reasons
     'failures_title' => '⚠ علل شکست (فهرست مرجع — فقط خواندنی)',
     'failures_empty' => 'فهرست مرجع خالی است.',
     'failure_line' => '• :name | شدت :severity | قابل پیشگیری: :preventable',
     'recent_failures' => 'آخرین شکست‌های کارهای شما:',
     'log_failure' => '⚠ ثبت شکست برای یک کار',
-
-    // Reviews, analytics, reports
     'reviews_title' => '↻ مرورها',
     'reviews_empty' => 'مروری ثبت نشده.',
     'range' => ':from تا :to',
@@ -222,10 +361,24 @@ return [
     'suggested_actions' => 'اقدامات پیشنهادی:',
     'review_created' => '✅ مرور ساخته شد.',
     'analytics_title' => '◫ آمار (۳۰ روز اخیر)',
-    'reports_prompt' => "▥ گزارش‌ها\n\nبازه گزارش را انتخاب کن:",
-    'period' => ['day' => '☀ روزانه', 'week' => '📆 هفتگی', 'month' => '🗓 ماهانه'],
-    'period_short' => ['day' => 'روزانه', 'week' => 'هفتگی', 'month' => 'ماهانه'],
-    'report_title' => ['day' => '☀ گزارش روزانه', 'week' => '📆 گزارش هفتگی', 'month' => '🗓 گزارش ماهانه'],
+    'reports_prompt' => '▥ گزارش‌ها
+
+بازه گزارش را انتخاب کن:',
+    'period' => [
+        'day' => '☀ روزانه',
+        'week' => '📆 هفتگی',
+        'month' => '🗓 ماهانه',
+    ],
+    'period_short' => [
+        'day' => 'روزانه',
+        'week' => 'هفتگی',
+        'month' => 'ماهانه',
+    ],
+    'report_title' => [
+        'day' => '☀ گزارش روزانه',
+        'week' => '📆 گزارش هفتگی',
+        'month' => '🗓 گزارش ماهانه',
+    ],
     'rep_created' => 'ایجادشده: :v',
     'rep_completed' => 'تکمیل‌شده: :v',
     'rep_rate' => 'نرخ تکمیل: :v٪',
@@ -234,9 +387,11 @@ return [
     'rep_deep' => 'کار عمیق: :v دقیقه',
     'rep_overdue' => 'عقب‌افتاده باز: :v',
     'rep_failed' => 'کارهای دارای شکست: :v',
+    'ai_prompt' => '✦ برنامه‌ریز هوشمند
 
-    // AI
-    'ai_prompt' => "✦ برنامه‌ریز هوشمند\n\nهدف یا سؤالت برای برنامه‌ریزی را بنویس (مثلاً «امروز روی چه کارهایی تمرکز کنم؟»).\n\nAI فقط پیشنهاد می‌دهد و هیچ تغییری در داده‌ها ایجاد نمی‌کند.",
+هدف یا سؤالت برای برنامه‌ریزی را بنویس (مثلاً «امروز روی چه کارهایی تمرکز کنم؟»).
+
+AI فقط پیشنهاد می‌دهد و هیچ تغییری در داده‌ها ایجاد نمی‌کند.',
     'ai_empty' => 'متن درخواست خالی است. دوباره بنویس:',
     'ai_thinking' => '⏳ برنامه‌ریز هوشمند در حال تحلیل داده‌های شماست…',
     'ai_unavailable' => '❌ برنامه‌ریز هوشمند در حال حاضر در دسترس نیست. بعداً دوباره تلاش کن.',
@@ -257,4 +412,16 @@ return [
     'pending_expires' => ' | انقضا: :v',
     'activity_title' => '◌ گزارش فعالیت',
     'activity_empty' => 'فعالیتی ثبت نشده.',
+    'plan_ai' => '✦ Haman AI:',
+    'plan_because' => 'چون:',
+    'plan_more' => '… و :n پیشنهاد دیگر (در نسخه‌ی وب).',
+    'plan_apply' => '✅ اعمال :n مورد تیک‌خورده',
+    'plan_dismiss' => 'رد پیشنهاد',
+    'plan_confirm_note' => 'تا دکمه‌ی «اعمال» را نزنید هیچ تغییری در برنامه‌تان داده نمی‌شود.',
+    'plan_applied' => ':n تغییر اعمال شد (:skipped مورد به‌خاطر تغییر برنامه رد شد).',
+    'plan_dismissed' => 'پیشنهاد رد شد؛ برنامه‌تان تغییری نکرد.',
+    'plan_not_open' => 'این پیشنهاد دیگر معتبر نیست؛ یک پیشنهاد تازه بگیرید.',
+    'what_now_title' => 'الان روی چی کار کنم؟',
+    'what_now_scheduled' => 'طبق برنامه الان: «:title»',
+    'what_now_none' => 'کار باز و آماده‌ای ندارید.',
 ];

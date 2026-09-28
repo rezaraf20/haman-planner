@@ -10,7 +10,6 @@ return [
     'profile_saved' => 'Profile saved.',
     'email_needs_password' => 'Enter your current password to change your email.',
     'email_taken' => 'That email is already used by another account.',
-
     'preferences' => 'Language, timezone & notifications',
     'language' => 'Language',
     'language_help' => 'Used for the web app, emails and the Telegram bot.',
@@ -27,13 +26,11 @@ return [
     'ai_language_auto' => 'Same as the app',
     'save_preferences' => 'Save settings',
     'preferences_saved' => 'Settings saved.',
-
     'security' => 'Security',
     'change_password' => 'Change password',
     'new_password' => 'New password',
     'new_password_confirm' => 'Confirm new password',
     'password_changed' => 'Your password has been changed.',
-
     'telegram' => 'Telegram',
     'telegram_connected' => 'Connected to:',
     'telegram_no_username' => 'no username',
@@ -47,7 +44,6 @@ return [
     'telegram_send' => 'Or send this to :bot:',
     'telegram_send_plain' => 'Send this in Telegram:',
     'telegram_not_in_plan' => 'Telegram access isn\'t included in your current plan.',
-
     'privacy' => 'Privacy & data',
     'account_info' => 'Account information',
     'member_since' => 'Member since',
@@ -64,4 +60,18 @@ return [
     'delete_last_admin' => 'This is the last active admin account and can\'t be deleted. Make someone else an admin first.',
     'deleted' => 'Your account has been deleted.',
     'legal' => 'Legal',
+    'planning' => 'Planning & working hours',
+    'planning_help' => 'Used for time blocking, overload warnings and Haman AI suggestions.',
+    'work_days' => 'Working days',
+    'work_start' => 'Work starts',
+    'work_end' => 'Work ends',
+    'default_task_minutes' => 'Default task length (minutes)',
+    'break_minutes' => 'Default break (minutes)',
+    'planning_buffer_percent' => 'Planning buffer (%)',
+    'planning_buffer_help' => 'This share of your working time is kept free for the unexpected (20% by default).',
+    'calendar_blocks_planning' => 'Connected calendar events reduce available time',
+    'save_planning' => 'Save planning settings',
+    'planning_saved' => 'Planning settings saved.',
+    'email_weekly_review' => 'Email me my weekly review',
+    'email_product_updates' => 'Tips and reminder emails (optional)',
 ];

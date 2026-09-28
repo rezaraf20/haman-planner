@@ -28,9 +28,12 @@ final class ScheduleBlockController extends Controller
             'ends_at' => ['required','date','after:starts_at'],
             'source' => ['nullable','string','max:50'],
             'status' => ['nullable','string','max:50'],
+            'kind' => ['nullable', \Illuminate\Validation\Rule::in(ScheduleBlock::KINDS)],
+            'is_fixed' => ['nullable','boolean'],
+            'title' => ['nullable','string','max:255'],
         ]);
 
-        return response()->json(ScheduleBlock::create($data)->load('task'), 201);
+        return response()->json(ScheduleBlock::create(array_filter($data, fn ($v) => $v !== null))->load('task'), 201);
     }
 
     public function update(Request $request, ScheduleBlock $scheduleBlock): JsonResponse
@@ -42,6 +45,9 @@ final class ScheduleBlockController extends Controller
             'ends_at' => ['sometimes','date','after:starts_at'],
             'source' => ['sometimes','string','max:50'],
             'status' => ['sometimes','string','max:50'],
+            'kind' => ['sometimes', \Illuminate\Validation\Rule::in(ScheduleBlock::KINDS)],
+            'is_fixed' => ['sometimes','boolean'],
+            'title' => ['sometimes','nullable','string','max:255'],
         ]));
 
         return response()->json($scheduleBlock->refresh()->load('task'));

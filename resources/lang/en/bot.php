@@ -1,68 +1,179 @@
 <?php
 return [
-    // Linking & access
     'link_invalid' => 'That connection code is invalid or has expired.',
     'link_other_chat' => 'This account is already connected to a different Telegram account.',
-    'linked' => "You're connected. Hi :name 👋\n\n🤖 Haman Planner",
-    'hello' => "Hi :name 👋\n\n🤖 Haman Planner\nPick a section:",
-    'home' => "🤖 Haman Planner\n\nPick a section:",
-    'use_menu' => "🤖 Haman Planner\n\nPlease use the buttons below:",
+    'linked' => 'You\'re connected. Hi :name 👋
+
+🤖 Haman Planner',
+    'hello' => 'Hi :name 👋
+
+🤖 Haman Planner
+Pick a section:',
+    'home' => '🤖 Haman Planner
+
+Pick a section:',
+    'use_menu' => '🤖 Haman Planner
+
+Please use the buttons below:',
     'no_access' => 'Access denied.',
     'not_active' => 'This chat isn\'t connected.',
-    'link_help' => "This Telegram account isn't connected to Haman Planner yet.\n\n1. Sign up at :url/register (or log in if you already have an account).\n2. In Account & settings, tap “Create a Telegram connection code”.\n3. Send the code here as /start CODE (or use the one-tap connect button).",
+    'link_help' => 'This Telegram account isn\'t connected to Haman Planner yet.
+
+1. Sign up at :url/register (or log in if you already have an account).
+2. In Account & settings, tap “Create a Telegram connection code”.
+3. Send the code here as /start CODE (or use the one-tap connect button).',
     'error' => '❌ Something went wrong. Please try again.',
     'update_failed' => 'Something went wrong processing that. Please try again.',
     'voice_disabled' => 'Voice messages aren\'t supported yet — please use the bot\'s buttons.',
-    'upgrade_hint' => "\n\nSee plans: :url",
+    'upgrade_hint' => '
+
+See plans: :url',
     'reminder_for_task' => '⏰ Reminder: :title',
     'reminder_generic' => '⏰ Haman Planner reminder',
     'cancel_words' => ['cancel', 'لغو'],
-
-    // Buttons
     'btn' => [
-        'home' => '🏠 Home', 'back' => '⬅️ Back', 'cancel' => '❌ Cancel', 'no' => '❌ No', 'yes' => '🗑 Yes', 'yes_delete' => '🗑 Yes, delete it',
-        'prev_page' => '◀️ Previous', 'next_page' => 'Next ▶️', 'edit' => '✏️ Edit', 'delete' => '🗑 Delete', 'view_task' => '📋 View task',
-        'done' => '✅ Done', 'defer' => '⏸ Defer', 'cancel_task' => '🚫 Cancel', 'log_work' => '◷ Log work', 'schedule' => '□ Schedule',
-        'deps' => '⇄ Dependencies', 'remind' => '⏰ Remind me', 'slipped' => '⚠ Slipped', 'cancel_reminder' => '🚫 Cancel reminder',
-        'clear' => '🧹 Clear', 'no_value' => '∅ None', 'skip' => '⏭ Skip', 'wz_back' => '⬅️ Back',
-        'finish' => '✅ Finish & review', 'save' => '✅ Save', 'search_again' => '⌕ Search again',
+        'home' => '🏠 Home',
+        'back' => '⬅️ Back',
+        'cancel' => '❌ Cancel',
+        'no' => '❌ No',
+        'yes' => '🗑 Yes',
+        'yes_delete' => '🗑 Yes, delete it',
+        'prev_page' => '◀️ Previous',
+        'next_page' => 'Next ▶️',
+        'edit' => '✏️ Edit',
+        'delete' => '🗑 Delete',
+        'view_task' => '📋 View task',
+        'done' => '✅ Done',
+        'defer' => '⏸ Defer',
+        'cancel_task' => '🚫 Cancel',
+        'log_work' => '◷ Log work',
+        'schedule' => '□ Schedule',
+        'deps' => '⇄ Dependencies',
+        'remind' => '⏰ Remind me',
+        'slipped' => '⚠ Slipped',
+        'cancel_reminder' => '🚫 Cancel reminder',
+        'clear' => '🧹 Clear',
+        'no_value' => '∅ None',
+        'skip' => '⏭ Skip',
+        'wz_back' => '⬅️ Back',
+        'finish' => '✅ Finish & review',
+        'save' => '✅ Save',
+        'search_again' => '⌕ Search again',
     ],
     'menu' => [
-        'today' => '◉ Today', 'tasks' => '✓ Tasks', 'inbox' => '▣ Inbox', 'search' => '⌕ Search', 'structure' => '🏗 Structure',
-        'execution' => '⚙ Execution', 'analysis' => '📊 Insights', 'knowledge' => '🧠 Knowledge & AI',
-        'new_task' => '➕ New task', 'tomorrow' => '📆 Tomorrow', 'all_open' => '📋 All open tasks',
-        'areas' => '◈ Areas', 'goals' => '◎ Goals', 'projects' => '▤ Projects', 'milestones' => '◇ Milestones',
-        'daily' => '☀ Daily plan', 'calendar' => '□ Calendar', 'worklog' => '◷ Work log', 'dependencies' => '⇄ Dependencies',
-        'reminders' => '◌ Reminders', 'failures' => '⚠ Why tasks slip', 'reviews' => '↻ Reviews', 'analytics' => '◫ Analytics', 'reports' => '▥ Reports',
-        'notes' => '▤ Notes', 'decisions' => '◆ Decisions', 'ai' => '✦ AI Planner', 'ai_history' => '✧ AI history',
-        'pending' => '⌛ Pending actions', 'activity' => '◌ Activity log',
+        'today' => '◉ Today',
+        'tasks' => '✓ Tasks',
+        'inbox' => '▣ Inbox',
+        'search' => '⌕ Search',
+        'structure' => '🏗 Structure',
+        'execution' => '⚙ Execution',
+        'analysis' => '📊 Insights',
+        'knowledge' => '🧠 Knowledge & AI',
+        'new_task' => '➕ New task',
+        'tomorrow' => '📆 Tomorrow',
+        'all_open' => '📋 All open tasks',
+        'areas' => '◈ Areas',
+        'goals' => '◎ Goals',
+        'projects' => '▤ Projects',
+        'milestones' => '◇ Milestones',
+        'daily' => '☀ Daily plan',
+        'calendar' => '□ Calendar',
+        'worklog' => '◷ Work log',
+        'dependencies' => '⇄ Dependencies',
+        'reminders' => '◌ Reminders',
+        'failures' => '⚠ Why tasks slip',
+        'reviews' => '↻ Reviews',
+        'analytics' => '◫ Analytics',
+        'reports' => '▥ Reports',
+        'notes' => '▤ Notes',
+        'decisions' => '◆ Decisions',
+        'ai' => '✦ AI Planner',
+        'ai_history' => '✧ AI history',
+        'pending' => '⌛ Pending actions',
+        'activity' => '◌ Activity log',
+        'what_now' => '◎ What now?',
+        'plan_day' => '✦ Plan my day',
+        'plan_week' => '✦ Plan my week',
+        'plan_fix' => '✦ Fix my schedule',
     ],
     'section' => [
-        'tasks' => '✓ Tasks', 'structure' => '🏗 Structure', 'execution' => '⚙ Execution', 'analysis' => '📊 Insights', 'knowledge' => '🧠 Knowledge & AI',
+        'tasks' => '✓ Tasks',
+        'structure' => '🏗 Structure',
+        'execution' => '⚙ Execution',
+        'analysis' => '📊 Insights',
+        'knowledge' => '🧠 Knowledge & AI',
     ],
     'plural' => [
-        'area' => '◈ Areas', 'goal' => '◎ Goals', 'project' => '▤ Projects', 'milestone' => '◇ Milestones', 'task' => '✓ Open tasks',
-        'note' => '▤ Notes', 'decision' => '◆ Decisions', 'reminder' => '◌ Reminders',
+        'area' => '◈ Areas',
+        'goal' => '◎ Goals',
+        'project' => '▤ Projects',
+        'milestone' => '◇ Milestones',
+        'task' => '✓ Open tasks',
+        'note' => '▤ Notes',
+        'decision' => '◆ Decisions',
+        'reminder' => '◌ Reminders',
     ],
-
-    // Field labels in wizards
     'fields' => [
-        'name' => 'Name', 'type' => 'Type', 'status' => 'Status', 'description' => 'Description', 'sort_order' => 'Order', 'title' => 'Title',
-        'area_id' => 'Area', 'goal_id' => 'Goal', 'project_id' => 'Project', 'milestone_id' => 'Milestone', 'task_id' => 'Task',
-        'importance' => 'Importance (0–100)', 'weight' => 'Weight', 'start_date' => 'Start date', 'target_date' => 'Target date',
-        'success_criteria' => 'Success criteria', 'progress' => 'Progress %', 'estimated_minutes' => 'Estimate (minutes)', 'priority' => 'Priority',
-        'deadline' => 'Due', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'energy_needed' => 'Energy needed (0–100)',
-        'focus_needed' => 'Focus needed (0–100)', 'failure_reason' => 'Why it slipped', 'content' => 'Content', 'decision' => 'Decision', 'rationale' => 'Rationale',
-        'decided_at' => 'Decided at (default: now)', 'scheduled_at' => 'Remind at', 'message' => 'Message',
-        'exec_started' => 'Start time (default: now)', 'exec_ended' => 'End time (or skip and enter a duration)', 'duration' => 'Duration (minutes)',
-        'focus_level' => 'Focus level (0–100)', 'energy_level' => 'Energy level (0–100)', 'result' => 'Outcome', 'blocker' => 'Blocker', 'notes' => 'Notes',
-        'depends_on' => 'Depends on task', 'dep_type' => 'Dependency type', 'starts_at' => 'Start', 'ends_at' => 'End',
-        'plan_date' => 'Date (default: today)', 'available_minutes' => 'Available minutes', 'planned_minutes' => 'Planned minutes',
-        'completed_minutes' => 'Completed minutes', 'buffer_minutes' => 'Buffer minutes', 'plan_focus' => 'Focus (0–100)', 'plan_energy' => 'Energy (0–100)',
+        'name' => 'Name',
+        'type' => 'Type',
+        'status' => 'Status',
+        'description' => 'Description',
+        'sort_order' => 'Order',
+        'title' => 'Title',
+        'area_id' => 'Area',
+        'goal_id' => 'Goal',
+        'project_id' => 'Project',
+        'milestone_id' => 'Milestone',
+        'task_id' => 'Task',
+        'importance' => 'Importance (0–100)',
+        'weight' => 'Weight',
+        'start_date' => 'Start date',
+        'target_date' => 'Target date',
+        'success_criteria' => 'Success criteria',
+        'progress' => 'Progress %',
+        'estimated_minutes' => 'Estimate (minutes)',
+        'priority' => 'Priority',
+        'deadline' => 'Due',
+        'planned_start' => 'Planned start',
+        'planned_end' => 'Planned end',
+        'energy_needed' => 'Energy needed (0–100)',
+        'focus_needed' => 'Focus needed (0–100)',
+        'failure_reason' => 'Why it slipped',
+        'content' => 'Content',
+        'decision' => 'Decision',
+        'rationale' => 'Rationale',
+        'decided_at' => 'Decided at (default: now)',
+        'scheduled_at' => 'Remind at',
+        'message' => 'Message',
+        'exec_started' => 'Start time (default: now)',
+        'exec_ended' => 'End time (or skip and enter a duration)',
+        'duration' => 'Duration (minutes)',
+        'focus_level' => 'Focus level (0–100)',
+        'energy_level' => 'Energy level (0–100)',
+        'result' => 'Outcome',
+        'blocker' => 'Blocker',
+        'notes' => 'Notes',
+        'depends_on' => 'Depends on task',
+        'dep_type' => 'Dependency type',
+        'starts_at' => 'Start',
+        'ends_at' => 'End',
+        'plan_date' => 'Date (default: today)',
+        'available_minutes' => 'Available minutes',
+        'planned_minutes' => 'Planned minutes',
+        'completed_minutes' => 'Completed minutes',
+        'buffer_minutes' => 'Buffer minutes',
+        'plan_focus' => 'Focus (0–100)',
+        'plan_energy' => 'Energy (0–100)',
     ],
-    'actions' => ['created' => 'Created', 'updated' => 'Updated', 'deleted' => 'Deleted', 'completed' => 'Completed', 'deferred' => 'Deferred', 'cancelled' => 'Cancelled', 'logged' => 'Logged'],
-
-    // Lists & views
+    'actions' => [
+        'created' => 'Created',
+        'updated' => 'Updated',
+        'deleted' => 'Deleted',
+        'completed' => 'Completed',
+        'deferred' => 'Deferred',
+        'cancelled' => 'Cancelled',
+        'logged' => 'Logged',
+    ],
     'empty' => 'Nothing here yet.',
     'create_entity' => '➕ New :entity',
     'not_owned' => 'Not found, or it isn\'t yours.',
@@ -72,11 +183,19 @@ return [
     'health' => 'Health: :health',
     'attempts' => 'Delivery attempts: :n/:max',
     'no_details' => 'No details yet.',
-    'edit_menu' => "✏️ Edit :entity “:title”\n\nChoose a field:",
+    'edit_menu' => '✏️ Edit :entity “:title”
+
+Choose a field:',
     'invalid_field' => 'That field or item isn\'t valid.',
-    'warn_project' => "\n\n⚠️ This project's milestones will be deleted too.",
-    'warn_detach' => "\n\nLinked items are kept — they're just unlinked.",
-    'warn_task' => "\n\n⚠️ This task's work log and dependencies will be deleted too.",
+    'warn_project' => '
+
+⚠️ This project\'s milestones will be deleted too.',
+    'warn_detach' => '
+
+Linked items are kept — they\'re just unlinked.',
+    'warn_task' => '
+
+⚠️ This task\'s work log and dependencies will be deleted too.',
     'confirm_delete' => '⚠️ Delete :entity “:title”?',
     'task_not_found' => 'Task not found, or it isn\'t yours.',
     'task_done' => '✅ Task done.',
@@ -86,46 +205,65 @@ return [
     'reminder_canceled' => '🚫 Reminder cancelled.',
     'task_fallback' => 'Task',
     'focus_block' => 'Focus',
-
-    // Today / tomorrow / inbox
     'today_title' => '◉ Today — :date',
     'today_tasks' => '✓ Today\'s tasks (:count):',
     'today_empty' => 'Nothing planned for today.',
-    'overdue' => "\n⚠️ Overdue (:count):",
+    'overdue' => '
+⚠️ Overdue (:count):',
     'due_short' => 'due :date',
-    'blocks' => "\n□ Time blocks:",
-    'done_today' => "\n✔️ Done today: :count",
+    'blocks' => '
+□ Time blocks:',
+    'done_today' => '
+✔️ Done today: :count',
     'tomorrow_title' => '📆 Tomorrow — :date',
     'tomorrow_empty' => 'Nothing planned for tomorrow.',
     'inbox_title' => '▣ Inbox (:count)',
     'inbox_empty' => 'Your inbox is empty.',
+    'search_prompt' => '⌕ Search
 
-    // Search
-    'search_prompt' => "⌕ Search\n\nType what you're looking for (at least 2 characters):",
+Type what you\'re looking for (at least 2 characters):',
     'search_short' => 'Please type at least 2 characters:',
     'search_results' => '⌕ Results for “:q”',
-    'no_results' => "\nNo results.",
-
-    // Wizard
+    'no_results' => '
+No results.',
     'ref_not_owned' => 'The selected item wasn\'t found, or it isn\'t yours.',
     'wz' => [
-        'create' => '➕ New :entity', 'edit' => '✏️ Edit :entity', 'exec' => '◷ Log work', 'dep' => '⇄ New dependency',
-        'sched' => '□ New time block', 'dplan' => '☀ Daily plan', 'fail' => '⚠ Why did it slip?',
+        'create' => '➕ New :entity',
+        'edit' => '✏️ Edit :entity',
+        'exec' => '◷ Log work',
+        'dep' => '⇄ New dependency',
+        'sched' => '□ New time block',
+        'dplan' => '☀ Daily plan',
+        'fail' => '⚠ Why did it slip?',
     ],
     'current_value' => 'Current value: :value',
     'pick' => 'Choose :label:req:',
     'required_suffix' => ' (required)',
-    'filter_line' => "\nFilter: “:filter”",
-    'filter_hint' => "\n(Type part of a title to filter)",
-    'none_found' => "\n\nNothing found.",
+    'filter_line' => '
+Filter: “:filter”',
+    'filter_hint' => '
+(Type part of a title to filter)',
+    'none_found' => '
+
+Nothing found.',
     'make_project_first' => ' Create a project first.',
-    'custom_hint' => "\n(or type your own value)",
-    'enter_date' => "Enter :label:\nFormat: 2026-09-25",
-    'enter_datetime' => "Enter :label:\nFormat: 2026-09-25 14:30, just 14:30, or “tomorrow 10:00”",
+    'custom_hint' => '
+(or type your own value)',
+    'enter_date' => 'Enter :label:
+Format: 2026-09-25',
+    'enter_datetime' => 'Enter :label:
+Format: 2026-09-25 14:30, just 14:30, or “tomorrow 10:00”',
     'enter_level' => 'Enter :label (0–100):',
     'enter_number' => 'Enter :label (a number):',
     'enter_text' => 'Enter :label:req:',
-    'quick' => ['today' => 'Today', 'tomorrow' => 'Tomorrow', 'week' => '+7 days', 'now' => 'Now', 'hour' => '+1 hour', 'tom9' => 'Tomorrow 9:00'],
+    'quick' => [
+        'today' => 'Today',
+        'tomorrow' => 'Tomorrow',
+        'week' => '+7 days',
+        'now' => 'Now',
+        'hour' => '+1 hour',
+        'tom9' => 'Tomorrow 9:00',
+    ],
     'expired' => '⌛ This step has expired. Please start again.',
     'required_missing' => 'Some required fields are still empty.',
     'field_required' => 'This field is required.',
@@ -139,7 +277,11 @@ return [
     'invalid_level' => 'Enter a number from 0 to 100.',
     'invalid_date' => 'That date isn\'t valid. Example: 2026-09-25',
     'invalid_datetime' => 'That time isn\'t valid. Example: 2026-09-25 14:30 or 14:30',
-    'summary' => "\n\n✅ Please check and confirm:\n\n",
+    'summary' => '
+
+✅ Please check and confirm:
+
+',
     'ref_gone' => '⚠️ One of the selected items is no longer available, so nothing was saved.',
     'end_before_start' => 'The planned end can\'t be before the start.',
     'created' => '✅ :entity saved.',
@@ -154,8 +296,6 @@ return [
     'dplan_saved' => '✅ Daily plan saved.',
     'invalid_data' => 'That isn\'t valid.',
     'failure_saved' => '⚠ Reason saved.',
-
-    // Daily plan
     'daily_title' => '☀ Daily plan — :date',
     'dp_available' => 'Available: :minutes min',
     'dp_planned' => 'Planned: :minutes min',
@@ -163,26 +303,31 @@ return [
     'dp_buffer' => 'Buffer: :minutes min',
     'focus_energy' => 'Focus: :focus | Energy: :energy',
     'dp_notes' => 'Notes: :notes',
-    'dp_blocks' => "\nTime blocks:",
+    'dp_blocks' => '
+Time blocks:',
     'dp_none' => 'No plan for this day yet.',
-    'dp_recent' => "\nRecent plans:",
+    'dp_recent' => '
+Recent plans:',
     'dp_recent_line' => '• :date — :planned/:available min',
     'dp_edit_today' => '✏️ Edit today\'s plan',
     'dp_new_today' => '➕ Plan today',
     'dp_other' => '➕ Plan another day',
-
-    // Calendar & blocks
     'cal_title' => '□ Calendar — today and the next 7 days',
     'cal_today' => '◉ Today',
     'new_block' => '➕ Time block',
     'block_not_found' => 'Time block not found, or it isn\'t yours.',
     'block_title' => '□ Time block #:id',
-    'lbl_task' => 'Task: :v', 'lbl_start' => 'Starts: :v', 'lbl_end' => 'Ends: :v', 'lbl_status' => 'Status: :v', 'lbl_source' => 'Source: :v',
-    'lbl_duration' => 'Duration: :minutes min', 'lbl_result' => 'Outcome: :v', 'lbl_blocker' => 'Blocker: :v', 'lbl_notes' => 'Notes: :v',
+    'lbl_task' => 'Task: :v',
+    'lbl_start' => 'Starts: :v',
+    'lbl_end' => 'Ends: :v',
+    'lbl_status' => 'Status: :v',
+    'lbl_source' => 'Source: :v',
+    'lbl_duration' => 'Duration: :minutes min',
+    'lbl_result' => 'Outcome: :v',
+    'lbl_blocker' => 'Blocker: :v',
+    'lbl_notes' => 'Notes: :v',
     'delete_block' => '🗑 Delete block',
     'confirm_delete_block' => '⚠️ Delete this time block?',
-
-    // Work log
     'exec_title' => '◷ Work log',
     'exec_empty' => 'No work logged yet.',
     'exec_line' => '• :date — :task — :minutes min',
@@ -190,8 +335,6 @@ return [
     'exec_not_found' => 'Work session not found, or it isn\'t yours.',
     'exec_view_title' => '◷ Work session #:id',
     'confirm_delete_exec' => '⚠️ Delete this work session?',
-
-    // Dependencies
     'deps_title' => '⇄ Dependencies',
     'deps_empty' => 'No dependencies yet.',
     'new_dep' => '➕ New dependency',
@@ -203,15 +346,11 @@ return [
     'add_dep' => '➕ Add dependency',
     'dep_not_found' => 'Dependency not found, or it isn\'t yours.',
     'confirm_delete_dep' => '⚠️ Delete dependency: “:a” :type “:b”?',
-
-    // Failure reasons
     'failures_title' => '⚠ Why tasks slip (reference list — read-only)',
     'failures_empty' => 'The reference list is empty.',
     'failure_line' => '• :name | severity :severity | preventable: :preventable',
     'recent_failures' => 'Your tasks that slipped recently:',
     'log_failure' => '⚠ Record why a task slipped',
-
-    // Reviews, analytics, reports
     'reviews_title' => '↻ Reviews',
     'reviews_empty' => 'No reviews yet.',
     'range' => ':from to :to',
@@ -222,10 +361,24 @@ return [
     'suggested_actions' => 'Suggested actions:',
     'review_created' => '✅ Review generated.',
     'analytics_title' => '◫ Analytics (last 30 days)',
-    'reports_prompt' => "▥ Reports\n\nChoose a period:",
-    'period' => ['day' => '☀ Daily', 'week' => '📆 Weekly', 'month' => '🗓 Monthly'],
-    'period_short' => ['day' => 'Daily', 'week' => 'Weekly', 'month' => 'Monthly'],
-    'report_title' => ['day' => '☀ Daily report', 'week' => '📆 Weekly report', 'month' => '🗓 Monthly report'],
+    'reports_prompt' => '▥ Reports
+
+Choose a period:',
+    'period' => [
+        'day' => '☀ Daily',
+        'week' => '📆 Weekly',
+        'month' => '🗓 Monthly',
+    ],
+    'period_short' => [
+        'day' => 'Daily',
+        'week' => 'Weekly',
+        'month' => 'Monthly',
+    ],
+    'report_title' => [
+        'day' => '☀ Daily report',
+        'week' => '📆 Weekly report',
+        'month' => '🗓 Monthly report',
+    ],
     'rep_created' => 'Created: :v',
     'rep_completed' => 'Completed: :v',
     'rep_rate' => 'Completion rate: :v%',
@@ -234,9 +387,11 @@ return [
     'rep_deep' => 'Deep work: :v min',
     'rep_overdue' => 'Overdue open: :v',
     'rep_failed' => 'Tasks that slipped: :v',
+    'ai_prompt' => '✦ AI Planner
 
-    // AI
-    'ai_prompt' => "✦ AI Planner\n\nTell me what you'd like help with (for example “What should I focus on today?”).\n\nThe AI only suggests — it never changes your data.",
+Tell me what you\'d like help with (for example “What should I focus on today?”).
+
+The AI only suggests — it never changes your data.',
     'ai_empty' => 'Please type your question:',
     'ai_thinking' => '⏳ The AI Planner is looking at your plan…',
     'ai_unavailable' => '❌ The AI Planner isn\'t available right now. Please try again later.',
@@ -257,4 +412,16 @@ return [
     'pending_expires' => ' | expires: :v',
     'activity_title' => '◌ Activity log',
     'activity_empty' => 'No activity yet.',
+    'plan_ai' => '✦ Haman AI:',
+    'plan_because' => 'Because:',
+    'plan_more' => '… and :n more suggestion(s) (see the web app).',
+    'plan_apply' => '✅ Apply :n ticked item(s)',
+    'plan_dismiss' => 'Dismiss',
+    'plan_confirm_note' => 'Nothing in your plan changes until you press “Apply”.',
+    'plan_applied' => ':n change(s) applied (:skipped skipped because the plan had changed).',
+    'plan_dismissed' => 'Proposal dismissed; your plan is unchanged.',
+    'plan_not_open' => 'This proposal is no longer valid — ask for a new one.',
+    'what_now_title' => 'What should I work on now?',
+    'what_now_scheduled' => 'Scheduled right now: “:title”',
+    'what_now_none' => 'You have no open, ready tasks.',
 ];

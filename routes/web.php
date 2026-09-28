@@ -35,6 +35,9 @@ Route::get('/fonts/custom/{weight}.font', function (string $weight) {
     return response($bytes, 200, ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin' => '*']);
 })->whereIn('weight', array_keys(\App\Support\Fonts::WEIGHTS))->name('fonts.custom');
 
+// Private iCal feed of planner blocks (token in the URL; read-only).
+Route::get('/calendar/feed/{token}.ics', [\App\Http\Controllers\CalendarController::class, 'feed'])->middleware('throttle:30,1')->name('calendar.feed');
+
 // ---------------------------------------------------------------- language switcher
 Route::get('/language/{locale}', LocaleController::class)->name('locale.switch');
 
@@ -66,6 +69,14 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
     Route::post('/settings/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::post('/settings/preferences', [AccountController::class, 'preferences'])->name('account.preferences');
     Route::post('/settings/security/password', [AccountController::class, 'password'])->name('account.password');
+    Route::post('/settings/planning', [AccountController::class, 'planning'])->name('account.planning');
+    Route::get('/settings/calendar/{provider}/connect', [\App\Http\Controllers\CalendarController::class, 'connect'])->whereIn('provider', ['google'])->name('calendar.connect');
+    Route::get('/settings/calendar/{provider}/callback', [\App\Http\Controllers\CalendarController::class, 'callback'])->whereIn('provider', ['google'])->name('calendar.callback');
+    Route::post('/settings/calendar/connections/{connection}', [\App\Http\Controllers\CalendarController::class, 'update'])->name('calendar.update');
+    Route::post('/settings/calendar/connections/{connection}/sync', [\App\Http\Controllers\CalendarController::class, 'syncNow'])->middleware('throttle:10,1')->name('calendar.sync');
+    Route::post('/settings/calendar/connections/{connection}/disconnect', [\App\Http\Controllers\CalendarController::class, 'disconnect'])->name('calendar.disconnect');
+    Route::post('/settings/calendar/feed', [\App\Http\Controllers\CalendarController::class, 'createFeed'])->name('calendar.feed.create');
+    Route::post('/settings/calendar/feed/delete', [\App\Http\Controllers\CalendarController::class, 'deleteFeed'])->name('calendar.feed.delete');
     Route::post('/settings/telegram/link', [AccountController::class, 'telegramLink'])->middleware('throttle:10,1')->name('account.telegram.link');
     Route::post('/settings/telegram/unlink', [AccountController::class, 'telegramUnlink'])->name('account.telegram.unlink');
     Route::get('/settings/export', [AccountController::class, 'export'])->middleware('throttle:5,1')->name('account.export');
@@ -99,6 +110,8 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
         Route::get('/payments', [AdminBusinessController::class, 'payments'])->name('admin.payments');
         Route::get('/payment-settings', [AdminContentController::class, 'payments'])->name('admin.payment-settings');
         Route::post('/payment-settings', [AdminContentController::class, 'savePayments'])->name('admin.payment-settings.save');
+        Route::get('/integrations', [\App\Http\Controllers\Admin\AdminIntegrationsController::class, 'show'])->name('admin.integrations');
+        Route::post('/integrations', [\App\Http\Controllers\Admin\AdminIntegrationsController::class, 'save'])->name('admin.integrations.save');
         Route::get('/content', [AdminContentController::class, 'content'])->name('admin.content');
         Route::post('/content', [AdminContentController::class, 'saveContent'])->name('admin.content.save');
         Route::post('/content/reset', [AdminContentController::class, 'resetContent'])->name('admin.content.reset');

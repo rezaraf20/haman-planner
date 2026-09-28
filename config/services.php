@@ -26,4 +26,11 @@ return [
         'legal_name' => env('LEGAL_ENTITY_NAME', 'HamanTech'),
         'contact_email' => env('SUPPORT_EMAIL', env('MAIL_FROM_ADDRESS')),
     ],
+    // Google Calendar OAuth (Admin → Integrations can override these). The redirect URI must be
+    // registered in Google Cloud: {APP_URL}/settings/calendar/google/callback
+    'google_calendar' => [
+        'client_id' => env('GOOGLE_CALENDAR_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CALENDAR_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_CALENDAR_REDIRECT_URI'),
+    ],
 ];

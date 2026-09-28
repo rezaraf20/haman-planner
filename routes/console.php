@@ -6,6 +6,14 @@ Schedule::command('planner:reminders')
     ->everyMinute()
     ->withoutOverlapping();
 
+Schedule::command('planner:recurring')
+    ->hourly()
+    ->withoutOverlapping();
+
+Schedule::command('calendar:sync')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
 Schedule::command('billing:lifecycle')
     ->hourly()
     ->withoutOverlapping();

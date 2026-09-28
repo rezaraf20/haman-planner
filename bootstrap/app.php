@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Plan limits are expected outcomes, not errors: never log them.
+        $exceptions->dontReport(\App\Exceptions\PlanLimitReached::class);
+
         // Plan limits: 402 for API/JSON clients, a friendly message for web pages.
         $exceptions->render(function (\App\Exceptions\PlanLimitReached $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {

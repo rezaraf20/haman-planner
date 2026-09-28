@@ -1,0 +1,40 @@
+<?php
+return [
+    'headline' => [
+        'overloaded_week' => 'This week is overloaded by approximately :duration.',
+        'overloaded_day' => 'Today is overloaded by approximately :duration.',
+        'fits' => ':count change(s) suggested.',
+        'nothing_to_do' => 'No changes needed — there is no unscheduled open work that fits this period.',
+    ],
+    'action' => [
+        'schedule' => 'Do “:title” on :day, :start–:end.',
+        'move' => 'Move “:title” from :from_day :from to :day :start.',
+        'defer' => 'Take “:title” out of this period and move it to next week / your backlog.',
+        'split' => 'Split “:title” (:duration) into :parts smaller tasks.',
+        'at_risk' => '“:title” doesn\'t fit before its deadline — move the deadline or drop other work.',
+        'add_buffer' => 'Reserve :day :start–:end as a recovery buffer.',
+    ],
+    'reason' => [
+        'overdue' => 'overdue (:date)',
+        'due_today' => 'due today',
+        'due_soon' => 'due in :days day(s)',
+        'due_this_week' => 'due this week (:days days)',
+        'priority' => 'priority :priority',
+        'importance' => 'high importance (:value)',
+        'goal' => 'moves goal “:goal” forward',
+        'unblocks' => ':count other task(s) are waiting for it',
+        'in_progress' => 'already in progress',
+        'history_adjusted' => 'estimate adjusted from :from to :to based on your actual history',
+        'missed_slot' => 'wasn\'t done at its previous time (:date)',
+        'after_deadline' => 'no free time before the deadline; first free slot after it',
+        'no_capacity_before_deadline' => 'not enough free capacity before the deadline',
+        'no_capacity' => 'not enough free capacity in this period',
+        'recovery_buffer' => 'the plan is full — keep an hour free to catch up',
+    ],
+    'ai_note' => [
+        'ai_unavailable' => 'Haman AI wasn\'t available; this proposal was built from the planning rules only.',
+        'ai_limit_reached' => 'This month\'s AI allowance is used up; this proposal was built from the planning rules only.',
+    ],
+    'not_open' => 'This proposal is no longer open (applied, dismissed or expired). Create a new one.',
+    'buffer_title' => 'Recovery buffer',
+];

@@ -24,10 +24,21 @@ final class ProductEvents
     public const SUBSCRIPTION_UPGRADED = 'subscription_upgraded';
     public const SUBSCRIPTION_CANCELED = 'subscription_canceled';
     public const ACCOUNT_DELETED = 'account_deleted';
+    public const ONBOARDING_STARTED = 'onboarding_started';
+    public const FIRST_PROJECT = 'first_project';
+    public const FIRST_TASK_COMPLETED = 'first_task_completed';
+    public const FIRST_PLAN_GENERATED = 'first_plan_generated';
+    public const FIRST_PLAN_APPLIED = 'first_plan_applied';
+    public const CALENDAR_CONNECTED = 'calendar_connected';
+    public const CHECKOUT_STARTED = 'checkout_started';
+    public const PAYMENT_FAILED = 'payment_failed';
 
+    /** Activation / conversion funnel in order (shown in Admin → Overview). */
     public const FUNNEL = [
-        self::REGISTERED, self::ONBOARDING_COMPLETED, self::FIRST_GOAL, self::FIRST_TASK, self::FIRST_AI_REQUEST,
-        self::TELEGRAM_CONNECTED, self::TRIAL_STARTED, self::SUBSCRIPTION_STARTED, self::SUBSCRIPTION_UPGRADED, self::SUBSCRIPTION_CANCELED,
+        self::REGISTERED, self::ONBOARDING_STARTED, self::ONBOARDING_COMPLETED, self::FIRST_GOAL, self::FIRST_PROJECT, self::FIRST_TASK,
+        self::FIRST_TASK_COMPLETED, self::FIRST_AI_REQUEST, self::FIRST_PLAN_GENERATED, self::FIRST_PLAN_APPLIED,
+        self::TELEGRAM_CONNECTED, self::CALENDAR_CONNECTED, self::TRIAL_STARTED, self::CHECKOUT_STARTED,
+        self::SUBSCRIPTION_STARTED, self::SUBSCRIPTION_UPGRADED, self::SUBSCRIPTION_CANCELED,
     ];
 
     /** @param array<string,scalar|null> $properties */

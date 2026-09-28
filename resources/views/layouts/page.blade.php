@@ -60,6 +60,7 @@ input[type=email],input[type=password],input[type=number]{direction:ltr;text-ali
 <a href="{{ route('admin.payments') }}" class="{{ request()->routeIs('admin.payments*') ? 'on' : '' }}">{{ __('admin.nav.payments') }}</a>
 <a href="{{ route('admin.payment-settings') }}" class="{{ request()->routeIs('admin.payment-settings*') ? 'on' : '' }}">{{ __('admin.nav.payment_settings') }}</a>
 <a href="{{ route('admin.content') }}" class="{{ request()->routeIs('admin.content*') ? 'on' : '' }}">{{ __('admin.nav.content') }}</a>
+<a href="{{ route('admin.integrations') }}" class="{{ request()->routeIs('admin.integrations*') ? 'on' : '' }}">{{ __('admin.nav.integrations') }}</a>
 <a href="{{ route('admin.support') }}" class="{{ request()->routeIs('admin.support*') ? 'on' : '' }}">{{ __('admin.nav.tickets') }}</a>
 <a href="{{ route('admin.system') }}" class="{{ request()->routeIs('admin.system*') ? 'on' : '' }}">{{ __('admin.nav.system') }}</a>
 <a href="{{ route('admin.settings') }}" class="{{ request()->routeIs('admin.settings*') ? 'on' : '' }}">{{ __('admin.nav.settings') }}</a>

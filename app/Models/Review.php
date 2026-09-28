@@ -5,6 +5,6 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model {
     use BelongsToPlannerUser;
 
- protected $fillable=['user_id', 'type','period_start','period_end','summary','metrics_json','actions_json'];
+ protected $fillable=['user_id', 'type','period_start','period_end','summary','metrics_json','actions_json','ai_summary'];
  protected $casts=['period_start'=>'date','period_end'=>'date','metrics_json'=>'array','actions_json'=>'array'];
 }

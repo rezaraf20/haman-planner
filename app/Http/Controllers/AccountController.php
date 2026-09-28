@@ -29,7 +29,30 @@ final class AccountController extends Controller
             'timezones' => Timezones::options(),
             'plan' => $entitlements->plan($request->user()),
             'telegramAllowed' => $entitlements->canUse($request->user(), 'telegram'),
-        ]);
+        ] + $this->calendarData($request, $entitlements));
+    }
+
+    /** Calendar card: connection, the user's calendars (fetched live, best effort) and feed state. */
+    private function calendarData(Request $request, Entitlements $entitlements): array
+    {
+        $sync = app(\App\Services\Calendar\CalendarSyncService::class);
+        $google = $sync->provider('google');
+        $connection = \App\Models\CalendarConnection::query()->where('provider', 'google')->first();
+        $choices = [];
+        if ($connection && $connection->status !== 'revoked' && $google?->isConfigured()) {
+            try {
+                $choices = $google->calendars($connection);
+            } catch (\Throwable) {
+                $choices = [];
+            }
+        }
+        return [
+            'calendarAllowed' => $entitlements->canUse($request->user(), 'calendar'),
+            'calendarConfigured' => (bool) $google?->isConfigured(),
+            'calendarConnection' => $connection,
+            'calendarChoices' => $choices,
+            'calendarFeedActive' => $request->user()->calendar_feed_token !== null,
+        ];
     }
 
     public function profile(Request $request): RedirectResponse
@@ -66,7 +89,7 @@ final class AccountController extends Controller
         $prefs = [
             'ai_response_language' => $data['ai_response_language'],
         ];
-        foreach (['notify_reminders_telegram', 'notify_support_email', 'notify_billing_email', 'weekly_summary_telegram', 'ai_enabled'] as $flag) {
+        foreach (['notify_reminders_telegram', 'notify_support_email', 'notify_billing_email', 'weekly_summary_telegram', 'ai_enabled', 'email_weekly_review', 'email_product_updates'] as $flag) {
             $prefs[$flag] = $request->boolean($flag);
         }
         $user->forceFill([
@@ -78,6 +101,33 @@ final class AccountController extends Controller
         app()->setLocale($data['locale']);
 
         return redirect()->route('account.settings')->with('status', __('settings.preferences_saved'));
+    }
+
+    /** Working days/hours, default durations and the planning buffer used by time blocking. */
+    public function planning(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'work_days' => ['required', 'array', 'min:1', 'max:7'],
+            'work_days.*' => ['integer', 'min:1', 'max:7'],
+            'work_start' => ['required', 'date_format:H:i'],
+            'work_end' => ['required', 'date_format:H:i', 'after:work_start'],
+            'default_task_minutes' => ['required', 'integer', 'min:5', 'max:480'],
+            'break_minutes' => ['required', 'integer', 'min:0', 'max:120'],
+            'planning_buffer_percent' => ['required', 'integer', 'min:0', 'max:60'],
+        ]);
+        $days = array_values(array_unique(array_map('intval', $data['work_days'])));
+        sort($days);
+        $user = $request->user();
+        $user->forceFill(['preferences' => array_merge(is_array($user->preferences) ? $user->preferences : [], [
+            'work_days' => $days,
+            'work_start' => $data['work_start'],
+            'work_end' => $data['work_end'],
+            'default_task_minutes' => (int) $data['default_task_minutes'],
+            'break_minutes' => (int) $data['break_minutes'],
+            'planning_buffer_percent' => (int) $data['planning_buffer_percent'],
+            'calendar_blocks_planning' => $request->boolean('calendar_blocks_planning'),
+        ])])->save();
+        return redirect()->to(route('account.settings').'#planning')->with('status', __('settings.planning_saved'));
     }
 
     public function password(Request $request): RedirectResponse

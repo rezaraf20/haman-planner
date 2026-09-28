@@ -22,6 +22,9 @@ final class OnboardingController extends Controller
     public function show(Request $request, Entitlements $entitlements): View|RedirectResponse
     {
         $step = max(1, min(self::STEPS, (int) $request->query('step', 1)));
+        if ($request->user()->onboarded_at === null) {
+            ProductEvents::record($request->user(), ProductEvents::ONBOARDING_STARTED, [], true);
+        }
         return view('onboarding.show', [
             'step' => $step,
             'user' => $request->user(),

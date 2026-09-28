@@ -20,6 +20,17 @@ final class User extends Authenticatable
         'weekly_summary_telegram' => false,
         'ai_enabled' => true,
         'ai_response_language' => 'auto', // auto = follow the interface language
+        // Planning / time blocking
+        'work_days' => null,               // ISO weekdays; null = locale default (fa: Sat–Wed, en: Mon–Fri)
+        'work_start' => '09:00',
+        'work_end' => '17:00',
+        'default_task_minutes' => 30,
+        'break_minutes' => 10,
+        'planning_buffer_percent' => 20,   // share of working time kept free (the original 20% buffer)
+        'calendar_blocks_planning' => true, // imported busy events reduce available time
+        // Non-essential email (transactional/security email is always sent)
+        'email_weekly_review' => false,
+        'email_product_updates' => true,   // onboarding tips and inactivity reminders
     ];
 
     protected $fillable = [
@@ -73,13 +84,19 @@ final class User extends Authenticatable
     public function preference(string $key): mixed
     {
         $stored = is_array($this->preferences) ? $this->preferences : [];
-        return array_key_exists($key, $stored) ? $stored[$key] : (self::PREFERENCE_DEFAULTS[$key] ?? null);
+        $value = array_key_exists($key, $stored) ? $stored[$key] : (self::PREFERENCE_DEFAULTS[$key] ?? null);
+        if ($key === 'work_days' && !is_array($value)) {
+            $value = $this->preferredLocale() === 'fa' ? [6, 7, 1, 2, 3] : [1, 2, 3, 4, 5];
+        }
+        return $value;
     }
 
     /** @return array<string,mixed> */
     public function allPreferences(): array
     {
-        return array_merge(self::PREFERENCE_DEFAULTS, array_intersect_key(is_array($this->preferences) ? $this->preferences : [], self::PREFERENCE_DEFAULTS));
+        $all = array_merge(self::PREFERENCE_DEFAULTS, array_intersect_key(is_array($this->preferences) ? $this->preferences : [], self::PREFERENCE_DEFAULTS));
+        $all['work_days'] = $this->preference('work_days');
+        return $all;
     }
 
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void

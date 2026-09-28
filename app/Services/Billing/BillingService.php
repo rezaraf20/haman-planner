@@ -108,6 +108,7 @@ final class BillingService
             throw new BillingException('billing.errors.provider_error');
         }
         $payment->update(['provider_reference' => $session->reference]);
+        ProductEvents::record($user, ProductEvents::CHECKOUT_STARTED, ['plan' => $plan->code, 'provider' => $gateway->key(), 'interval' => $interval]);
         return $session->redirectUrl;
     }
 

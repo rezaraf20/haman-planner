@@ -17,6 +17,7 @@ class ActivityLog extends Model
         'user_id',
         'actor_type',
         'actor_id',
+        'channel',
         'action',
         'entity_type',
         'entity_id',

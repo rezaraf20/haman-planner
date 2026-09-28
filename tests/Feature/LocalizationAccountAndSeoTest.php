@@ -92,7 +92,7 @@ final class LocalizationAccountAndSeoTest extends TestCase
         $admin = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('secret123'), 'is_active' => true, 'is_admin' => true, 'onboarded_at' => now()]);
         $ticket = SupportTicket::create(['user_id' => $admin->id, 'subject' => 'Help', 'status' => 'open']);
         $pages = ['/planner', '/settings', '/billing', '/support', '/support/'.$ticket->id, '/onboarding', '/admin', '/admin/users', '/admin/settings',
-            '/admin/subscriptions', '/admin/plans', '/admin/payments', '/admin/system', '/admin/support', '/admin/support/'.$ticket->id, '/admin/access'];
+            '/admin/subscriptions', '/admin/plans', '/admin/payments', '/admin/system', '/admin/support', '/admin/support/'.$ticket->id, '/admin/access', '/admin/integrations', '/admin/content', '/admin/payment-settings'];
         foreach (['fa', 'en'] as $locale) {
             $admin->update(['locale' => $locale]);
             foreach ($pages as $page) {

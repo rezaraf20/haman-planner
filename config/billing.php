@@ -16,10 +16,12 @@ return [
         'active_goals' => ['type' => 'count'],           // goals not completed/cancelled
         'active_projects' => ['type' => 'count'],        // projects not completed/cancelled
         'open_tasks' => ['type' => 'count'],             // tasks not completed/cancelled
+        'attachment_storage_mb' => ['type' => 'storage'], // total size of a user's attachments
     ],
 
     // Boolean capabilities a plan may grant.
-    'features' => ['telegram', 'ai_planner', 'advanced_analytics', 'priority_support'],
+    'features' => ['telegram', 'ai_planner', 'advanced_analytics', 'priority_support',
+        'recurring_tasks', 'calendar', 'advanced_ai_planning', 'attachments'],
 
     // Minor-unit handling per currency.
     'currencies' => [

@@ -10,7 +10,6 @@ return [
     'profile_saved' => 'پروفایل ذخیره شد.',
     'email_needs_password' => 'برای تغییر ایمیل، رمز فعلی را وارد کنید.',
     'email_taken' => 'این ایمیل برای حساب دیگری ثبت شده است.',
-
     'preferences' => 'زبان، منطقه زمانی و اعلان‌ها',
     'language' => 'زبان',
     'language_help' => 'زبان پنل وب، ایمیل‌ها و ربات Telegram.',
@@ -27,13 +26,11 @@ return [
     'ai_language_auto' => 'مثل زبان پنل',
     'save_preferences' => 'ذخیره تنظیمات',
     'preferences_saved' => 'تنظیمات ذخیره شد.',
-
     'security' => 'امنیت',
     'change_password' => 'تغییر رمز عبور',
     'new_password' => 'رمز جدید',
     'new_password_confirm' => 'تکرار رمز جدید',
     'password_changed' => 'رمز عبور با موفقیت تغییر کرد.',
-
     'telegram' => 'اتصال Telegram',
     'telegram_connected' => 'متصل است به:',
     'telegram_no_username' => 'بدون username',
@@ -47,7 +44,6 @@ return [
     'telegram_send' => 'در ربات :bot بفرست:',
     'telegram_send_plain' => 'در Telegram بفرست:',
     'telegram_not_in_plan' => 'دسترسی Telegram در پلن فعلی شما فعال نیست.',
-
     'privacy' => 'حریم خصوصی و داده‌ها',
     'account_info' => 'اطلاعات حساب',
     'member_since' => 'عضویت از',
@@ -64,4 +60,18 @@ return [
     'delete_last_admin' => 'این آخرین حساب مدیر فعال است و قابل حذف نیست. ابتدا مدیر دیگری تعیین کنید.',
     'deleted' => 'حساب شما حذف شد.',
     'legal' => 'اسناد',
+    'planning' => 'برنامه‌ریزی و زمان کاری',
+    'planning_help' => 'این تنظیمات برای بلوک‌بندی زمان، هشدار شلوغی برنامه و پیشنهادهای Haman AI استفاده می‌شود.',
+    'work_days' => 'روزهای کاری',
+    'work_start' => 'شروع ساعت کاری',
+    'work_end' => 'پایان ساعت کاری',
+    'default_task_minutes' => 'مدت پیش‌فرض هر کار (دقیقه)',
+    'break_minutes' => 'مدت پیش‌فرض استراحت (دقیقه)',
+    'planning_buffer_percent' => 'حاشیه‌ی امن برنامه (٪)',
+    'planning_buffer_help' => 'این درصد از زمان کاری برای کارهای پیش‌بینی‌نشده خالی می‌ماند (پیش‌فرض ۲۰٪).',
+    'calendar_blocks_planning' => 'رویدادهای تقویم متصل، زمان در دسترس را کم کنند',
+    'save_planning' => 'ذخیره‌ی تنظیمات برنامه‌ریزی',
+    'planning_saved' => 'تنظیمات برنامه‌ریزی ذخیره شد.',
+    'email_weekly_review' => 'مرور هفتگی را ایمیل کن',
+    'email_product_updates' => 'ایمیل‌های راهنما و یادآوری (قابل لغو)',
 ];

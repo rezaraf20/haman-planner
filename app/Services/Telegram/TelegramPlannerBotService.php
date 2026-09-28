@@ -275,6 +275,10 @@ final class TelegramPlannerBotService
             'rmonth' => $this->report($c, $m, 'month'),
 
             'aiplanner' => $this->beginAI($c, $m),
+            'hplan' => $this->planProposal($c, $m, in_array($s1, \App\Services\Planner\SmartReschedulingService::KINDS, true) ? $s1 : 'day'),
+            'hpapply' => $this->planApply($c, $m, $i1),
+            'hpdis' => $this->planDismiss($c, $m, $i1),
+            'hnow' => $this->whatNow($c, $m),
             'aiinteractions' => $this->aiInteractions($c, $m),
             'pending' => $this->pendingActions($c, $m),
             'activity' => $this->activity($c, $m),
@@ -477,6 +481,7 @@ final class TelegramPlannerBotService
         return [
             [$this->btn($this->t('menu.today'), 'today'), $this->btn($this->t('menu.tasks'), 'tasks')],
             [$this->btn($this->t('menu.inbox'), 'inbox'), $this->btn($this->t('menu.search'), 'search')],
+            [$this->btn($this->t('menu.what_now'), 'hnow'), $this->btn($this->t('menu.plan_day'), 'hplan:day')],
             [$this->btn($this->t('menu.structure'), 'structure')],
             [$this->btn($this->t('menu.execution'), 'execution')],
             [$this->btn($this->t('menu.analysis'), 'analysis')],
@@ -542,6 +547,8 @@ final class TelegramPlannerBotService
         $this->clearState($c);
         $this->show($c, $m, $this->t('section.knowledge'), [
             [$this->btn($this->t('menu.notes'), 'ls:note:0'), $this->btn($this->t('menu.decisions'), 'ls:decision:0')],
+            [$this->btn($this->t('menu.plan_day'), 'hplan:day'), $this->btn($this->t('menu.plan_week'), 'hplan:week')],
+            [$this->btn($this->t('menu.plan_fix'), 'hplan:fix'), $this->btn($this->t('menu.what_now'), 'hnow')],
             [$this->btn($this->t('menu.ai'), 'aiplanner'), $this->btn($this->t('menu.ai_history'), 'aiinteractions')],
             [$this->btn($this->t('menu.pending'), 'pending'), $this->btn($this->t('menu.activity'), 'activity')],
             $this->back(),
@@ -2307,9 +2314,79 @@ final class TelegramPlannerBotService
         $this->show($c, $m, $this->t('ai_prompt'), [$this->back('knowledge', $this->t('btn.cancel'))]);
     }
 
+    // ---------------------------------------------------------------- Haman AI planning
+
+    /** Proposal text + buttons. Nothing changes until the user presses Apply. */
+    private function planProposal(string|int $c, ?int $m, string $kind, ?string $message = null): void
+    {
+        $user = User::query()->find($this->uid());
+        if (!$user) return;
+        $mid = $this->show($c, $m, $this->t('ai_thinking'));
+        $assistant = app(\App\Services\Planner\PlanningAssistantService::class);
+        $p = $assistant->present($assistant->generate($user, $kind, $message), $user);
+        $lines = ['✦ '.$p['headline']];
+        if ($p['summary']) $lines[] = "\n".$this->t('plan_ai').' '.$p['summary'];
+        foreach (array_slice($p['actions'], 0, 12) as $i => $a) {
+            $lines[] = "\n".($a['selected'] ? '☑' : '☐').' '.($i + 1).'. '.$a['text']."\n   ".$this->t('plan_because').' '.implode(' · ', $a['reasons_text']);
+        }
+        if (count($p['actions']) > 12) $lines[] = "\n".$this->t('plan_more', ['n' => count($p['actions']) - 12]);
+        $selected = count(array_filter(array_slice($p['actions'], 0, 12), fn ($a) => $a['selected'] && $a['type'] !== 'at_risk'));
+        $kb = $selected > 0
+            ? [[$this->btn($this->t('plan_apply', ['n' => $selected]), 'hpapply:'.$p['id'])], [$this->btn($this->t('plan_dismiss'), 'hpdis:'.$p['id'])], $this->back('knowledge')]
+            : [$this->back('knowledge')];
+        if ($selected > 0) $lines[] = "\n".$this->t('plan_confirm_note');
+        $this->show($c, $mid, mb_substr(implode("\n", $lines), 0, 3900), $kb);
+    }
+
+    private function planApply(string|int $c, int $m, int $id): void
+    {
+        $user = User::query()->find($this->uid());
+        $proposal = \App\Models\PlanProposal::query()->find($id);
+        if (!$user || !$proposal || !$proposal->isOpen()) {
+            $this->show($c, $m, $this->t('plan_not_open'), [$this->back('knowledge')]);
+            return;
+        }
+        // Only the pre-selected actions shown in the message (first 12), exactly what the user saw.
+        $keys = collect(array_slice((array) $proposal->actions, 0, 12))->filter(fn ($a) => $a['selected'] && $a['type'] !== 'at_risk')->pluck('key')->all();
+        $results = app(\App\Services\Planner\PlanApplier::class)->apply($user, $proposal, $keys);
+        $ok = count(array_filter($results, fn ($r) => $r['status'] === 'applied'));
+        $this->show($c, $m, $this->t('plan_applied', ['n' => $ok, 'skipped' => count($results) - $ok]), [[$this->btn($this->t('menu.calendar'), 'calendar')], $this->back()]);
+    }
+
+    private function planDismiss(string|int $c, int $m, int $id): void
+    {
+        \App\Models\PlanProposal::query()->whereKey($id)->where('status', 'pending')->update(['status' => 'dismissed']);
+        $this->show($c, $m, $this->t('plan_dismissed'), [$this->back('knowledge')]);
+    }
+
+    private function whatNow(string|int $c, ?int $m): void
+    {
+        $user = User::query()->find($this->uid());
+        if (!$user) return;
+        $r = app(\App\Services\Planner\TaskRanker::class)->whatNow($user);
+        $assistant = app(\App\Services\Planner\PlanningAssistantService::class);
+        $lines = ['◎ '.$this->t('what_now_title')];
+        if ($r['now_scheduled']) $lines[] = $this->t('what_now_scheduled', ['title' => (string) $r['now_scheduled']['title']]);
+        foreach ($r['ranked'] as $i => $t) {
+            $reasons = array_map(fn ($x) => $assistant->reasonText($x, $user->preferredLocale(), $user->preferredTimezone()), $t['reasons']);
+            $lines[] = "\n".($i + 1).'. '.$t['title'].($reasons ? "\n   ".$this->t('plan_because').' '.implode(' · ', $reasons) : '');
+        }
+        if ($r['ranked'] === []) $lines[] = $this->t('what_now_none');
+        $kb = array_map(fn ($t) => [$this->btn('▶ '.mb_substr($t['title'], 0, 40), 'v:task:'.$t['id'])], array_slice($r['ranked'], 0, 3));
+        $kb[] = [$this->btn($this->t('menu.plan_day'), 'hplan:day')];
+        $kb[] = $this->back();
+        $this->show($c, $m, implode("\n", $lines), $kb);
+    }
+
     private function runAI(string|int $c, string $text): void
     {
         $text = mb_substr(trim($text), 0, 500);
+        $intent = \App\Support\PlanningIntent::detect($text);
+        if ($intent !== null) {
+            $this->clearState($c);
+            $intent === 'now' ? $this->whatNow($c, null) : $this->planProposal($c, null, $intent, $text);
+            return;
+        }
         if ($text === '') {
             $this->show($c, null, $this->t('ai_empty'), [$this->back('knowledge', $this->t('btn.cancel'))]);
             return;

@@ -15,6 +15,16 @@ final class LocalDate
 {
     private const FA_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 
+    /**
+     * A timestamp as stored in the database (application timezone wall clock). Use this for every
+     * query bound built from a Carbon in another timezone — Eloquent does not convert query
+     * bindings, so a UTC or user-timezone Carbon would otherwise be compared as the wrong instant.
+     */
+    public static function db(\DateTimeInterface $value): string
+    {
+        return \Carbon\CarbonImmutable::instance($value)->setTimezone((string) config('app.timezone'))->format('Y-m-d H:i:s');
+    }
+
     public static function tz(): string
     {
         $user = auth()->user();

@@ -112,6 +112,7 @@ final class Entitlements
         return match (config("billing.metrics.$metric.type")) {
             'monthly' => (int) UsageCounter::query()->where(['user_id' => $user->id, 'metric' => $metric, 'period' => self::period()])->value('used'),
             'count' => $this->count($user, $metric),
+            'storage' => $this->storageMb($user),
             default => 0,
         };
     }
@@ -148,6 +149,29 @@ final class Entitlements
         }
         DB::table('usage_counters')->where(['user_id' => $user->id, 'metric' => $metric, 'period' => self::period()])
             ->where('used', '>=', $amount)->update(['used' => DB::raw('used - '.(int) $amount)]);
+    }
+
+    /** Attachment storage in whole megabytes (rounded up). */
+    public function storageMb(User $user): int
+    {
+        try {
+            return (int) ceil(((int) \App\Models\Attachment::withoutGlobalScopes()->where('user_id', $user->id)->sum('size')) / 1048576);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /** Would adding $bytes exceed the plan's attachment storage? */
+    public function ensureStorageFor(User $user, int $bytes): void
+    {
+        $limit = $this->limit($user, 'attachment_storage_mb');
+        if ($limit === null) {
+            return;
+        }
+        $used = (int) \App\Models\Attachment::withoutGlobalScopes()->where('user_id', $user->id)->sum('size');
+        if ($used + $bytes > $limit * 1048576) {
+            throw new PlanLimitReached('attachment_storage_mb', $limit);
+        }
     }
 
     public function ensureCanCreate(User $user, string $metric): void
