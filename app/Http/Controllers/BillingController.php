@@ -22,11 +22,13 @@ final class BillingController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $gateways = array_filter($this->billing->gateways(), fn ($g) => $g->isConfigured());
+        // Only the payment methods that charge in this language's currency (fa → toman: Zibal/Zarinpal; en → USD: Stripe).
+        $currency = $this->billing->currencyFor(app()->getLocale());
+        $gateways = array_filter($this->billing->gateways(), fn ($g) => $g->isConfigured() && $g->currency() === $currency);
         return view('billing.index', [
             'summary' => $this->entitlements->summary($user),
             'plans' => Plan::query()->where('is_active', true)->where('is_public', true)->orderBy('sort_order')->get(),
-            'currency' => $this->billing->currencyFor(app()->getLocale()),
+            'currency' => $currency,
             'interval' => in_array($request->query('interval'), Plan::INTERVALS, true) ? $request->query('interval') : 'monthly',
             'gateways' => $gateways,
             'hadTrial' => $this->billing->hadTrial($user),
@@ -53,7 +55,27 @@ final class BillingController extends Controller
     public function callback(Request $request, Payment $payment): RedirectResponse
     {
         abort_unless($request->hasValidSignatureWhileIgnoring(['Authority', 'Status', 'session_id', 'canceled']), 403);
-        $payment = $this->billing->completeCheckout($payment, $request);
+        return $this->finish($request, $this->billing->completeCheckout($payment, $request));
+    }
+
+    /**
+     * Zibal return URL. Zibal appends its own query string, so this URL cannot carry a signature:
+     * the payment is looked up by Zibal's trackId and is activated only after server-side verification.
+     */
+    public function zibalReturn(Request $request): RedirectResponse
+    {
+        $trackId = (string) $request->query('trackId', '');
+        $payment = ctype_digit($trackId) && strlen($trackId) <= 20
+            ? Payment::query()->where('provider', 'zibal')->where('provider_reference', $trackId)->first()
+            : null;
+        if (!$payment) {
+            return redirect()->route($request->user() ? 'billing.index' : 'login')->with('billing_error', __('billing.callback_failed'));
+        }
+        return $this->finish($request, $this->billing->completeCheckout($payment, $request));
+    }
+
+    private function finish(Request $request, Payment $payment): RedirectResponse
+    {
         $locale = (string) ($payment->meta['locale'] ?? app()->getLocale());
         app()->setLocale(in_array($locale, ['fa', 'en'], true) ? $locale : app()->getLocale());
 

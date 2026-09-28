@@ -82,11 +82,13 @@ final class AdminContentController extends Controller
     {
         $request->validate([
             'zarinpal_merchant_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
+            'zibal_merchant' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
             'stripe_secret' => ['nullable', 'string', 'max:255', 'regex:/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/'],
             'stripe_webhook_secret' => ['nullable', 'string', 'max:255', 'regex:/^whsec_[A-Za-z0-9+\/=]+$/'],
         ], [
             'stripe_webhook_secret.regex' => __('admin.pay_webhook_invalid'),
             'zarinpal_merchant_id.regex' => __('admin.pay_merchant_invalid'),
+            'zibal_merchant.regex' => __('admin.pay_merchant_invalid'),
             'stripe_secret.regex' => __('admin.pay_stripe_invalid'),
         ]);
 
@@ -95,6 +97,9 @@ final class AdminContentController extends Controller
             return back()->withErrors(['stripe_webhook_secret' => __('admin.pay_webhook_in_use')]);
         }
         PaymentSettings::put([
+            'zibal_enabled' => $request->boolean('zibal_enabled'),
+            'zibal_sandbox' => $request->boolean('zibal_sandbox'),
+            'zibal_merchant' => $request->boolean('clear_zibal_merchant') ? null : (string) $request->input('zibal_merchant', ''),
             'zarinpal_enabled' => $request->boolean('zarinpal_enabled'),
             'zarinpal_sandbox' => $request->boolean('zarinpal_sandbox'),
             'stripe_enabled' => $request->boolean('stripe_enabled'),

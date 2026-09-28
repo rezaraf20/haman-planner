@@ -39,6 +39,13 @@ return [
             'sandbox' => filter_var(env('ZARINPAL_SANDBOX', false), FILTER_VALIDATE_BOOL),
             'currency' => 'IRT',
         ],
+        // Zibal (Iranian cards). Prices stay in tomans; the gateway converts to rials (see ZibalGateway::toRial).
+        'zibal' => [
+            'enabled' => filter_var(env('ZIBAL_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'merchant' => env('ZIBAL_MERCHANT'),
+            'sandbox' => filter_var(env('ZIBAL_SANDBOX', false), FILTER_VALIDATE_BOOL),
+            'currency' => 'IRT',
+        ],
         'stripe' => [
             'enabled' => filter_var(env('STRIPE_ENABLED', false), FILTER_VALIDATE_BOOL),
             'secret' => env('STRIPE_SECRET'),

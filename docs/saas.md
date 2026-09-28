@@ -97,6 +97,24 @@ limits are unlimited. Change this in Admin → Plans if you want different defau
   in `BillingService::gateways()`. A provider that can renew by itself also implements
   `RecurringGateway` (`supportsRecurring`, `setCancelAtPeriodEnd`, `cancelNow`).
 
+### Zibal (toman)
+
+`App\Services\Billing\Gateways\ZibalGateway` — Iranian cards, next to Zarinpal (both charge IRT; Persian users see
+both, English users see Stripe only).
+
+- Flow: `POST https://gateway.zibal.ir/v1/request` (merchant, amount, callbackUrl, orderId = payment ID) → `trackId`
+  → redirect to `https://gateway.zibal.ir/start/{trackId}` → Zibal returns to `GET /billing/return/zibal?success&status&trackId&orderId`
+  → the payment is looked up by `trackId` → `POST /v1/verify` (merchant, trackId). A payment is paid only if verify
+  answers `result=100` with `amount` equal to the expected rial amount and the same `orderId`. `result=201` (already
+  verified) is accepted only after `/v1/inquiry` reports `status=1`. The browser's `success`/`status` values are never
+  trusted. A 5xx/timeout leaves the payment pending, so the next callback retries.
+- **Currency:** the app stores tomans. `ZibalGateway::toRial()` (×10) is the only conversion, used for the request
+  and for checking the verified amount; invoices stay in tomans. Tests cover 10,000 / 100,000 / 1,000,000 tomans.
+- Idempotency: the same row lock as the other gateways — repeated callbacks never create a second payment, invoice or
+  period. Only a masked card number and Zibal's reference number are stored.
+- Settings: Admin → Payment settings → Zibal (merchant stored encrypted), or `ZIBAL_ENABLED`, `ZIBAL_MERCHANT`,
+  `ZIBAL_SANDBOX` (test merchant `zibal`). The return URL has no signature because Zibal appends its own query string.
+
 ### Stripe subscriptions (auto-renewal)
 
 When `STRIPE_WEBHOOK_SECRET` (or Admin → Payment settings → *Webhook signing secret*) is set, Stripe checkouts use

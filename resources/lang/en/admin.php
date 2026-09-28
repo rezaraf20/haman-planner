@@ -190,6 +190,7 @@ return [
         'stripe' => 'Stripe',
         'stripe_webhooks' => 'Stripe webhooks',
         'google_calendar' => 'Google Calendar',
+        'zibal' => 'Zibal',
     ],
     'ok' => 'OK',
     'warn' => 'Check',
@@ -326,6 +327,7 @@ return [
     'pay_provider' => [
         'zarinpal' => 'Zarinpal (Iranian bank cards, IRT)',
         'stripe' => 'Stripe (international cards, USD)',
+        'zibal' => 'Zibal (Iranian bank cards, IRT)',
     ],
     'pay_active' => 'Active',
     'pay_inactive' => 'Inactive',
@@ -430,4 +432,8 @@ return [
     'webhook_value' => 'last: :last · failed (7 days): :failed',
     'calendar_value' => ':n connected · :errors need attention',
     'pay_webhook_in_use' => 'Auto-renewing Stripe subscriptions exist; the webhook signing secret cannot be removed or they would stop being renewed here. Replace it with the new secret instead.',
+    'pay_zibal_merchant' => 'Zibal merchant code',
+    'pay_zibal_sandbox' => 'Test mode (Zibal test merchant "zibal")',
+    'pay_zibal_help' => 'Copy the merchant code from the Zibal panel → Gateways. Prices are in tomans and are converted to rials (×10) automatically when sent to Zibal. To test, turn on test mode (no money moves) and turn it off before real sales.',
+    'pay_zibal_return' => 'Zibal return URL (sent automatically):',
 ];

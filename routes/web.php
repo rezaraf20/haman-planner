@@ -64,6 +64,7 @@ Route::get('/reset-password/{token}', [PasswordResetController::class, 'showRese
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1,w-reset-password')->name('password.update');
 
 // Payment provider redirect (signed URL; verified server-to-server with the provider).
+Route::get('/billing/return/zibal', [BillingController::class, 'zibalReturn'])->middleware('throttle:30,1,w-billing-return-zibal')->name('billing.return.zibal');
 Route::match(['get', 'post'], '/billing/callback/{payment}', [BillingController::class, 'callback'])->middleware('throttle:30,1,w-billing-callback-payment')->name('billing.callback');
 
 // ---------------------------------------------------------------- signed-in area

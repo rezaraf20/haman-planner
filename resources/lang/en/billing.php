@@ -68,6 +68,7 @@ return [
         'stripe' => 'Card (Stripe)',
         'manual' => 'Manual',
         'trial' => 'Trial',
+        'zibal' => 'Zibal (Iranian bank card)',
     ],
     'payments_unavailable' => 'Online payment isn\'t available yet. To subscribe, send us a message from Support.',
     'switch_note' => 'Paying for a different plan switches to it straight away with a full new period (no proration). Renewing the same plan adds a period after the current one.',

@@ -134,6 +134,7 @@ final class AdminBusinessController extends Controller
             'ai' => $this->configuredRow(filled(config('services.ai.api_key')) || config('services.ai.provider') === 'ollama'),
             'mail' => $this->configuredRow(filled(config('mail.default')) && config('mail.default') !== 'log' && (config('mail.default') !== 'smtp' || filled(config('mail.mailers.smtp.host')))),
             'storage' => $check(fn () => $this->storageRow()) ?? ['down', '—'],
+            'zibal' => $this->configuredRow($check(fn () => app(\App\Services\Billing\Gateways\ZibalGateway::class)->isConfigured()) === true),
             'zarinpal' => $this->configuredRow($check(fn () => app(\App\Services\Billing\Gateways\ZarinpalGateway::class)->isConfigured()) === true),
             'stripe' => $check(fn () => $this->stripeRow()) ?? ['down', '—'],
             'stripe_webhooks' => $check(fn () => $this->webhookRow()) ?? ['down', '—'],

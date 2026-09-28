@@ -40,7 +40,7 @@ final class BillingService
     /** @return array<string,PaymentGateway> every known driver, configured or not */
     public function gateways(): array
     {
-        return ['zarinpal' => app(ZarinpalGateway::class), 'stripe' => app(StripeGateway::class)];
+        return ['zibal' => app(\App\Services\Billing\Gateways\ZibalGateway::class), 'zarinpal' => app(ZarinpalGateway::class), 'stripe' => app(StripeGateway::class)];
     }
 
     public function gateway(string $key): ?PaymentGateway

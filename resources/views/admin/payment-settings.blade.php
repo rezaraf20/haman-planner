@@ -16,6 +16,19 @@
 
 <form method="post" action="{{ route('admin.payment-settings.save') }}" autocomplete="off">@csrf
 <div class="card">
+<h2>{{ __('admin.pay_provider.zibal') }}</h2>
+<label class="check"><input type="checkbox" name="zibal_enabled" value="1" @checked($fields['zibal_enabled']['value'])> {{ __('admin.pay_enable') }}</label>
+<div class="field"><label>{{ __('admin.pay_zibal_merchant') }}</label>
+<input type="password" name="zibal_merchant" dir="ltr" value="" placeholder="{{ $fields['zibal_merchant']['masked'] ?? 'merchant' }}" maxlength="64" autocomplete="new-password">
+<div class="help">{{ __('admin.pay_secret_help') }} · {{ __('admin.pay_source.'.$fields['zibal_merchant']['source']) }}</div>
+@if ($fields['zibal_merchant']['source'] === 'panel')<label class="check"><input type="checkbox" name="clear_zibal_merchant" value="1"> {{ __('admin.pay_clear') }}</label>@endif
+</div>
+<label class="check"><input type="checkbox" name="zibal_sandbox" value="1" @checked($fields['zibal_sandbox']['value'])> {{ __('admin.pay_zibal_sandbox') }}</label>
+<div class="help">{{ __('admin.pay_zibal_help') }}</div>
+<p class="help">{{ __('admin.pay_zibal_return') }} <span class="ltr">{{ rtrim((string) config('app.url'), '/') }}/billing/return/zibal</span></p>
+</div>
+
+<div class="card">
 <h2>{{ __('admin.pay_provider.zarinpal') }}</h2>
 <label class="check"><input type="checkbox" name="zarinpal_enabled" value="1" @checked($fields['zarinpal_enabled']['value'])> {{ __('admin.pay_enable') }}</label>
 <div class="field"><label>{{ __('admin.pay_merchant') }}</label>
