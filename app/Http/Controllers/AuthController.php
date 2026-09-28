@@ -62,6 +62,7 @@ final class AuthController extends Controller
         $request->session()->regenerateToken();
         $request->session()->put('locale', $locale);
 
-        return redirect()->route('login');
+        // Clear the browser's HTTP/service-worker caches for this site on logout.
+        return redirect()->route('login')->header('Clear-Site-Data', '"cache"');
     }
 }

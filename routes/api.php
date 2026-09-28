@@ -43,7 +43,7 @@ Route::get('/ready', function () {
     }
 });
 
-Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1');
+Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1,a-telegram-webhook');
 
 Route::middleware([
     EncryptCookies::class,
@@ -54,7 +54,7 @@ Route::middleware([
     \App\Http\Middleware\SetLocale::class,
     IdempotencyMiddleware::class,
     \App\Http\Middleware\TrackLastSeen::class,
-    'throttle:120,1',
+    'throttle:120,1,api',
 ])->group(function (): void {
     Route::get('/me', fn () => response()->json(['user' => request()->user()]));
 
@@ -79,14 +79,20 @@ Route::middleware([
     Route::apiResource('schedule-blocks', ScheduleBlockController::class);
 
     // Haman AI planning (proposals are applied only on explicit confirmation)
-    Route::post('/planning/proposals', [\App\Http\Controllers\Api\PlanningController::class, 'propose'])->middleware('throttle:20,1');
+    Route::post('/planning/proposals', [\App\Http\Controllers\Api\PlanningController::class, 'propose'])->middleware('throttle:20,1,a-planning-proposals');
     Route::get('/planning/proposals/{planProposal}', [\App\Http\Controllers\Api\PlanningController::class, 'show']);
     Route::post('/planning/proposals/{planProposal}/apply', [\App\Http\Controllers\Api\PlanningController::class, 'apply']);
     Route::post('/planning/proposals/{planProposal}/dismiss', [\App\Http\Controllers\Api\PlanningController::class, 'dismiss']);
     Route::get('/planning/what-now', [\App\Http\Controllers\Api\PlanningController::class, 'whatNow']);
     Route::get('/planning/insights', [\App\Http\Controllers\Api\PlanningController::class, 'insights']);
-    Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1');
+    Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1,a-reviews-weekly');
     Route::get('/reviews/{review}/details', [\App\Http\Controllers\Api\PlanningController::class, 'showReview']);
+
+    // Attachments (private; ownership enforced on every call)
+    Route::get('/{type}/{id}/attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'index'])->whereIn('type', ['task', 'project'])->whereNumber('id');
+    Route::post('/{type}/{id}/attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'store'])->whereIn('type', ['task', 'project'])->whereNumber('id')->middleware('throttle:30,1,a-type-id-attachments');
+    Route::get('/attachments/{attachment}/download', [\App\Http\Controllers\Api\AttachmentController::class, 'download']);
+    Route::delete('/attachments/{attachment}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy']);
 
     // Time blocking
     Route::get('/schedule', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
@@ -123,6 +129,10 @@ Route::middleware([
     Route::get('/reviews', [ReviewController::class, 'index']);
     Route::get('/system/dashboard', [SystemController::class, 'dashboard']);
     Route::get('/system/activity', [SystemController::class, 'activity']);
+    Route::get('/activity/timeline', function (\Illuminate\Http\Request $request) {
+        $data = $request->validate(['before' => ['nullable', 'integer'], 'actor' => ['nullable', 'in:user,ai,system']]);
+        return response()->json(app(\App\Services\Planner\ActivityTimelineService::class)->timeline($request->user(), $data['before'] ?? null, 50, $data['actor'] ?? null));
+    });
     Route::get('/system/ai-interactions', [SystemController::class, 'ai']);
     Route::get('/system/pending-actions', [SystemController::class, 'pending']);
     Route::get('/system/failures', [SystemController::class, 'failures']);

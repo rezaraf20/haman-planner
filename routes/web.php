@@ -36,24 +36,28 @@ Route::get('/fonts/custom/{weight}.font', function (string $weight) {
 })->whereIn('weight', array_keys(\App\Support\Fonts::WEIGHTS))->name('fonts.custom');
 
 // Private iCal feed of planner blocks (token in the URL; read-only).
-Route::get('/calendar/feed/{token}.ics', [\App\Http\Controllers\CalendarController::class, 'feed'])->middleware('throttle:30,1')->name('calendar.feed');
+Route::get('/calendar/feed/{token}.ics', [\App\Http\Controllers\CalendarController::class, 'feed'])->middleware('throttle:30,1,w-calendar-feed-token-ics')->name('calendar.feed');
+
+// PWA
+Route::get('/manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/offline', [\App\Http\Controllers\PwaController::class, 'offline'])->name('pwa.offline');
 
 // ---------------------------------------------------------------- language switcher
 Route::get('/language/{locale}', LocaleController::class)->name('locale.switch');
 
 // ---------------------------------------------------------------- authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:8,1')->name('login.submit');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:8,1,w-login')->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'show'])->name('register');
-Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:5,1')->name('register.submit');
+Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:5,1,w-register')->name('register.submit');
 Route::get('/forgot-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
-Route::post('/forgot-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:5,1')->name('password.email');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:5,1,w-forgot-password')->name('password.email');
 Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
-Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1')->name('password.update');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1,w-reset-password')->name('password.update');
 
 // Payment provider redirect (signed URL; verified server-to-server with the provider).
-Route::match(['get', 'post'], '/billing/callback/{payment}', [BillingController::class, 'callback'])->middleware('throttle:30,1')->name('billing.callback');
+Route::match(['get', 'post'], '/billing/callback/{payment}', [BillingController::class, 'callback'])->middleware('throttle:30,1,w-billing-callback-payment')->name('billing.callback');
 
 // ---------------------------------------------------------------- signed-in area
 Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
@@ -73,26 +77,26 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
     Route::get('/settings/calendar/{provider}/connect', [\App\Http\Controllers\CalendarController::class, 'connect'])->whereIn('provider', ['google'])->name('calendar.connect');
     Route::get('/settings/calendar/{provider}/callback', [\App\Http\Controllers\CalendarController::class, 'callback'])->whereIn('provider', ['google'])->name('calendar.callback');
     Route::post('/settings/calendar/connections/{connection}', [\App\Http\Controllers\CalendarController::class, 'update'])->name('calendar.update');
-    Route::post('/settings/calendar/connections/{connection}/sync', [\App\Http\Controllers\CalendarController::class, 'syncNow'])->middleware('throttle:10,1')->name('calendar.sync');
+    Route::post('/settings/calendar/connections/{connection}/sync', [\App\Http\Controllers\CalendarController::class, 'syncNow'])->middleware('throttle:10,1,w-settings-calendar-connections-connection-sync')->name('calendar.sync');
     Route::post('/settings/calendar/connections/{connection}/disconnect', [\App\Http\Controllers\CalendarController::class, 'disconnect'])->name('calendar.disconnect');
     Route::post('/settings/calendar/feed', [\App\Http\Controllers\CalendarController::class, 'createFeed'])->name('calendar.feed.create');
     Route::post('/settings/calendar/feed/delete', [\App\Http\Controllers\CalendarController::class, 'deleteFeed'])->name('calendar.feed.delete');
-    Route::post('/settings/telegram/link', [AccountController::class, 'telegramLink'])->middleware('throttle:10,1')->name('account.telegram.link');
+    Route::post('/settings/telegram/link', [AccountController::class, 'telegramLink'])->middleware('throttle:10,1,w-settings-telegram-link')->name('account.telegram.link');
     Route::post('/settings/telegram/unlink', [AccountController::class, 'telegramUnlink'])->name('account.telegram.unlink');
-    Route::get('/settings/export', [AccountController::class, 'export'])->middleware('throttle:5,1')->name('account.export');
-    Route::post('/settings/delete', [AccountController::class, 'destroy'])->middleware('throttle:5,1')->name('account.destroy');
+    Route::get('/settings/export', [AccountController::class, 'export'])->middleware('throttle:5,1,w-settings-export')->name('account.export');
+    Route::post('/settings/delete', [AccountController::class, 'destroy'])->middleware('throttle:5,1,w-settings-delete')->name('account.destroy');
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
-    Route::post('/billing/checkout', [BillingController::class, 'checkout'])->middleware('throttle:10,1')->name('billing.checkout');
+    Route::post('/billing/checkout', [BillingController::class, 'checkout'])->middleware('throttle:10,1,w-billing-checkout')->name('billing.checkout');
     Route::post('/billing/trial', [BillingController::class, 'trial'])->name('billing.trial');
     Route::post('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
     Route::post('/billing/resume', [BillingController::class, 'resume'])->name('billing.resume');
     Route::get('/billing/invoices/{invoice}', [BillingController::class, 'invoice'])->name('billing.invoice');
 
     Route::get('/support', [SupportController::class, 'index'])->name('support.index');
-    Route::post('/support', [SupportController::class, 'store'])->middleware('throttle:10,1')->name('support.store');
+    Route::post('/support', [SupportController::class, 'store'])->middleware('throttle:10,1,w-support')->name('support.store');
     Route::get('/support/{ticket}', [SupportController::class, 'show'])->whereNumber('ticket')->name('support.show');
-    Route::post('/support/{ticket}/reply', [SupportController::class, 'reply'])->whereNumber('ticket')->middleware('throttle:20,1')->name('support.reply');
+    Route::post('/support/{ticket}/reply', [SupportController::class, 'reply'])->whereNumber('ticket')->middleware('throttle:20,1,w-support-ticket-reply')->name('support.reply');
     Route::post('/support/{ticket}/close', [SupportController::class, 'close'])->whereNumber('ticket')->name('support.close');
 
     Route::middleware('admin')->prefix('admin')->group(function (): void {

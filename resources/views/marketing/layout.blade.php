@@ -14,6 +14,7 @@
 <html lang="{{ $loc }}" dir="{{ \App\Support\Locales::dir() }}">
 <head>
 @include('partials.fonts')
+@include('partials.pwa')
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ $metaTitle }}</title>
 <meta name="description" content="{{ $metaDesc }}">

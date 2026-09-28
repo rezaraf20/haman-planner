@@ -165,3 +165,51 @@
     + '.pa{cursor:pointer}.pa input{margin-top:4px}.pa.risk{background:#fff8f0}';
   document.head.appendChild(css);
 })();
+
+/* ---------------------------------------------------------------- attachments & activity timeline */
+(function () {
+  'use strict';
+  const T = (k, r) => t(k, r);
+  const size = b => b >= 1048576 ? num((b / 1048576).toFixed(1)) + ' MB' : num(Math.max(1, Math.round(b / 1024))) + ' KB';
+
+  window.attachmentsModal = async function (type, id) {
+    const render = async () => {
+      const r = await api('/' + type + '/' + id + '/attachments'), a = r.data || [];
+      $('attlist').innerHTML = a.map(f => '<div class=row><div class=rowmain><div class=rowtitle>' + esc(f.original_name) + '</div><div class=rowsub>' + esc(size(f.size)) + ' · ' + esc(fmtDT(f.created_at)) + '</div></div>'
+        + '<div class=rowactions><a class="btn small" href="/api/attachments/' + f.id + '/download">⤓</a><button class="btn small danger" data-del="' + f.id + '">' + esc(t('delete')) + '</button></div></div>').join('') || '<div class=empty>' + esc(T('att_empty')) + '</div>';
+      document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+        if (!confirm(T('att_delete_confirm'))) return;
+        try { await api('/attachments/' + b.dataset.del, { method: 'DELETE' }); render(); } catch (e) { fail(e); }
+      });
+    };
+    modal('📎 ' + T('att_title'), '<div class=list id=attlist></div><form id=attform class=modalactions style="justify-content:space-between"><input type=file name=file required><button class="btn primary">' + esc(T('att_upload')) + '</button></form><p class=muted>' + esc(T('att_help')) + '</p>');
+    $('attform').onsubmit = async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const r = await fetch('/api/' + type + '/' + id + '/attachments', { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: fd });
+      if (!r.ok) { const x = await r.json().catch(() => ({})); const err = Error(x.message || Object.values(x.errors || {}).flat().join(' ') || t('error')); err.status = r.status; err.upgrade = x.upgrade_url; return fail(err); }
+      e.target.reset(); toast(T('att_uploaded')); render();
+    };
+    render().catch(fail);
+  };
+
+  window.activityTimeline = async function (actor, before, append) {
+    const r = await api('/activity/timeline?' + (actor ? 'actor=' + actor + '&' : '') + (before ? 'before=' + before : ''));
+    const icon = { user: '👤', ai: '✦', system: '⚙' };
+    const html = r.groups.map(g => '<h3 class=muted style="margin:16px 0 6px">' + esc(g.label) + '</h3><div class=list>' + g.items.map(i =>
+      '<div class="row tl-' + i.actor + '"><div class=rowmain><div class=rowtitle><span class=muted>' + esc(i.time) + '</span> — ' + esc(i.text) + '</div>'
+      + '<div class=rowsub>' + icon[i.actor] + ' ' + esc(I18N.activity.actor[i.actor] || i.actor) + (i.channel ? ' · ' + esc(I18N.activity.channel[i.channel] || i.channel) : '') + '</div></div>'
+      + (i.entity === 'task' && i.entity_id && i.action !== 'deleted' ? '<button class="btn small" onclick="editItem(' + i.entity_id + ',\'task\')">' + esc(t('edit')) + '</button>' : '') + '</div>').join('') + '</div>').join('');
+    if (!append) {
+      const f = (k, l) => '<button class="btn small' + ((actor || '') === k ? ' primary' : '') + '" onclick="activityTimeline(\'' + k + '\')">' + esc(l) + '</button>';
+      $('content').innerHTML = '<div class=card><div class=head><h2>' + esc(I18N.nav.activity) + '</h2><div class=actions>' + f('', I18N.activity.filter_all) + f('user', I18N.activity.actor.user) + f('ai', 'Haman AI') + f('system', I18N.activity.actor.system) + '</div></div><div id=tl>' + (html || empty()) + '</div><div id=tlmore></div></div>';
+    } else {
+      $('tl').insertAdjacentHTML('beforeend', html);
+    }
+    $('tlmore').innerHTML = r.next_before ? '<div class=modalactions><button class=btn onclick="activityTimeline(\'' + (actor || '') + '\',' + r.next_before + ',true)">' + esc(T('more')) + '</button></div>' : '';
+  };
+
+  const css = document.createElement('style');
+  css.textContent = '.tl-ai{border-inline-start:3px solid #8b7cf6}.tl-system{opacity:.85}';
+  document.head.appendChild(css);
+})();

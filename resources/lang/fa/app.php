@@ -208,5 +208,12 @@ return [
         'insights_failures_none' => 'هنوز علت شکست/مانع کافی ثبت نشده است.',
         'insights_missed_common' => 'رایج‌ترین علت کارهای عقب‌افتاده',
         'insights_overloaded_misses' => ':n کار عقب‌افتاده در روزهایی بود که بیش از ظرفیت برنامه‌ریزی شده بودند.',
+        'att_title' => 'فایل‌های پیوست',
+        'att_empty' => 'فایلی پیوست نشده است.',
+        'att_delete_confirm' => 'این فایل حذف شود؟',
+        'att_upload' => 'بارگذاری',
+        'att_uploaded' => 'فایل پیوست شد.',
+        'att_help' => 'فرمت‌های مجاز: PDF، تصویر، متن، CSV، Word، Excel، PowerPoint و ZIP. فایل‌ها خصوصی‌اند و فقط برای شما قابل دانلودند.',
+        'more' => 'بیشتر',
     ],
 ];

@@ -208,5 +208,12 @@ return [
         'insights_failures_none' => 'Not enough failure/blocker reasons recorded yet.',
         'insights_missed_common' => 'Most common reason for missed tasks',
         'insights_overloaded_misses' => ':n missed task(s) were due on days planned over capacity.',
+        'att_title' => 'Attachments',
+        'att_empty' => 'No files attached.',
+        'att_delete_confirm' => 'Delete this file?',
+        'att_upload' => 'Upload',
+        'att_uploaded' => 'File attached.',
+        'att_help' => 'Allowed: PDF, images, text, CSV, Word, Excel, PowerPoint and ZIP. Files are private and only you can download them.',
+        'more' => 'More',
     ],
 ];

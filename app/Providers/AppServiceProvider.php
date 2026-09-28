@@ -21,5 +21,8 @@ final class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Files of deleted tasks/projects are removed from storage too.
+        \App\Models\Task::deleted(fn ($t) => app(\App\Services\Planner\AttachmentService::class)->purge('task', (int) $t->id));
+        \App\Models\Project::deleted(fn ($p) => app(\App\Services\Planner\AttachmentService::class)->purge('project', (int) $p->id));
     }
 }

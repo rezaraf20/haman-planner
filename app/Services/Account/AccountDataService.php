@@ -30,7 +30,7 @@ final class AccountDataService
 {
     /** Planner tables with a user_id column, children first. */
     public const PLANNER_TABLES = [
-        'task_dependencies', 'execution_logs', 'schedule_blocks', 'reminders', 'notes', 'tasks', 'milestones',
+        'task_dependencies', 'execution_logs', 'schedule_blocks', 'reminders', 'notes', 'tasks', 'recurring_tasks', 'milestones',
         'projects', 'goals', 'decisions', 'areas', 'daily_plans', 'reviews', 'ai_interactions', 'pending_actions', 'activity_logs',
     ];
 
@@ -51,6 +51,7 @@ final class AccountDataService
         $out['subscriptions'] = $user->subscriptions()->with('plan:id,code')->get()
             ->map(fn ($s) => ['plan' => $s->plan?->code] + $s->only(['status', 'billing_interval', 'trial_ends_at', 'current_period_start', 'current_period_end', 'canceled_at']))->all();
         $out['invoices'] = Invoice::query()->where('user_id', $user->id)->get(['number', 'amount', 'currency', 'issued_at', 'lines'])->toArray();
+        $out['attachments'] = \App\Models\Attachment::withoutGlobalScopes()->where('user_id', $user->id)->get(['attachable_type', 'attachable_id', 'original_name', 'mime', 'size', 'created_at'])->toArray();
         $out['support_tickets'] = SupportTicket::query()->where('user_id', $user->id)->with('messages:id,support_ticket_id,is_staff,body,created_at')->get(['id', 'subject', 'status', 'created_at'])->toArray();
         return $out;
     }
@@ -62,6 +63,14 @@ final class AccountDataService
         $anonymize = (bool) config('billing.anonymize_invoices_on_account_deletion', true);
         $pseudonym = 'deleted-user-'.substr(hash('sha256', $user->id.'|'.$email.'|'.config('app.key')), 0, 12);
 
+        app(\App\Services\Planner\AttachmentService::class)->purge(null, null, (int) $user->id);
+        foreach (\App\Models\CalendarConnection::withoutGlobalScopes()->where('user_id', $user->id)->get() as $connection) {
+            try {
+                app(\App\Services\Calendar\CalendarSyncService::class)->disconnect($connection); // revokes access upstream
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
         DB::transaction(function () use ($user, $email, $anonymize, $pseudonym): void {
             foreach (self::PLANNER_TABLES as $table) {
                 if (Schema::hasTable($table) && Schema::hasColumn($table, 'user_id')) {

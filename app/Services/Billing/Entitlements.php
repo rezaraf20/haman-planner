@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Schema;
  */
 final class Entitlements
 {
-    /** @var array<int,?Plan> per-request cache */
+    /** @var array<int,array{plan:?Plan,at:float,scope:int}> per-request (and at most 2 s) cache */
     private array $planCache = [];
 
     private static bool $tablesReady = false;
@@ -61,15 +61,19 @@ final class Entitlements
 
     public function plan(User $user): ?Plan
     {
-        if (array_key_exists($user->id, $this->planCache)) {
-            return $this->planCache[$user->id];
+        // Short-lived cache: services can outlive a request (reused controllers, queue workers).
+        $scope = app()->bound('request') ? spl_object_id(app('request')) : 0;
+        if (isset($this->planCache[$user->id]) && $this->planCache[$user->id]['scope'] === $scope && $this->planCache[$user->id]['at'] > microtime(true) - 2.0) {
+            return $this->planCache[$user->id]['plan'];
         }
         if (!self::tablesReady()) {
-            return $this->planCache[$user->id] = null;
+            $this->planCache[$user->id] = ['plan' => null, 'at' => microtime(true), 'scope' => $scope];
+            return null;
         }
         $plan = $this->currentSubscription($user)?->plan
             ?? Plan::query()->where('is_default', true)->where('is_active', true)->orderBy('sort_order')->first();
-        return $this->planCache[$user->id] = $plan;
+        $this->planCache[$user->id] = ['plan' => $plan, 'at' => microtime(true), 'scope' => $scope];
+        return $plan;
     }
 
     public function forget(User $user): void

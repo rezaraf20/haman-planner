@@ -8,6 +8,7 @@
 <html lang="{{ $loc }}" dir="{{ \App\Support\Locales::dir() }}">
 <head>
 @include('partials.fonts')
+@include('partials.pwa')
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="csrf-token" content="{{ csrf_token() }}"><title>{{ $brand['app_name'] }}</title>
@@ -44,6 +45,7 @@ input[type=email],input[type=datetime-local],input[type=date],input[type=number]
 <button onclick="location.href='{{ route('billing.index') }}'">💳 <span class="txt">{{ __('app.nav.billing') }}</span></button>
 @if($brand['support_enabled'] || $u->is_admin)<button onclick="location.href='{{ route('support.index') }}'">💬 <span class="txt">{{ __('app.nav.support') }}</span></button>@endif
 @if($u->is_admin)<button onclick="location.href='{{ route('admin.home') }}'">⚙ <span class="txt">{{ __('app.nav.admin') }}</span></button>@endif
+<button id="pwa-install" class="hide">⤓ <span class="txt">{{ __('pwa.install') }}</span></button>
 <form method="post" action="{{ route('logout') }}">@csrf<button>↪ <span class="txt">{{ __('common.logout') }}</span></button></form>
 <div class="lang">@include('partials.lang-switch')</div>
 </div>
@@ -55,7 +57,7 @@ input[type=email],input[type=datetime-local],input[type=date],input[type=number]
 <div class="top"><div><div class="eyebrow">{{ $brand['app_name'] }} · {{ $u->name }} · <span dir="ltr">{{ $u->email }}</span></div><h1 id="title">{{ __('app.nav.today') }}</h1></div><div class="actions"><button class="btn" onclick="loadView(view)">↻ {{ __('common.refresh') }}</button><button class="btn primary" onclick="openCreate()">＋ {{ __('common.add') }}</button></div></div><div id="content"></div></main></div>
 <div class="modalback" id="modal"><div class="modal"><div class="head"><h2 id="mtitle"></h2><button class="btn small" onclick="closeModal()" aria-label="{{ __('common.close') }}">×</button></div><div id="mbody"></div></div></div><div id="toast" class="toast" role="status"></div>
 <script>
-const I18N={t:@json(__('app.js')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days'))};
+const I18N={t:@json(__('app.js')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days')),activity:@json(__('activity'))};
 const LOCALE=@json($loc),TZ=@json($u->preferredTimezone()),INTL=LOCALE==='fa'?'fa-IR':'en-US',BILLING_URL=@json(route('billing.index'));
 const csrf=document.querySelector('meta[name=csrf-token]').content,$=id=>document.getElementById(id);let view='today',cache={areas:[],goals:[],projects:[],milestones:[],tasks:[]};
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -74,7 +76,7 @@ function fail(e){if(e.status===402)toast(esc(e.message)+' <a href="'+esc(e.upgra
 async function cacheAll(){let [a,g,p,m,tk]=await Promise.all([api('/areas'),api('/goals'),api('/projects'),api('/milestones'),api('/tasks?per_page=100')]);cache.areas=a.data||a;cache.goals=g.data||g;cache.projects=p.data||p;cache.milestones=m.data||m;cache.tasks=tk.data||tk}
 const label=v=>{if(v==null||v==='')return'—';let s=String(v);return I18N.status[s]||I18N.prio[s]||I18N.generic[s]||I18N.failure[s]||s};
 function pill(v){let s=String(v||'').toLowerCase(),c=['completed','on_track','on track','done','paid','success'].includes(s)?'ok':['blocked','behind','cancelled','failed','error'].includes(s)?'danger':['waiting','at_risk','at risk','deferred','pending'].includes(s)?'warn':'';return '<span class="pill '+c+'">'+esc(label(v))+'</span>'}
-function itemRow(x,kind){let title=(x.recurring_task_id?'🔁 ':'')+(x.title||x.name||x.intent||t('untitled'));return '<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(title)+'</div><div class="rowsub">'+(x.deadline?t('due_on',{date:fmt(x.deadline)}):x.target_date?t('target_on',{date:fmt(x.target_date)}):x.scheduled_at?fmtDT(x.scheduled_at):x.created_at?fmtDT(x.created_at):'')+'</div>'+(x.progress!=null?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,x.progress))+'%"></i></div>':'')+'</div><div class="rowactions">'+pill(x.status||x.health||x.priority)+(x.recurring_task_id&&!['completed','cancelled'].includes(x.status)?'<button class="btn small" onclick="skipOccurrence('+x.id+')">'+esc(t('skip_occurrence'))+'</button>':'')+'<button class="btn small" onclick="editItem('+x.id+',\''+kind+'\')">'+esc(t('edit'))+'</button><button class="btn small danger" onclick="deleteItem('+x.id+',\''+kind+'\')">'+esc(t('delete'))+'</button></div></div>'}
+function itemRow(x,kind){let title=(x.recurring_task_id?'🔁 ':'')+(x.title||x.name||x.intent||t('untitled'));return '<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(title)+'</div><div class="rowsub">'+(x.deadline?t('due_on',{date:fmt(x.deadline)}):x.target_date?t('target_on',{date:fmt(x.target_date)}):x.scheduled_at?fmtDT(x.scheduled_at):x.created_at?fmtDT(x.created_at):'')+'</div>'+(x.progress!=null?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,x.progress))+'%"></i></div>':'')+'</div><div class="rowactions">'+pill(x.status||x.health||x.priority)+(kind==='task'||kind==='project'?'<button class="btn small" title="'+esc(t('att_title'))+'" onclick="attachmentsModal(\''+kind+'\','+x.id+')">📎</button>':'')+(x.recurring_task_id&&!['completed','cancelled'].includes(x.status)?'<button class="btn small" onclick="skipOccurrence('+x.id+')">'+esc(t('skip_occurrence'))+'</button>':'')+'<button class="btn small" onclick="editItem('+x.id+',\''+kind+'\')">'+esc(t('edit'))+'</button><button class="btn small danger" onclick="deleteItem('+x.id+',\''+kind+'\')">'+esc(t('delete'))+'</button></div></div>'}
 const F=(n,type,req)=>[n,I18N.fields[n]||n,type,req?1:0];
 const schema={
 area:{ep:'areas',f:[F('name','text',1),F('type','text'),F('status','text'),F('sort_order','number'),F('description','textarea')]},
@@ -137,11 +139,12 @@ async function generateReview(){try{await api('/reviews/generate',{method:'POST'
 async function loadView(v){view=v;$('title').textContent=I18N.nav[{'ai-planner':'ai_planner',ai:'ai_interactions'}[v]||v]||v;try{
 if(v==='today')return today();if(v==='inbox')return inbox();if(v==='search')return searchView();if(v==='ai-planner')return aiPlanner();if(v==='analytics')return analytics();if(v==='reports')return reports('week');if(v==='daily')return daily();if(v==='calendar')return window.calendarView?calendarView():calendar();if(v==='recurring')return recurringView();if(v==='dependencies')return dependencies();
 if(v==='execution')return execution();if(v==='failures')return failures();if(v==='reviews')return reviews();
-if(v==='ai')return systemList('ai-interactions',I18N.nav.ai_interactions,renderAI);if(v==='pending')return systemList('pending-actions',I18N.nav.pending,renderPending);if(v==='activity')return systemList('activity',I18N.nav.activity,renderActivity);
+if(v==='ai')return systemList('ai-interactions',I18N.nav.ai_interactions,renderAI);if(v==='pending')return systemList('pending-actions',I18N.nav.pending,renderPending);if(v==='activity')return window.activityTimeline?activityTimeline():systemList('activity',I18N.nav.activity,renderActivity);
 if(['tasks','goals','projects','areas','milestones','reminders','notes','decisions'].includes(v))return loadList(v);
 }catch(e){$('content').innerHTML='<div class=card><div style="color:#b42318">'+esc(e.message)+'</div></div>'}}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadView(b.dataset.view)});
 document.addEventListener('DOMContentLoaded',()=>loadView(view));
+let pwaPrompt=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pwaPrompt=e;$('pwa-install').classList.remove('hide')});$('pwa-install').onclick=async()=>{if(!pwaPrompt)return;pwaPrompt.prompt();await pwaPrompt.userChoice;pwaPrompt=null;$('pwa-install').classList.add('hide')};
 </script>
 <script src="{{ asset('js/planner-calendar.js') }}?v={{ @filemtime(public_path('js/planner-calendar.js')) }}"></script>
 <script src="{{ asset('js/planner-ai.js') }}?v={{ @filemtime(public_path('js/planner-ai.js')) }}"></script></body></html>

@@ -142,7 +142,11 @@ final class TaskController extends Controller
                 $task->recurrence_exception = 'moved';
             }
         }
+        $deadlineChanged = $task->isDirty('deadline') && $task->getOriginal('deadline') !== null;
         $task->save();
+        if ($deadlineChanged) {
+            app(\App\Services\Planner\ActivityLogger::class)->log('deadline_changed', Task::class, $task->id, null, ['deadline' => $task->deadline?->toIso8601String()]);
+        }
         if ($plannedBefore[0] !== null && $plannedBefore !== [$task->planned_start?->toIso8601String(), $task->planned_end?->toIso8601String()]) {
             app(\App\Services\Planner\ActivityLogger::class)->log('rescheduled', Task::class, $task->id,
                 ['planned_start' => $plannedBefore[0], 'planned_end' => $plannedBefore[1]],
@@ -179,6 +183,7 @@ final class TaskController extends Controller
         $project = $task->project()->first();
         $milestone = $task->milestone()->first();
 
+        app(\App\Services\Planner\ActivityLogger::class)->log('deleted', Task::class, $task->id, ['title' => $task->title], null);
         $task->delete();
 
         if ($milestone) $this->progressPropagation->milestone($milestone);
