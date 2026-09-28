@@ -87,6 +87,7 @@ Route::middleware([
     Route::post('/planning/proposals/{planProposal}/apply', [\App\Http\Controllers\Api\PlanningController::class, 'apply']);
     Route::post('/planning/proposals/{planProposal}/dismiss', [\App\Http\Controllers\Api\PlanningController::class, 'dismiss']);
     Route::get('/planning/what-now', [\App\Http\Controllers\Api\PlanningController::class, 'whatNow']);
+    Route::get('/planning/week', [\App\Http\Controllers\Api\PlanningController::class, 'week']);
     Route::get('/planning/insights', [\App\Http\Controllers\Api\PlanningController::class, 'insights']);
     Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1,a-reviews-weekly');
     Route::get('/reviews/{review}/details', [\App\Http\Controllers\Api\PlanningController::class, 'showReview']);

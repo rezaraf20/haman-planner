@@ -179,10 +179,13 @@ final class AdminBusinessTest extends TestCase
             $html = $this->get($url)->getContent();
             $this->assertStringContainsString('fonts/vazirmatn/Vazirmatn-wght.woff2', $html);
             $this->assertStringContainsString('fonts/poppins/poppins-latin-700-normal.woff2', $html);
-            $this->assertStringContainsString('font-family:var(--font)', $html);
+            $this->assertTrue(str_contains($html, 'font-family:var(--font)') || str_contains($html, 'css/haman.css'), $url.' uses the font variable');
             $this->assertStringNotContainsString('fonts.googleapis.com', $html);
         }
-        $this->assertStringContainsString('font-family:var(--font)', $this->actingAs($this->member)->get('/planner')->getContent());
+        // App pages share the design system stylesheet, which applies the font variable.
+        $this->assertStringContainsString('font-family: var(--font)', (string) file_get_contents(public_path('css/haman.css')));
+        $this->assertStringContainsString('css/haman.css', $this->actingAs($this->member)->get('/planner')->getContent());
+        $this->assertStringContainsString('fonts/vazirmatn/Vazirmatn-wght.woff2', $this->get('/planner')->getContent());
     }
 
     public function test_admin_can_upload_a_persian_font_and_switch_the_english_font(): void

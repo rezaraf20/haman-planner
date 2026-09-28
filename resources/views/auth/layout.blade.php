@@ -7,35 +7,37 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
+<link rel="stylesheet" href="{{ asset('css/haman.css') }}?v={{ @filemtime(public_path('css/haman.css')) }}">
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:var(--font);background:#0f172a;color:#172033;display:grid;place-items:center;padding:24px 0}
-.card{width:min(430px,calc(100% - 32px));background:#fff;border-radius:24px;padding:36px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
-.head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.logo{font-size:26px;font-weight:850;letter-spacing:-.5px}.sub{color:#718096;margin:7px 0 24px;line-height:1.8}
-.field{margin:16px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
-.field input,.field select{width:100%;padding:13px 14px;border:1px solid #d9dee8;border-radius:12px;font-size:15px;outline:none;font-family:inherit;background:#fff}
-.field input:focus,.field select:focus{border-color:#18212f;box-shadow:0 0 0 3px #e8ebef}.field .help{font-size:12px;color:#94a3b8;margin-top:6px}
-input[type=email],input[type=password]{direction:ltr;text-align:start}
-.btn{width:100%;border:0;border-radius:12px;padding:13px;background:#18212f;color:#fff;font-weight:800;cursor:pointer;font-size:15px;font-family:inherit}
-.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 0 18px;font-size:13px}
-.remember{display:flex;gap:8px;align-items:center;color:#64748b}
-a{color:#18212f;font-weight:700;text-decoration:none}a:hover{text-decoration:underline}
-.error{background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:6px}
-.ok{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:6px}
-.foot{text-align:center;font-size:13px;color:#64748b;margin-top:22px;line-height:1.9}
-.legal{font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.8}
+body{min-height:100vh;display:grid;place-items:center;padding:32px 16px;background:var(--bg)}
+.auth{width:min(420px,100%)}
+.auth .card{padding:32px;box-shadow:var(--shadow-1)}
+.auth .head{align-items:flex-start;margin-bottom:0}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--ink-900)}
+.logo .mark{width:32px;height:32px;border-radius:9px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:15px}
+.sub{color:var(--text-3);margin:10px 0 22px;line-height:1.8}
+.auth .field{margin:0 0 14px}
+.auth .btn{width:100%;min-height:42px}
+.auth .btn:not(.ghost){background:var(--ink-900);border-color:var(--ink-900);color:#fff}
+.auth .btn:not(.ghost):hover{background:var(--ink-700)}
+.row{justify-content:space-between;margin:4px 0 18px;font-size:var(--fs-sm)}
+.remember{display:flex;gap:8px;align-items:center;color:var(--text-2)}
+.error{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-line);padding:10px 12px;border-radius:var(--r-md);font-size:var(--fs-sm);line-height:1.8;margin-bottom:12px}
+.foot{text-align:center;font-size:var(--fs-sm);color:var(--text-3);margin-top:18px;line-height:1.9}
+.legal{font-size:var(--fs-xs);color:var(--text-3);margin-top:10px;line-height:1.8}
 .hp{position:absolute;inset-inline-start:-10000px;width:1px;height:1px;overflow:hidden}
-.lang-switch{font-size:12px;color:#94a3b8;white-space:nowrap}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:#18212f}
+.lang-switch{font-size:var(--fs-xs);color:var(--text-3);white-space:nowrap}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:var(--text)}
+.auth-note{text-align:center;color:var(--text-3);font-size:var(--fs-xs);margin-top:16px}
 </style>
 </head>
-<body><main class="card">
+<body><div class="auth"><main class="card">
 <div class="head">
-<div>@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" style="max-height:56px;max-width:200px;object-fit:contain;display:block;margin-bottom:10px">@endif
-<div class="logo">{{ $brand['app_name'] }}</div></div>
+<div>@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" style="max-height:48px;max-width:180px;object-fit:contain;display:block;margin-bottom:10px">@endif
+<div class="logo">@unless($brand['logo'])<span class="mark" aria-hidden="true">{{ mb_substr($brand['app_name'], 0, 1) }}</span>@endunless{{ $brand['app_name'] }}</div></div>
 @include('partials.lang-switch')
 </div>
 <div class="sub">@hasSection('subtitle')@yield('subtitle')@else{{ $brand['tagline'] }}@endif</div>
-@if (session('status'))<div class="ok">{{ session('status') }}</div>@endif
-@if ($errors->any())<div class="error">@foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>@endif
+@if (session('status'))<div class="ok" role="status">{{ session('status') }}</div>@endif
+@if ($errors->any())<div class="error" role="alert">@foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>@endif
 @yield('content')
-</main></body></html>
+</main></div></body></html>

@@ -1,12 +1,13 @@
 @extends('layouts.page')
 @section('title', __('billing.title'))
 @push('styles')
-.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.plan{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}.plan.current{border-color:var(--ink);box-shadow:0 0 0 2px #17203311}
-.plan-name{font-weight:850;font-size:18px;display:flex;gap:8px;align-items:center}.plan-desc{color:var(--muted);line-height:1.8;min-height:48px}
-.plan-price{font-size:24px;font-weight:900}.plan-price small{font-size:12px;color:var(--muted);font-weight:600}
-.plan-features{list-style:none;padding:0;margin:4px 0;line-height:2}.plan-features .no{color:#a0aec0}.plan-actions{display:grid;gap:8px;margin-top:auto}
-.toggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}.toggle a{padding:7px 14px;color:var(--ink);font-weight:700}.toggle a.on{background:var(--ink);color:#fff}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--s4)}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s5);display:flex;flex-direction:column;gap:var(--s2)}.plan.current{border-color:var(--ink-900);box-shadow:0 0 0 1px var(--ink-900)}
+.plan-name{font-weight:var(--w-bold);font-size:var(--fs-lg);display:flex;gap:8px;align-items:center}.plan-desc{color:var(--text-3);line-height:1.8;min-height:48px}
+.plan-price{font-size:24px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums}.plan-price small{font-size:var(--fs-sm);color:var(--text-3);font-weight:var(--w-medium)}
+.plan-features{list-style:none;padding:0;margin:4px 0;line-height:2;font-size:var(--fs-sm)}.plan-features .no{color:var(--text-3);opacity:.7}.plan-actions{display:grid;gap:var(--s2);margin-top:auto;padding-top:var(--s2)}
+.pay-caption{font-size:var(--fs-xs);font-weight:var(--w-semibold);color:var(--text-3)}
+.toggle{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--r);overflow:hidden;background:var(--surface)}.toggle a{padding:6px 14px;color:var(--text-2);font-weight:var(--w-semibold);text-decoration:none}.toggle a.on{background:var(--ink-900);color:#fff}
 @endpush
 @section('content')
 @php($sub = $summary['subscription'])

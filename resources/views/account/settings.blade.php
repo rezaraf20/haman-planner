@@ -2,9 +2,9 @@
 @section('title', __('settings.title'))
 @push('styles')
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:860px){.cols{grid-template-columns:1fr}}
-.code{font-size:28px;letter-spacing:5px;font-weight:900;background:#f1f5f9;padding:14px;border-radius:12px;text-align:center;margin:14px 0;direction:ltr}
-.tg{display:inline-block;background:#229ED9;color:#fff;border-radius:10px;padding:11px 16px;font-weight:700}.tg:hover{text-decoration:none}
-.danger-zone{border-color:#f5c2c0}
+.code{font-size:26px;letter-spacing:5px;font-weight:700;background:var(--surface-3);padding:14px;border-radius:var(--r-lg);text-align:center;margin:14px 0;direction:ltr}
+.tg{display:inline-flex;background:#229ED9;color:#fff;border-radius:var(--r);padding:9px 14px;font-weight:600}.tg:hover{color:#fff}.tg:hover{text-decoration:none}
+.danger-zone{border-color:var(--danger-line)}.danger-zone h2{color:var(--danger)}
 dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{color:var(--muted)}dd{margin:0}
 @endpush
 @section('content')

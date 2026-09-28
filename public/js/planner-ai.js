@@ -10,7 +10,7 @@
   window.openPlanner = async function (kind, message) {
     if (view !== 'ai-planner') { document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('active', x.dataset.view === 'ai-planner')); view = 'ai-planner'; $('title').textContent = I18N.nav.ai_planner; await plannerHome(); }
     const out = $('planout');
-    out.innerHTML = '<div class=empty>' + esc(T('ai_thinking')) + '</div>';
+    out.innerHTML = '<div class=card><div class=skeleton><i></i><i></i><i></i></div><p class="muted small" style="margin:10px 0 0">' + esc(T('ai_thinking')) + '</p></div>';
     try {
       const body = message ? { message } : { kind };
       const r = await api('/planning/proposals', { method: 'POST', body: JSON.stringify(body) });
@@ -25,7 +25,7 @@
       + '<div class=statgrid><div><div class=muted>' + esc(T('plan_usable')) + '</div><strong>' + esc(m.usable) + '</strong></div><div><div class=muted>' + esc(T('plan_scheduled')) + '</div><strong>' + esc(m.scheduled) + '</strong></div>'
       + '<div><div class=muted>' + esc(T('plan_overload')) + '</div><strong>' + esc(m.overload) + '</strong></div></div>'
       + (p.metrics && p.metrics.history_used ? '<p class=muted>ⓘ ' + esc(T('plan_history_used')) + '</p>' : '');
-    if (p.summary) h += '<div class=aisum><b>✦ ' + esc(T('plan_ai_label')) + '</b><p>' + esc(p.summary) + '</p></div>';
+    if (p.summary) h += '<div class=aisum><b>' + ic('haman', 'sm') + ' ' + esc(T('plan_ai_label')) + '</b><p>' + esc(p.summary) + '</p></div>';
     else if (p.ai_note) h += '<p class=muted>ⓘ ' + esc(p.ai_note) + '</p>';
     (p.ai_warnings || []).forEach(w => h += '<div class="notice">⚠ ' + esc(w) + '</div>');
     if (!p.actions.length) return h + '</div>';
@@ -34,7 +34,7 @@
       return '<label class="row pa' + (a.type === 'at_risk' ? ' risk' : '') + '"><div class=rowmain style="display:flex;gap:10px;align-items:flex-start">'
         + (p.open && a.type !== 'at_risk' ? '<input type=checkbox data-key="' + esc(a.key) + '"' + (a.selected ? ' checked' : '') + '>' : '<span>' + (applied ? (applied.status === 'applied' ? '✓' : '–') : '•') + '</span>')
         + '<div><div class=rowtitle>' + esc(a.text) + '</div><div class=rowsub>' + esc(T('plan_because')) + ' ' + esc((a.reasons_text || []).join(' · ')) + '</div>'
-        + (a.ai_note ? '<div class=rowsub>✦ ' + esc(a.ai_note) + (a.ai_advises_against ? ' <b>(' + esc(T('plan_ai_against')) + ')</b>' : '') + '</div>' : '')
+        + (a.ai_note ? '<div class=rowsub>' + ic('haman', 'sm') + ' ' + esc(a.ai_note) + (a.ai_advises_against ? ' <b>(' + esc(T('plan_ai_against')) + ')</b>' : '') + '</div>' : '')
         + (applied && applied.status !== 'applied' ? '<div class=rowsub>' + esc(T('plan_skipped_' + applied.reason) || applied.reason) + '</div>' : '')
         + '</div></div></label>';
     }).join('') + '</div>';
@@ -70,10 +70,10 @@
   }
 
   async function plannerHome() {
-    const b = (k, label) => '<button class="btn" data-plan="' + k + '">' + esc(label) + '</button>';
-    $('content').innerHTML = '<div class=card><div class=head><h2>✦ ' + esc(I18N.nav.ai_planner) + '</h2><span class=muted>' + esc(T('plan_intro')) + '</span></div>'
-      + '<div class=actions>' + b('day', T('ai_plan_day')) + b('week', T('ai_plan_week')) + b('next_week', T('ai_plan_next_week')) + b('fix', T('ai_fix')) + b('now', T('ai_what_now')) + b('ask', T('ai_ask_advice')) + '</div>'
-      + '<div class=toolbar style="margin-top:10px"><input id=plantext class=search style="width:100%" placeholder="' + esc(T('plan_free_placeholder')) + '"><button class="btn primary" id=plango>' + esc(T('ai_button')) + '</button></div></div>'
+    const tile = (k, icon) => '<button class="ai-tile" data-plan="' + k + '">' + ic(icon) + '<span><b>' + esc(T(k === 'ask' ? 'ai_ask_advice' : k === 'now' ? 'ai_what_now' : k === 'fix' ? 'ai_fix' : 'ai_plan_' + k)) + '</b><span>' + esc(T('plan_desc_' + k)) + '</span></span></button>';
+    $('content').innerHTML = '<div class=card><p class="muted" style="margin:0 0 12px">' + esc(T('plan_intro')) + '</p><div class=ai-tiles>'
+      + tile('day', 'today') + tile('week', 'calendar') + tile('next_week', 'arrow') + tile('fix', 'refresh') + tile('now', 'goal') + tile('ask', 'support') + '</div>'
+      + '<div class=toolbar style="margin:14px 0 0"><input id=plantext class="input" style="flex:1;min-width:200px" aria-label="' + esc(T('plan_free_placeholder')) + '" placeholder="' + esc(T('plan_free_placeholder')) + '"><button class="btn primary" id=plango>' + esc(T('ai_button')) + '</button></div></div>'
       + '<div id=planout class=section></div>';
     document.querySelectorAll('[data-plan]').forEach(x => x.onclick = () => x.dataset.plan === 'ask' ? legacyAsk() : openPlanner(x.dataset.plan));
     const go = () => { const v = $('plantext').value.trim(); if (v) openPlanner(null, v); };
@@ -90,21 +90,115 @@
 
   window.aiPlanner = plannerHome;
 
-  // ------------------------------------------------------------------ today: what now
+  // ------------------------------------------------------------------ home ("Today")
+  // Answers, in order: what now, what matters today, how the week is going, what needs attention,
+  // what Haman recommends. Everything comes from recorded data; AI is never called here.
 
-  const origToday = window.today;
+  const H = k => (I18N.home || {})[k] || k;
+  const hm = iso => new Date(iso).toLocaleTimeString(INTL, { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+  function greeting() { const h = +tzParts(new Date()).hour; return h < 12 ? H('morning') : h < 17 ? H('afternoon') : H('evening'); }
+
   window.today = async function () {
-    await origToday();
-    const box = document.createElement('div'); box.className = 'section'; box.id = 'wn';
-    $('content').prepend(box);
-    try {
-      const r = await api('/planning/what-now');
-      const top = r.ranked.slice(0, 3);
-      box.innerHTML = '<div class=card><div class=head><h2>◎ ' + esc(T('what_now_title')) + '</h2><div class=actions><button class="btn small" onclick="openPlanner(\'day\')">✦ ' + esc(T('ai_plan_day')) + '</button></div></div>'
-        + (r.now_scheduled ? '<p><b>' + esc(T('what_now_scheduled')) + ':</b> ' + esc(r.now_scheduled.title || '') + '</p>' : '')
-        + '<div class=list>' + (top.map(x => '<div class=row><div class=rowmain><div class=rowtitle>' + esc(x.title) + '</div><div class=rowsub>' + esc((x.reasons_text || []).join(' · ')) + '</div></div>' + pill(x.priority) + '</div>').join('') || empty()) + '</div>'
-        + (r.today && r.today.warning ? '<div class=notice style="margin-top:10px">⚠ ' + esc(r.today.warning.text) + '</div>' : '') + '</div>';
-    } catch (e) { box.remove(); }
+    const p = tzParts(new Date()), d = p.year + '-' + p.month + '-' + p.day;
+    const [sch, wn, wk] = await Promise.all([
+      api('/schedule?from=' + d + '&to=' + d).catch(() => null),
+      api('/planning/what-now').catch(() => null),
+      api('/planning/week').catch(() => null),
+    ]);
+    if (view !== 'today') return;
+    const day = sch && sch.days && sch.days[0], items = (sch ? sch.items : []).slice().sort((a, b) => a.starts_at < b.starts_at ? -1 : 1);
+    const busy = sch ? sch.busy || [] : [], pairs = sch && sch.conflicts || [], conflicts = new Set(pairs.flat());
+    const keyOf = i => (i.type || 'event') + ':' + i.id;
+    const ranked = wn ? wn.ranked : [], now = Date.now();
+    const important = ranked.filter(x => ['p0', 'p1'].includes(x.priority) || (x.deadline && new Date(x.deadline) - now < 864e5)).length;
+    const free = day && day.working ? Math.max(0, day.usable_minutes - day.scheduled_minutes) : null;
+
+    // hero
+    $('title').textContent = greeting().replace(':name', USER_NAME);
+    let h = '<div class=home-hero><div><p>'
+      + esc(ranked.length ? T('home_line', { n: num(important || ranked.length) }) : H('nothing_open'))
+      + (day && day.working ? ' ' + esc(free > 0 ? T('home_free', { time: dur(free) }) : day.overload_minutes > 0 ? T('home_over', { time: dur(day.overload_minutes) }) : T('home_full')) : ' ' + esc(H('day_off')))
+      + '</p></div><div class=actions><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button></div></div>';
+
+    // left column
+    let L = '';
+    const cur = wn && wn.now_scheduled, top = cur ? null : ranked[0];
+    if (cur || top) {
+      const x = cur || top;
+      L += '<section class="card now-card" aria-labelledby=nowh><div class=eyebrow id=nowh>' + esc(cur ? H('now_scheduled') : H('now_next')) + '</div>'
+        + '<div class=now-title>' + esc(x.title || '') + '</div><div class=meta>'
+        + (cur ? '<span>' + ic('clock', 'sm') + esc(hm(cur.starts_at) + '–' + hm(cur.ends_at)) + '</span>' : '')
+        + (!cur && top.deadline ? dueMeta(top.deadline, false) : '') + (!cur && top.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(top.estimated_minutes)) + '</span>' : '')
+        + (!cur && top.reasons_text && top.reasons_text.length ? '<span>' + esc(top.reasons_text[0]) + '</span>' : '') + '</div>'
+        + '<div class=actions style="margin-top:12px">' + ((cur ? cur.task_id : top.id) ? '<button class="btn primary" onclick="homeDone(' + (cur ? cur.task_id : top.id) + ',this)">' + ic('check') + esc(H('mark_done')) + '</button><button class=btn onclick="executionForm()">' + ic('timer') + esc(t('log_work')) + '</button>' : '')
+        + '<button class="btn ghost" onclick="openPlanner(\'now\')">' + esc(H('why_this')) + '</button></div></section>';
+    }
+    // schedule
+    const all = items.map(i => ({ ...i, src: 'plan' })).concat(busy.map(b => ({ ...b, src: 'busy', kind: 'busy' }))).sort((a, b) => a.starts_at < b.starts_at ? -1 : 1);
+    L += '<section class=card aria-labelledby=schh><div class=head><h2 id=schh>' + esc(H('schedule')) + '</h2><button class="btn ghost small" data-go2=calendar onclick="loadView(\'calendar\')">' + esc(H('open_calendar')) + ic('chev', 'sm flip') + '</button></div>';
+    if (all.length) {
+      L += '<div class=tl>' + all.map(i => {
+        const doneI = i.status === 'completed', isNow = new Date(i.starts_at) <= now && new Date(i.ends_at) > now, conf = conflicts.has(keyOf(i));
+        return '<div class="tl-item' + (doneI ? ' done' : '') + (isNow ? ' now' : '') + (conf ? ' conflict' : '') + '"><div class=tl-time>' + esc(hm(i.starts_at)) + '</div>'
+          + '<div class="tl-bar k-' + esc(i.kind || 'task') + (i.src === 'busy' ? ' busy' : '') + '"><div class=rowtitle>' + esc(i.title || (i.src === 'busy' ? H('busy') : t('focus'))) + '</div><div class=meta><span>' + esc(hm(i.starts_at) + '–' + hm(i.ends_at)) + '</span>'
+          + (i.src === 'busy' ? '<span>' + esc(H('from_calendar')) + '</span>' : '') + (conf ? '<span class=late>' + ic('alert', 'sm') + esc(H('conflict')) + '</span>' : '') + '</div></div>'
+          + '<div>' + (doneI ? '<span class="pill ok">' + esc(label('completed')) + '</span>' : isNow ? '<span class="pill accent">' + esc(H('now')) + '</span>' : '') + '</div></div>';
+      }).join('') + '</div>';
+    } else {
+      L += '<div class=empty style="padding:20px"><p class=empty-text>' + esc(H('schedule_empty')) + '</p><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button></div>';
+    }
+    if (day && day.working) {
+      const pct = day.usable_minutes ? Math.min(100, Math.round(day.scheduled_minutes / day.usable_minutes * 100)) : 0;
+      L += '<div class=cap-line><span>' + esc(H('capacity')) + '</span><span class=num>' + esc(T('home_cap', { used: dur(day.scheduled_minutes), total: dur(day.usable_minutes) })) + '</span></div>'
+        + '<div class=progress role=progressbar aria-valuenow="' + pct + '" aria-valuemin=0 aria-valuemax=100 aria-label="' + esc(H('capacity')) + '"><i class="' + (day.overload_minutes > 0 ? 'danger' : pct > 90 ? 'warn' : '') + '" style="width:' + pct + '%"></i></div>';
+    }
+    L += '</section>';
+    // next up
+    const rest = ranked.slice(cur ? 0 : 1, cur ? 4 : 5);
+    if (rest.length) {
+      L += '<section class=card aria-labelledby=nexth><div class=head><h2 id=nexth>' + esc(H('next_up')) + '</h2><button class="btn ghost small" onclick="loadView(\'tasks\')">' + esc(H('all_tasks')) + ic('chev', 'sm flip') + '</button></div><div class=list>'
+        + rest.map(x => '<div class="row task"><button class=check aria-pressed=false aria-label="' + esc(I18N.row.complete) + '" onclick="toggleDone(' + x.id + ',false,this)"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><div class=rowmain><div class=rowtitle>'
+          + (['p0', 'p1'].includes(x.priority) ? '<span class="prio ' + x.priority + '" title="' + esc(label(x.priority)) + '">' + esc(String(label(x.priority)).split('—').pop().trim()) + '</span> ' : '') + esc(x.title) + '</div><div class=meta>' + dueMeta(x.deadline, false)
+          + (x.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(x.estimated_minutes)) + '</span>' : '') + '</div></div>'
+          + '<div class=rowactions>' + rowMenu([mi('edit', t('edit'), "editItem(" + x.id + ",'task')")]) + '</div></div>').join('') + '</div></section>';
+    }
+
+    // right column
+    let R = '';
+    if (wk) {
+      const pct = wk.percent;
+      R += '<section class=card aria-labelledby=wkh><div class=head><h2 id=wkh>' + esc(H('week')) + '</h2><span class="muted small">' + esc(fmt(wk.week_start + 'T12:00:00Z')) + ' – ' + esc(fmt(wk.week_end + 'T12:00:00Z')) + '</span></div>'
+        + '<div class=week-top><div class=ring style="--p:' + (pct || 0) + '" data-label="' + esc(pct == null ? '—' : num(pct) + '%') + '" role=img aria-label="' + esc(H('week') + ' ' + (pct == null ? '—' : pct + '%')) + '"></div><div><b>' + esc(T('home_week_done', { done: num(wk.tasks_completed), total: num(wk.tasks_total) })) + '</b><div class="muted small">' + esc(pct == null ? H('week_empty') : H('week_hint')) + '</div></div></div>'
+        + '<dl class=kv><dt>' + esc(H('planned')) + '</dt><dd>' + esc(wk.planned_text) + '</dd><dt>' + esc(H('actual')) + '</dt><dd>' + esc(wk.actual_text) + '</dd>'
+        + '<dt>' + esc(H('overdue')) + '</dt><dd' + (wk.overdue_count ? ' style="color:var(--danger)"' : '') + '>' + esc(num(wk.overdue_count)) + '</dd></dl></section>';
+    }
+    // Haman recommends: only concrete, data-backed observations
+    const recs = [];
+    if (day && day.overload_minutes > 0) recs.push({ text: T('rec_over', { time: dur(day.overload_minutes) }), act: 'fix', label: H('review_suggestion') });
+    if (pairs.length) recs.push({ text: T('rec_conflicts', { n: num(pairs.length) }), act: 'fix', label: H('review_suggestion') });
+    if (wk && wk.due_soon_unscheduled.length) recs.push({ text: T('rec_due_soon', { n: num(wk.due_soon_unscheduled.length), title: wk.due_soon_unscheduled[0].title }), act: 'day', label: T('ai_plan_day') });
+    if (wk && wk.overdue_count) recs.push({ text: T('rec_overdue', { n: num(wk.overdue_count) }), act: 'week', label: T('ai_plan_week') });
+    if (!recs.length && day && day.working && free > 60 && ranked.length) recs.push({ text: T('rec_free', { time: dur(free) }), act: 'day', label: T('ai_plan_day') });
+    if (recs.length) {
+      const r = recs[0];
+      R += '<section class="card suggest" aria-labelledby=sugh><div class=suggest-label id=sugh>' + ic('haman', 'sm') + esc(H('recommends')) + '</div><p style="margin:0 0 10px">' + esc(r.text) + '</p>'
+        + (recs.length > 1 ? '<ul class="muted small" style="margin:0 0 10px">' + recs.slice(1).map(x => '<li>' + esc(x.text) + '</li>').join('') + '</ul>' : '')
+        + '<button class="btn small" onclick="openPlanner(\'' + r.act + '\')">' + esc(r.label) + ic('chev', 'sm flip') + '</button><p class="muted small" style="margin:8px 0 0">' + esc(H('recommends_note')) + '</p></section>';
+    }
+    if (wk && wk.overdue.length) {
+      R += '<section class=card aria-labelledby=atth><div class=head><h2 id=atth>' + esc(H('attention')) + '</h2></div><div class=list>'
+        + wk.overdue.map(x => '<div class=row><div class=rowmain><div class=rowtitle>' + esc(x.title) + '</div><div class=meta>' + dueMeta(x.deadline, false) + '</div></div><button class="btn ghost small" onclick="editItem(' + x.id + ',\'task\')">' + esc(t('edit')) + '</button></div>').join('') + '</div></section>';
+    }
+    if (!ranked.length && !all.length) {
+      L = '<section class=card>' + empty('today') + '</section>';
+    }
+    $('content').innerHTML = h + '<div class=home-grid><div style="display:grid;gap:16px">' + L + '</div><div style="display:grid;gap:16px">' + R + '</div></div>';
+  };
+
+  window.homeDone = async function (id, btn) {
+    btn.classList.add('is-busy');
+    try { await api('/tasks/' + id, { method: 'PUT', body: JSON.stringify({ status: 'completed' }) }); toast(t('task_done')); window.today(); }
+    catch (e) { btn.classList.remove('is-busy'); fail(e); }
   };
 
   // ------------------------------------------------------------------ weekly review
@@ -133,7 +227,7 @@
       + '<div class=grid2><div><h3>' + esc(T('weekly_blockers')) + '</h3>' + (w.blockers_text.length ? '<ul>' + w.blockers_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '<p class=muted>' + esc(T('weekly_no_blockers')) + '</p>')
       + '<h3>' + esc(T('weekly_projects')) + '</h3>' + ((m.projects_attention || []).length ? '<ul>' + m.projects_attention.map(p => '<li>' + esc(p.title) + ' — ' + esc(T('weekly_project_line', { overdue: num(p.overdue), missed: num(p.missed) })) + '</li>').join('') + '</ul>' : '<p class=muted>—</p>') + '</div>'
       + '<div><h3>' + esc(T('weekly_recs')) + '</h3><ul>' + w.recommendations_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
-      + (w.ai_summary ? '<div class=aisum><b>✦ ' + esc(T('plan_ai_label')) + '</b><p>' + esc(w.ai_summary) + '</p><p class=muted>' + esc(T('weekly_ai_note')) + '</p></div>' : '') + '</div></div></div>';
+      + (w.ai_summary ? '<div class=aisum><b>' + ic('haman', 'sm') + ' ' + esc(T('plan_ai_label')) + '</b><p>' + esc(w.ai_summary) + '</p><p class=muted>' + esc(T('weekly_ai_note')) + '</p></div>' : '') + '</div></div></div>';
   }
 
   // ------------------------------------------------------------------ analytics: insights
@@ -160,10 +254,6 @@
 
   function dur(mins) { mins = +mins || 0; const h = Math.floor(mins / 60), r = mins % 60; return h && r ? T('dur_hm', { h: num(h), m: num(r) }) : h ? T('dur_h', { h: num(h) }) : T('dur_m', { m: num(r) }); }
 
-  const css = document.createElement('style');
-  css.textContent = '.aisum{background:#f5f3ff;border:1px solid #e4dcff;border-radius:12px;padding:10px 12px;margin:10px 0}.aisum p{margin:6px 0 0;line-height:1.9}'
-    + '.pa{cursor:pointer}.pa input{margin-top:4px}.pa.risk{background:#fff8f0}';
-  document.head.appendChild(css);
 })();
 
 /* ---------------------------------------------------------------- attachments & activity timeline */
@@ -210,6 +300,6 @@
   };
 
   const css = document.createElement('style');
-  css.textContent = '.tl-ai{border-inline-start:3px solid #8b7cf6}.tl-system{opacity:.85}';
+  css.textContent = '.list .row.tl-ai{border-inline-start:3px solid var(--accent)}.tl-system{opacity:.85}';
   document.head.appendChild(css);
 })();

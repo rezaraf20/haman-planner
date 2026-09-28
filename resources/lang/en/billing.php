@@ -131,4 +131,10 @@ Renew here: :url',
     'auto_renew_on' => 'Renews automatically on :date.',
     'past_due_notice' => 'The last renewal payment failed. Stripe will retry; access continues until :date. Please check your card with the payment provider.',
     'auto_renew_badge' => 'Auto-renew',
+    'provider_short' => [
+        'zibal' => 'Zibal',
+        'zarinpal' => 'Zarinpal',
+        'stripe' => 'Stripe',
+    ],
+    'payment_method' => 'Payment method',
 ];

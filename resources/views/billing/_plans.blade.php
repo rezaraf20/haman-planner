@@ -31,14 +31,15 @@
 @if ($autoRenewing)
 <div class="help">{{ __('billing.auto_renew_badge') }}</div>
 @else
-@forelse ($gateways as $g)
-@if ($p->price($g->currency(), $interval))
+@php($payable = collect($gateways)->filter(fn ($g) => $p->price($g->currency(), $interval)))
+@if ($payable->isNotEmpty())
+<div class="pay-caption">{{ $isCurrent ? __('billing.renew') : __('billing.switch') }}</div>
+@endif
+@forelse ($payable as $g)
 <form method="post" action="{{ route('billing.checkout') }}">@csrf
 <input type="hidden" name="plan" value="{{ $p->id }}"><input type="hidden" name="interval" value="{{ $interval }}"><input type="hidden" name="provider" value="{{ $g->key() }}">
-<button class="btn primary" style="width:100%">{{ $isCurrent ? __('billing.renew') : __('billing.switch') }} — {{ \App\Support\Money::format($p->price($g->currency(), $interval), $g->currency()) }}</button>
-<div class="help">{{ __('billing.pay_with', ['provider' => __('billing.provider.'.$g->key())]) }}</div>
+<button class="btn {{ $loop->first ? 'primary' : '' }} pay-btn" style="width:100%" aria-label="{{ ($isCurrent ? __('billing.renew') : __('billing.switch')).' — '.__('billing.pay_with', ['provider' => __('billing.provider_short.'.$g->key())]) }}"><svg class="i sm"><use href="#i-card"/></svg>{{ __('billing.pay_with', ['provider' => __('billing.provider_short.'.$g->key())]) }}</button>
 </form>
-@endif
 @empty
 <div class="help">{{ __('billing.payments_unavailable') }}</div>
 @endforelse

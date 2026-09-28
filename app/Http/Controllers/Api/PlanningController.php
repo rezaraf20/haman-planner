@@ -76,6 +76,49 @@ final class PlanningController extends Controller
         return response()->json($r);
     }
 
+    /**
+     * Week-to-date progress for the home screen, from recorded data only: tasks planned for this
+     * week (deadline or planned start inside it) vs completed, scheduled vs logged time, and what
+     * needs attention (overdue, due soon without a slot).
+     */
+    public function week(Request $request, WeeklyReviewService $weekly): JsonResponse
+    {
+        $user = $request->user();
+        $loc = $user->preferredLocale();
+        $tz = $user->preferredTimezone();
+        $now = CarbonImmutable::now($tz);
+        $start = $weekly->weekStart($user, $now);
+        $end = $start->addDays(7);
+        [$s, $e] = [LocalDate::db($start), LocalDate::db($end)];
+
+        $inWeek = \App\Models\Task::query()->ownedBy($user->id)->where('status', '!=', 'cancelled')
+            ->where(fn ($q) => $q->whereBetween('deadline', [$s, $e])->orWhereBetween('planned_start', [$s, $e]));
+        $total = (clone $inWeek)->count();
+        $done = (clone $inWeek)->where('status', 'completed')->count();
+        $scheduling = app(\App\Services\Planner\SchedulingService::class);
+        $planned = 0;
+        for ($d = $start; $d->lt($end); $d = $d->addDay()) {
+            $planned += $scheduling->dayCapacity($user, $d)['scheduled_minutes'];
+        }
+        $actual = (int) \App\Models\ExecutionLog::query()->ownedBy($user->id)->whereBetween('started_at', [$s, $e])->sum('duration_minutes');
+
+        $open = fn () => \App\Models\Task::query()->ownedBy($user->id)->whereNotIn('status', ['completed', 'cancelled']);
+        $overdue = $open()->whereNotNull('deadline')->where('deadline', '<', LocalDate::db($now))->orderBy('deadline')->limit(5)->get(['id', 'title', 'deadline', 'priority']);
+        $overdueCount = $open()->whereNotNull('deadline')->where('deadline', '<', LocalDate::db($now))->count();
+        $soon = $open()->whereNull('planned_start')->whereBetween('deadline', [LocalDate::db($now), LocalDate::db($now->addHours(48))])
+            ->orderBy('deadline')->limit(5)->get(['id', 'title', 'deadline', 'priority']);
+
+        return response()->json([
+            'week_start' => $start->toDateString(), 'week_end' => $end->subDay()->toDateString(),
+            'tasks_total' => $total, 'tasks_completed' => $done,
+            'percent' => $total > 0 ? (int) round($done / $total * 100) : null,
+            'planned_minutes' => $planned, 'actual_minutes' => $actual,
+            'planned_text' => \App\Services\Planner\SchedulingService::duration($planned, $loc),
+            'actual_text' => \App\Services\Planner\SchedulingService::duration($actual, $loc),
+            'overdue' => $overdue, 'overdue_count' => $overdueCount, 'due_soon_unscheduled' => $soon,
+        ]);
+    }
+
     public function insights(Request $request, PlanInsightsService $insights): JsonResponse
     {
         $days = (int) ($request->validate(['days' => ['nullable', 'integer', 'min:7', 'max:365']])['days'] ?? 90);

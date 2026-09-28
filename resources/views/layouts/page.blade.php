@@ -8,39 +8,35 @@
 <meta name="robots" content="noindex">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
+<link rel="stylesheet" href="{{ asset('css/haman.css') }}?v={{ @filemtime(public_path('css/haman.css')) }}">
 <style>
-:root{--bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#64748b;--line:#e4e8ef;--dark:#0f1726;--ok:#087f5b;--warn:#9a6509;--danger:#b42318;--blue:#3157d5}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px}
-a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
-.top{background:var(--dark);color:#fff}.top .in{max-width:1180px;margin:auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px;font-weight:850;font-size:17px;color:#fff}.brand img{height:32px;max-width:120px;object-fit:contain;border-radius:6px;background:#fff1}
-.top nav{display:flex;gap:4px;flex-wrap:wrap;margin-inline-start:auto;align-items:center}.top nav a,.top nav button{color:#cbd5e1;padding:7px 11px;border-radius:9px;background:none;border:0;font:inherit;cursor:pointer}.top nav a.on,.top nav a:hover,.top nav button:hover{background:#1e2a3d;color:#fff;text-decoration:none}
-.top .lang-switch{color:#8d9ab0;font-size:12px;padding-inline:8px}.top .lang-switch a{padding:0}.top .lang-switch strong{color:#fff}.lang-switch .sep{margin-inline:6px}
-.wrap{max-width:1180px;margin:22px auto;padding:0 20px}
-.sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.sub a{padding:8px 13px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--ink);font-weight:700}.sub a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
-h1{font-size:22px;margin:0 0 14px}h2{font-size:16px;margin:0 0 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
-.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.stat b{display:block;font-size:26px;margin-top:4px}.stat span{color:var(--muted);font-size:12px}
-table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}th{font-size:12px;color:var(--muted);font-weight:700;background:#fafbfc}
-.tbl{overflow-x:auto}
-.btn{display:inline-block;border:1px solid #d5dbe4;background:#fff;border-radius:9px;padding:8px 13px;cursor:pointer;color:var(--ink);font:inherit;font-weight:700}.btn:hover{text-decoration:none}.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.danger{color:var(--danger)}.btn.sm{padding:4px 9px;font-size:12px}.btn[disabled]{opacity:.55;cursor:not-allowed}
-.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input:not([type=checkbox]):not([type=radio]):not([type=file]),.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid #d5dbe4;border-radius:10px;font:inherit;background:#fff}.field textarea{min-height:110px;resize:vertical}.help{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.8}
-input[type=email],input[type=password],input[type=number]{direction:ltr;text-align:start}
-.check{display:flex;gap:8px;align-items:center;margin:10px 0;font-weight:700}
-.ok{padding:10px 12px;border-radius:10px;background:#ecfdf5;color:#047857;margin-bottom:14px;line-height:1.8}.err{padding:10px 12px;border-radius:10px;background:#fff1f2;color:#be123c;margin-bottom:14px;line-height:1.8}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;background:#eef2f7;color:#334155}.pill.g{background:#e7f7ef;color:var(--ok)}.pill.y{background:#fff4d6;color:var(--warn)}.pill.r{background:#fdecec;color:var(--danger)}.pill.b{background:#e8eefc;color:var(--blue)}
-.muted{color:var(--muted)}.ltr{direction:ltr;unicode-bidi:isolate}
-.msg{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;background:#fff;white-space:pre-wrap;line-height:1.9}.msg.staff{background:#f2f6ff;border-color:#d7e2fb}.msg .meta{font-size:12px;color:var(--muted);margin-bottom:6px;white-space:normal}
-.bars{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}.bars div{flex:1;background:#dbe4f5;border-radius:6px 6px 0 0;position:relative;min-height:3px}.bars div span{position:absolute;top:-18px;inset-inline:0;text-align:center;font-size:11px;color:var(--muted)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.meter{height:8px;border-radius:99px;background:#edf0f4;overflow:hidden}.meter i{display:block;height:100%;background:var(--ink)}.meter i.warn{background:var(--warn)}.meter i.full{background:var(--danger)}
+.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.top .in{max-width:1180px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink-900);text-decoration:none}
+.top .brand img{height:28px;max-width:120px;object-fit:contain}
+.top .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:14px}
+.top nav{display:flex;gap:2px;flex-wrap:wrap;margin-inline-start:auto;align-items:center}
+.top nav a,.top nav button{color:var(--text-2);padding:7px 11px;border-radius:var(--r);background:none;border:0;font-weight:var(--w-medium);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.top nav a:hover,.top nav button:hover{background:var(--surface-3);color:var(--text);text-decoration:none}
+.top nav a.on{background:var(--accent-soft);color:var(--accent-strong)}
+.top .lang-switch{color:var(--text-3);font-size:var(--fs-xs);padding-inline:8px}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:var(--text)}
+.wrap{max-width:1180px;margin:24px auto 48px;padding:0 20px}
+.wrap > h1{margin-bottom:var(--s4)}
+.wrap > .card{margin-bottom:var(--s4)}
+.sub{display:flex;gap:2px;flex-wrap:wrap;margin:-8px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.sub a{padding:9px 12px;color:var(--text-2);font-weight:var(--w-medium);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;text-decoration:none}
+.sub a:hover{color:var(--text);text-decoration:none}
+.sub a.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
+.msg{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;margin:10px 0;background:var(--surface);white-space:pre-wrap;line-height:1.9}.msg.staff{background:var(--info-bg);border-color:var(--info-line)}.msg .meta{font-size:var(--fs-sm);color:var(--text-3);margin-bottom:6px;white-space:normal}
+@media(max-width:760px){.top nav{margin-inline-start:0;width:100%;overflow-x:auto;flex-wrap:nowrap}.wrap{padding:0 16px;margin-top:16px}}
 @stack('styles')
 </style>
 </head>
 <body>
+@include('partials.icons')
+<a class="skip-link" href="#main">{{ __('app.home.skip') }}</a>
 <header class="top"><div class="in">
-<a class="brand" href="{{ route('planner.app') }}">@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="">@endif{{ $brand['app_name'] }}</a>
+<a class="brand" href="{{ route('planner.app') }}">@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="">@else<span class="mark" aria-hidden="true">{{ mb_substr($brand['app_name'], 0, 1) }}</span>@endif{{ $brand['app_name'] }}</a>
 <nav>
 <a href="{{ route('planner.app') }}">{{ __('app.nav.planner') }}</a>
 <a href="{{ route('billing.index') }}" class="{{ request()->routeIs('billing.*') ? 'on' : '' }}">{{ __('app.nav.billing') }}</a>
@@ -51,7 +47,7 @@ input[type=email],input[type=password],input[type=number]{direction:ltr;text-ali
 @include('partials.lang-switch')
 </nav>
 </div></header>
-<main class="wrap">
+<main class="wrap" id="main">
 @if(request()->routeIs('admin.*'))
 <div class="sub">
 <a href="{{ route('admin.home') }}" class="{{ request()->routeIs('admin.home') ? 'on' : '' }}">{{ __('admin.nav.dashboard') }}</a>

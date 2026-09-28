@@ -12,55 +12,140 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="csrf-token" content="{{ csrf_token() }}"><title>{{ $brand['app_name'] }}</title>
+<link rel="stylesheet" href="{{ asset('css/haman.css') }}?v={{ @filemtime(public_path('css/haman.css')) }}">
 <style>
-:root{--bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#718096;--line:#e4e8ef;--nav:#0f1726;--nav2:#1e2a3d;--blue:#3157d5;--ok:#087f5b;--warn:#9a6509;--danger:#b42318}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font)}button,input,select,textarea{font:inherit}button{cursor:pointer}
-.shell{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.side{background:var(--nav);color:#fff;padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}.brand{font-size:21px;font-weight:900;padding:7px 10px 22px}.brand small{display:block;font-size:10px;color:#8d9ab0;margin-top:5px;font-weight:500}.nav{display:grid;gap:3px}.group{font-size:10px;color:#65738a;margin:16px 10px 5px}.nav button,.bottom button{border:0;background:transparent;color:#b8c3d4;text-align:start;border-radius:9px;padding:10px 11px;width:100%}.nav button:hover,.nav button.active{background:var(--nav2);color:#fff}.bottom{border-top:1px solid #273247;margin-top:18px;padding-top:12px}.bottom .lang{padding:10px 11px;font-size:12px;color:#8d9ab0}.bottom .lang a{color:#cbd5e1}.bottom .lang strong{color:#fff}.bottom .lang .sep{margin-inline:6px}
-.main{min-width:0;padding:28px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:20px}.eyebrow{font-size:11px;color:var(--muted)}h1{font-size:29px;margin:4px 0;font-weight:900}.actions{display:flex;gap:7px;flex-wrap:wrap}.btn{border:1px solid #d4dbe5;background:#fff;color:var(--ink);border-radius:10px;padding:9px 13px;font-weight:700}.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.danger{color:var(--danger)}.btn.small{font-size:11px;padding:6px 9px}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:0 3px 15px rgba(16,24,39,.035)}.metric{font-size:27px;font-weight:900;margin-top:5px}.muted{color:var(--muted);font-size:12px}.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:13px;margin-top:13px}.section{margin-top:13px}.head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.head h2{font-size:16px;margin:0}.list{display:grid;gap:7px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.rowmain{min-width:0}.rowtitle{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rowsub{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.7}.rowactions{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}.pill{display:inline-block;border-radius:999px;padding:4px 8px;background:#edf1f6;font-size:10px;white-space:nowrap}.pill.ok{background:#e9f8f2;color:var(--ok)}.pill.warn{background:#fff6df;color:var(--warn)}.pill.danger{background:#fff0ef;color:var(--danger)}.progress{height:6px;background:#edf0f4;border-radius:20px;overflow:hidden;margin-top:7px}.progress i{display:block;height:100%;background:var(--ink)}
-.toolbar{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap}.search{width:min(390px,100%);border:1px solid #d6dce5;border-radius:10px;padding:9px 11px}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid var(--line);font-size:12px;text-align:start}.table th{font-size:10px;color:var(--muted)}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.day{min-height:145px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:9px}.block{background:#eef2ff;border-radius:7px;padding:6px;margin-top:6px;font-size:10px}
-.modalback{position:fixed;inset:0;background:#11182799;display:none;align-items:center;justify-content:center;padding:20px;z-index:99}.modalback.show{display:flex}.modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:22px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.field.full{grid-column:1/-1}.field label{display:block;font-size:11px;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid #d6dce5;border-radius:9px;background:#fff}.field textarea{min-height:90px}.modalactions{display:flex;gap:7px;margin-top:15px}
-.toast{position:fixed;bottom:20px;inset-inline-start:20px;background:#172033;color:#fff;padding:11px 14px;border-radius:9px;display:none;z-index:120;max-width:min(420px,calc(100% - 40px))}.toast.show{display:block}.toast a{color:#9fb4ff}
-.empty{text-align:center;color:#8a95a5;padding:28px}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.hide{display:none!important}
-.notice{background:#fff7d6;border:1px solid #efd98a;color:#6b4e00;border-radius:12px;padding:10px 14px;margin-bottom:14px;line-height:1.8;white-space:pre-wrap}
-.ai-out h3{font-size:13px;margin:14px 0 6px}.ai-out ul{margin:0;padding-inline-start:18px;line-height:1.9}
-input[type=email],input[type=datetime-local],input[type=date],input[type=number]{direction:ltr}
-@media(max-width:1050px){.shell{grid-template-columns:80px 1fr}.brand span,.brand small,.nav .txt,.group,.bottom .txt,.bottom .lang{display:none}.brand{text-align:center}.nav button,.bottom button{text-align:center}.cards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:720px){.shell{display:block}.side{height:auto;position:sticky;z-index:20;padding:8px;display:flex;overflow:auto}.brand{padding:9px}.nav{display:flex}.nav button{white-space:nowrap}.bottom{display:none}.main{padding:14px}.top{flex-direction:column}.cards,.grid2,.formgrid,.statgrid{grid-template-columns:1fr}.calendar{grid-template-columns:1fr 1fr}.mobile-links{display:flex!important}}
-.mobile-links{display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12px}.mobile-links a{color:var(--blue)}
+/* App shell (layout only — components come from haman.css) */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-inline-end:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:16px 12px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 14px;color:var(--ink-900);font-weight:700;font-size:16px;text-decoration:none}
+.brand img{max-height:30px;max-width:120px;object-fit:contain}
+.brand .mark{width:28px;height:28px;border-radius:8px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700;flex:none}
+.side-search{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);background:var(--surface-2);color:var(--text-3);border-radius:var(--r);padding:7px 10px;margin-bottom:6px;font-size:var(--fs-sm);text-align:start}
+.side-search:hover{border-color:var(--line-strong);color:var(--text-2)}
+.nav{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
+.nav .group{font-size:var(--fs-xs);font-weight:var(--w-semibold);color:var(--text-3);margin:16px 10px 4px}
+.nav button,.side-foot a,.side-foot button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--text-2);text-align:start;border-radius:var(--r);padding:7px 10px;font-size:var(--fs-base);font-weight:var(--w-medium);position:relative;text-decoration:none}
+.nav button .i,.side-foot .i{color:var(--text-3)}
+.nav button:hover,.side-foot a:hover,.side-foot button:hover{background:var(--surface-3);color:var(--text);text-decoration:none}
+.nav button.active{background:var(--accent-soft);color:var(--accent-strong);font-weight:var(--w-semibold)}
+.nav button.active .i{color:var(--accent)}
+.nav button.active::before{content:"";position:absolute;inset-inline-start:-4px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
+.nav details summary{list-style:none;cursor:pointer;font-size:var(--fs-xs);font-weight:var(--w-semibold);color:var(--text-3);margin:16px 10px 4px;display:flex;align-items:center;gap:4px}
+.nav details summary::-webkit-details-marker{display:none}
+.nav details summary .i{width:13px;height:13px;transition:transform var(--t-fast)}
+.nav details[open] summary .i{transform:rotate(90deg)}
+[dir=rtl] .nav details summary .i{transform:scaleX(-1)}[dir=rtl] .nav details[open] summary .i{transform:rotate(90deg)}
+.side-foot{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;display:grid;gap:1px}
+.side-foot .who{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border:0;background:none;border-radius:var(--r);font-size:var(--fs-xs);color:var(--text-3);min-width:0}
+.side-foot .who:hover{background:var(--surface-3)}
+.side-foot .who b{display:block;color:var(--text);font-size:var(--fs-sm);font-weight:var(--w-semibold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-foot .who .mail{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-pop.up{top:auto;bottom:calc(100% + 4px);inset-inline:0}
+.side-foot form{margin:0}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--text-2);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.side-foot .lang-switch{font-size:var(--fs-xs);color:var(--text-3);padding:4px 10px}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:var(--text)}
+.main{min-width:0;padding:28px 32px 48px;max-width:1240px;width:100%}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.top h1{font-size:var(--fs-xl)}
+.top .sub{color:var(--text-3);font-size:var(--fs-sm);margin-top:2px}
+.mobilebar,.tabbar,.scrim{display:none}
+@media(max-width:1024px){.shell{grid-template-columns:minmax(0,1fr)}
+ .side{position:fixed;inset-block:0;inset-inline-start:0;width:280px;z-index:90;transform:translateX(-105%);transition:transform var(--t) var(--ease);box-shadow:var(--shadow-2)}
+ [dir=rtl] .side{transform:translateX(105%)}
+ body.nav-open .side{transform:none}
+ .scrim{position:fixed;inset:0;background:rgba(15,27,45,.35);z-index:80}body.nav-open .scrim{display:block}
+ .mobilebar{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 12px}
+ .mobilebar .brand{padding:0;flex:1;font-size:15px}
+ .main{padding:18px 16px calc(88px + env(safe-area-inset-bottom))}
+ .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;inset-inline:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+ .tabbar button{border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 2px;font-size:10.5px;color:var(--text-3);border-radius:var(--r);min-height:48px}
+ .tabbar button.active{color:var(--accent-strong)}
+ .tabbar button .i{width:20px;height:20px}
+ .top .actions .btn.hide-sm,.top .actions .btn.primary{display:none}
+ .top{margin-bottom:14px}
+}
+/* Home */
+.home-hero{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.home-hero h2{font-size:var(--fs-xl);font-weight:var(--w-bold)}
+.home-hero p{color:var(--text-2);margin:4px 0 0}
+.home-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:16px;align-items:start}
+.now-card{border-color:var(--ink-900);border-width:1px}
+.now-card .now-title{font-size:var(--fs-lg);font-weight:var(--w-bold);margin:2px 0 4px}
+.tl{display:grid;gap:2px}
+.tl-item{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 10px;border-radius:var(--r-md)}
+.tl-item:hover{background:var(--surface-2)}
+.tl-time{font-size:var(--fs-sm);color:var(--text-3);font-variant-numeric:tabular-nums;direction:ltr;text-align:start}
+.tl-bar{border-inline-start:3px solid var(--accent);padding-inline-start:10px;min-width:0}
+.tl-bar.k-focus{border-color:var(--ink-700)}.tl-bar.k-break{border-color:var(--line-strong)}.tl-bar.k-buffer{border-color:var(--warning)}.tl-bar.k-meeting,.tl-bar.busy{border-color:var(--text-3);border-inline-start-style:dashed}
+.tl-item.done .tl-bar{border-color:var(--success)}.tl-item.done .rowtitle{color:var(--text-3);text-decoration:line-through}
+.tl-item.now{background:var(--accent-soft)}
+.tl-item.conflict .tl-bar{border-color:var(--danger)}
+.cap-line{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:var(--text-3);margin-top:10px}
+.week-top{display:flex;align-items:center;gap:16px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:var(--fs-sm);margin-top:12px}
+.kv dt{color:var(--text-3)}.kv dd{margin:0;font-weight:var(--w-semibold);font-variant-numeric:tabular-nums}
+@media(max-width:1100px){.home-grid{grid-template-columns:minmax(0,1fr)}}
 </style></head>
 <body>
-<div class="shell"><aside class="side">
-<div class="brand">@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" style="max-height:40px;max-width:150px;object-fit:contain;display:block;margin-bottom:6px">@endif<span>{{ $brand['app_name'] }}</span><small>{{ $brand['tagline'] }}</small></div>
+@include('partials.icons')
+<a class="skip-link" href="#content">{{ __('app.home.skip') }}</a>
+<div class="mobilebar">
+<button class="btn ghost icon" id="navtoggle" aria-label="{{ __('app.nav.menu') }}" aria-expanded="false" aria-controls="side"><svg class="i"><use href="#i-menu"/></svg></button>
+<span class="brand"><span class="mark" aria-hidden="true">{{ mb_substr($brand['app_name'], 0, 1) }}</span>{{ $brand['app_name'] }}</span>
+<button class="btn ghost icon" data-go="search" aria-label="{{ __('app.nav.search') }}"><svg class="i"><use href="#i-search"/></svg></button>
+<button class="btn primary icon" onclick="openCreate()" aria-label="{{ __('common.add') }}"><svg class="i"><use href="#i-plus"/></svg></button>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="shell"><aside class="side" id="side" aria-label="{{ __('app.nav.menu') }}">
+<a class="brand" href="{{ route('planner.app') }}">@if($brand['logo'])<img src="{{ $brand['logo'] }}" alt="">@else<span class="mark" aria-hidden="true">{{ mb_substr($brand['app_name'], 0, 1) }}</span>@endif<span>{{ $brand['app_name'] }}</span></a>
+<button class="side-search" data-go="search"><svg class="i sm"><use href="#i-search"/></svg><span>{{ __('app.nav.search') }}…</span></button>
+@php($nb = fn ($view, $icon, $key) => '<button data-view="'.$view.'"><svg class="i"><use href="#i-'.$icon.'"/></svg><span class="txt">'.e(__('app.nav.'.$key)).'</span></button>')
 <nav class="nav">
-<button class="active" data-view="today">◉ <span class="txt">{{ __('app.nav.today') }}</span></button><button data-view="tasks">✓ <span class="txt">{{ __('app.nav.tasks') }}</span></button><button data-view="recurring">🔁 <span class="txt">{{ __('app.nav.recurring') }}</span></button><button data-view="inbox">▣ <span class="txt">{{ __('app.nav.inbox') }}</span></button><button data-view="search">⌕ <span class="txt">{{ __('app.nav.search') }}</span></button>
-<div class="group">{{ __('app.nav.group_structure') }}</div><button data-view="areas">◈ <span class="txt">{{ __('app.nav.areas') }}</span></button><button data-view="goals">◎ <span class="txt">{{ __('app.nav.goals') }}</span></button><button data-view="projects">▤ <span class="txt">{{ __('app.nav.projects') }}</span></button><button data-view="milestones">◇ <span class="txt">{{ __('app.nav.milestones') }}</span></button>
-<div class="group">{{ __('app.nav.group_execution') }}</div><button data-view="daily">☀ <span class="txt">{{ __('app.nav.daily') }}</span></button><button data-view="calendar">□ <span class="txt">{{ __('app.nav.calendar') }}</span></button><button data-view="execution">◷ <span class="txt">{{ __('app.nav.execution') }}</span></button><button data-view="dependencies">⇄ <span class="txt">{{ __('app.nav.dependencies') }}</span></button><button data-view="reminders">◌ <span class="txt">{{ __('app.nav.reminders') }}</span></button><button data-view="failures">⚠ <span class="txt">{{ __('app.nav.failures') }}</span></button>
-<div class="group">{{ __('app.nav.group_analysis') }}</div><button data-view="reviews">↻ <span class="txt">{{ __('app.nav.reviews') }}</span></button><button data-view="analytics">◫ <span class="txt">{{ __('app.nav.analytics') }}</span></button><button data-view="reports">▥ <span class="txt">{{ __('app.nav.reports') }}</span></button>
-<div class="group">{{ __('app.nav.group_knowledge') }}</div><button data-view="notes">▤ <span class="txt">{{ __('app.nav.notes') }}</span></button><button data-view="decisions">◆ <span class="txt">{{ __('app.nav.decisions') }}</span></button><button data-view="ai-planner">✦ <span class="txt">{{ __('app.nav.ai_planner') }}</span></button><button data-view="ai">✧ <span class="txt">{{ __('app.nav.ai_interactions') }}</span></button><button data-view="pending">⌛ <span class="txt">{{ __('app.nav.pending') }}</span></button><button data-view="activity">◌ <span class="txt">{{ __('app.nav.activity') }}</span></button>
+<div class="group">{{ __('app.nav.group_today') }}</div>
+{!! $nb('today', 'today', 'today') !!}{!! $nb('daily', 'daily', 'daily') !!}{!! $nb('calendar', 'calendar', 'calendar') !!}{!! $nb('inbox', 'inbox', 'inbox') !!}
+{!! $nb('ai-planner', 'haman', 'ai_planner') !!}
+<div class="group">{{ __('app.nav.group_planning') }}</div>
+{!! $nb('areas', 'areas', 'areas') !!}{!! $nb('goals', 'goal', 'goals') !!}{!! $nb('projects', 'project', 'projects') !!}{!! $nb('milestones', 'flag', 'milestones') !!}{!! $nb('recurring', 'repeat', 'recurring') !!}
+<div class="group">{{ __('app.nav.group_execution') }}</div>
+{!! $nb('tasks', 'tasks', 'tasks') !!}{!! $nb('execution', 'timer', 'execution') !!}{!! $nb('dependencies', 'link', 'dependencies') !!}{!! $nb('reminders', 'bell', 'reminders') !!}{!! $nb('failures', 'alert', 'failures') !!}
+<div class="group">{{ __('app.nav.group_analysis') }}</div>
+{!! $nb('reviews', 'review', 'reviews') !!}{!! $nb('analytics', 'chart', 'analytics') !!}{!! $nb('reports', 'report', 'reports') !!}
+<details id="navmore"><summary><svg class="i"><use href="#i-chev"/></svg>{{ __('app.nav.group_more') }}</summary>
+{!! $nb('notes', 'note', 'notes') !!}{!! $nb('decisions', 'decision', 'decisions') !!}{!! $nb('activity', 'activity', 'activity') !!}{!! $nb('ai', 'history', 'ai_interactions') !!}{!! $nb('pending', 'hourglass', 'pending') !!}{!! $nb('search', 'search', 'search') !!}
+</details>
 </nav>
-<div class="bottom">
-<button onclick="location.href='{{ route('account.settings') }}'">🔐 <span class="txt">{{ __('app.nav.settings') }}</span></button>
-<button onclick="location.href='{{ route('billing.index') }}'">💳 <span class="txt">{{ __('app.nav.billing') }}</span></button>
-@if($brand['support_enabled'] || $u->is_admin)<button onclick="location.href='{{ route('support.index') }}'">💬 <span class="txt">{{ __('app.nav.support') }}</span></button>@endif
-@if($u->is_admin)<button onclick="location.href='{{ route('admin.home') }}'">⚙ <span class="txt">{{ __('app.nav.admin') }}</span></button>@endif
-<button id="pwa-install" class="hide">⤓ <span class="txt">{{ __('pwa.install') }}</span></button>
-<form method="post" action="{{ route('logout') }}">@csrf<button>↪ <span class="txt">{{ __('common.logout') }}</span></button></form>
-<div class="lang">@include('partials.lang-switch')</div>
+<div class="side-foot">
+<div class="menu userbox"><button class="who" aria-haspopup="menu" aria-expanded="false" onclick="toggleMenu(this,event)"><span class="avatar" aria-hidden="true">{{ mb_substr($u->name, 0, 1) }}</span><span style="min-width:0;flex:1;text-align:start"><b>{{ $u->name }}</b><span class="ltr mail">{{ $u->email }}</span></span><svg class="i sm"><use href="#i-more"/></svg></button>
+<div class="menu-pop up" role="menu">
+<a role="menuitem" href="{{ route('account.settings') }}"><svg class="i sm"><use href="#i-settings"/></svg>{{ __('app.nav.settings') }}</a>
+<a role="menuitem" href="{{ route('billing.index') }}"><svg class="i sm"><use href="#i-card"/></svg>{{ __('app.nav.billing') }}</a>
+@if($brand['support_enabled'] || $u->is_admin)<a role="menuitem" href="{{ route('support.index') }}"><svg class="i sm"><use href="#i-support"/></svg>{{ __('app.nav.support') }}</a>@endif
+@if($u->is_admin)<a role="menuitem" href="{{ route('admin.home') }}"><svg class="i sm"><use href="#i-shield"/></svg>{{ __('app.nav.admin') }}</a>@endif
+<button role="menuitem" id="pwa-install" class="hide"><svg class="i sm"><use href="#i-download"/></svg>{{ __('pwa.install') }}</button>
+<form method="post" action="{{ route('logout') }}">@csrf<button role="menuitem"><svg class="i sm flip"><use href="#i-logout"/></svg>{{ __('common.logout') }}</button></form>
+</div></div>
+@include('partials.lang-switch')
 </div>
 </aside>
-<main class="main">
-<div class="mobile-links"><a href="{{ route('account.settings') }}">{{ __('app.nav.settings') }}</a><a href="{{ route('billing.index') }}">{{ __('app.nav.billing') }}</a>@if($brand['support_enabled'])<a href="{{ route('support.index') }}">{{ __('app.nav.support') }}</a>@endif @include('partials.lang-switch')</div>
-@if(filled($brand['announcement']))<div class="notice">📢 {{ $brand['announcement'] }}</div>@endif
+<main class="main" id="main">
+@if(filled($brand['announcement']))<div class="notice">{{ $brand['announcement'] }}</div>@endif
 @if($errors->has('plan'))<div class="notice">{{ $errors->first('plan') }} <a href="{{ route('billing.index') }}">{{ __('billing.see_plans') }}</a></div>@endif
-<div class="top"><div><div class="eyebrow">{{ $brand['app_name'] }} · {{ $u->name }} · <span dir="ltr">{{ $u->email }}</span></div><h1 id="title">{{ __('app.nav.today') }}</h1></div><div class="actions"><button class="btn" onclick="loadView(view)">↻ {{ __('common.refresh') }}</button><button class="btn primary" onclick="openCreate()">＋ {{ __('common.add') }}</button></div></div><div id="content"></div></main></div>
-<div class="modalback" id="modal"><div class="modal"><div class="head"><h2 id="mtitle"></h2><button class="btn small" onclick="closeModal()" aria-label="{{ __('common.close') }}">×</button></div><div id="mbody"></div></div></div><div id="toast" class="toast" role="status"></div>
+<div class="top"><div><h1 id="title">{{ __('app.nav.today') }}</h1><div class="sub" id="subtitle"></div></div><div class="actions"><button class="btn ghost icon hide-sm" onclick="loadView(view)" aria-label="{{ __('common.refresh') }}" title="{{ __('common.refresh') }}"><svg class="i"><use href="#i-refresh"/></svg></button><button class="btn primary" onclick="openCreate()"><svg class="i"><use href="#i-plus"/></svg>{{ __('common.add') }}</button></div></div>
+<div id="content" tabindex="-1" aria-live="polite"></div></main></div>
+<nav class="tabbar" aria-label="{{ __('app.nav.menu') }}">
+<button data-view="today"><svg class="i"><use href="#i-today"/></svg>{{ __('app.nav.today') }}</button>
+<button data-view="tasks"><svg class="i"><use href="#i-tasks"/></svg>{{ __('app.nav.tasks') }}</button>
+<button data-view="calendar"><svg class="i"><use href="#i-calendar"/></svg>{{ __('app.nav.calendar') }}</button>
+<button data-view="ai-planner"><svg class="i"><use href="#i-haman"/></svg>{{ __('app.nav.haman_short') }}</button>
+<button id="tabmore"><svg class="i"><use href="#i-menu"/></svg>{{ __('app.nav.more') }}</button>
+</nav>
+<div class="modalback" id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle"><div class="modal"><div class="head"><h2 id="mtitle"></h2><button class="btn ghost icon" onclick="closeModal()" aria-label="{{ __('common.close') }}"><svg class="i"><use href="#i-x"/></svg></button></div><div id="mbody"></div></div></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
-const I18N={t:@json(__('app.js')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days')),activity:@json(__('activity'))};
-const LOCALE=@json($loc),TZ=@json($u->preferredTimezone()),INTL=LOCALE==='fa'?'fa-IR':'en-US',BILLING_URL=@json(route('billing.index'));
+const I18N={t:@json(__('app.js')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days')),activity:@json(__('activity')),home:@json(__('app.home')),empties:@json(__('app.empty')),row:@json(__('app.row')),views:@json(__('app.view_sub'))};
+const LOCALE=@json($loc),TZ=@json($u->preferredTimezone()),INTL=LOCALE==='fa'?'fa-IR':'en-US',BILLING_URL=@json(route('billing.index')),USER_NAME=@json($u->name);
 const csrf=document.querySelector('meta[name=csrf-token]').content,$=id=>document.getElementById(id);let view='today',cache={areas:[],goals:[],projects:[],milestones:[],tasks:[]};
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const ic=(n,c)=>'<svg class="i'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
 function t(k,r){let s=I18N.t[k]??k;if(r)for(const[a,b]of Object.entries(r))s=s.split(':'+a).join(b);return s}
 const num=v=>v==null||v===''?'—':(typeof v==='number'||/^-?\d+(\.\d+)?$/.test(String(v))?Number(v).toLocaleString(INTL,{maximumFractionDigits:2}):String(v));
 const fmt=v=>v?new Date(v).toLocaleDateString(INTL,{timeZone:TZ}):'—',fmtDT=v=>v?new Date(v).toLocaleString(INTL,{timeZone:TZ,dateStyle:'short',timeStyle:'short'}):'—';
@@ -75,8 +160,30 @@ async function api(path,opt={}){let method=(opt.method||'GET').toUpperCase(),h={
 function fail(e){if(e.status===402)toast(esc(e.message)+' <a href="'+esc(e.upgrade||BILLING_URL)+'">'+esc(t('see_plans'))+'</a>',true);else toast(e.message)}
 async function cacheAll(){let [a,g,p,m,tk]=await Promise.all([api('/areas'),api('/goals'),api('/projects'),api('/milestones'),api('/tasks?per_page=100')]);cache.areas=a.data||a;cache.goals=g.data||g;cache.projects=p.data||p;cache.milestones=m.data||m;cache.tasks=tk.data||tk}
 const label=v=>{if(v==null||v==='')return'—';let s=String(v);return I18N.status[s]||I18N.prio[s]||I18N.generic[s]||I18N.failure[s]||s};
-function pill(v){let s=String(v||'').toLowerCase(),c=['completed','on_track','on track','done','paid','success'].includes(s)?'ok':['blocked','behind','cancelled','failed','error'].includes(s)?'danger':['waiting','at_risk','at risk','deferred','pending'].includes(s)?'warn':'';return '<span class="pill '+c+'">'+esc(label(v))+'</span>'}
-function itemRow(x,kind){let title=(x.recurring_task_id?'🔁 ':'')+(x.title||x.name||x.intent||t('untitled'));return '<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(title)+'</div><div class="rowsub">'+(x.deadline?t('due_on',{date:fmt(x.deadline)}):x.target_date?t('target_on',{date:fmt(x.target_date)}):x.scheduled_at?fmtDT(x.scheduled_at):x.created_at?fmtDT(x.created_at):'')+'</div>'+(x.progress!=null?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,x.progress))+'%"></i></div>':'')+'</div><div class="rowactions">'+pill(x.status||x.health||x.priority)+(kind==='task'||kind==='project'?'<button class="btn small" title="'+esc(t('att_title'))+'" onclick="attachmentsModal(\''+kind+'\','+x.id+')">📎</button>':'')+(x.recurring_task_id&&!['completed','cancelled'].includes(x.status)?'<button class="btn small" onclick="skipOccurrence('+x.id+')">'+esc(t('skip_occurrence'))+'</button>':'')+'<button class="btn small" onclick="editItem('+x.id+',\''+kind+'\')">'+esc(t('edit'))+'</button><button class="btn small danger" onclick="deleteItem('+x.id+',\''+kind+'\')">'+esc(t('delete'))+'</button></div></div>'}
+function pill(v){if(v==null||v==='')return'';let s=String(v).toLowerCase(),c=['completed','on_track','on track','done','paid','success','applied'].includes(s)?'ok':['blocked','behind','cancelled','failed','error','overdue','p0'].includes(s)?'danger':['waiting','at_risk','at risk','deferred','pending','p1'].includes(s)?'warn':['in_progress','active','running'].includes(s)?'info':'';return '<span class="pill '+c+'">'+esc(label(v))+'</span>'}
+/* Deadline text with meaning: overdue (red), due within 24h (amber). */
+function dueMeta(d,done){if(!d)return'';let ms=new Date(d)-Date.now(),cls=done?'':ms<0?'late':ms<864e5?'soon':'';return '<span class="'+cls+'">'+ic('clock','sm')+esc(ms<0&&!done?t('overdue_since',{date:fmt(d)}):t('due_on',{date:fmt(d)}))+'</span>'}
+const dur=m=>{m=+m||0;let h=Math.floor(m/60),r=m%60;return h&&r?t('dur_hm',{h:num(h),m:num(r)}):h?t('dur_h',{h:num(h)}):t('dur_m',{m:num(r)})};
+function rowMenu(items){return '<div class="menu"><button class="btn ghost small icon more" aria-haspopup="menu" aria-expanded="false" aria-label="'+esc(I18N.row.more)+'" onclick="toggleMenu(this,event)">'+ic('more')+'</button><div class="menu-pop" role="menu">'+items.filter(Boolean).join('')+'</div></div>'}
+const mi=(icon,text,on,cls)=>'<button role="menuitem" class="'+(cls||'')+'" onclick="'+on+'">'+ic(icon,'sm')+esc(text)+'</button>';
+function toggleMenu(b,e){e.stopPropagation();let m=b.parentElement,open=!m.classList.contains('open');document.querySelectorAll('.menu.open').forEach(x=>{x.classList.remove('open');x.querySelector('button').setAttribute('aria-expanded','false')});if(open){m.classList.add('open');b.setAttribute('aria-expanded','true');let f=m.querySelector('[role=menuitem]');f&&f.focus()}}
+document.addEventListener('click',()=>document.querySelectorAll('.menu.open').forEach(x=>x.classList.remove('open')));
+async function toggleDone(id,done,btn){let row=btn.closest('.task');row.classList.toggle('done',!done);if(!done)row.classList.add('just-done');try{await api('/tasks/'+id,{method:'PUT',body:JSON.stringify({status:done?'planned':'completed'})});btn.setAttribute('aria-pressed',String(!done));btn.setAttribute('onclick','toggleDone('+id+','+(!done)+',this)');toast(done?t('task_reopened'):t('task_done'))}catch(e){row.classList.toggle('done',done);fail(e)}}
+function itemRow(x,kind){
+ let title=x.title||x.name||x.intent||t('untitled'),done=x.status==='completed',menu=[];
+ menu.push(mi('edit',t('edit'),"editItem("+x.id+",'"+kind+"')"));
+ if(kind==='task'||kind==='project')menu.push(mi('clip',t('att_title'),"attachmentsModal('"+kind+"',"+x.id+")"));
+ if(x.recurring_task_id&&!['completed','cancelled'].includes(x.status))menu.push(mi('skip',t('skip_occurrence'),'skipOccurrence('+x.id+')'));
+ menu.push(mi('trash',t('delete'),'deleteItem('+x.id+",'"+kind+"')",'danger'));
+ if(kind==='task'){
+  let parent=x.project?'<span class="lvl project">'+esc(x.project.title)+'</span>':x.goal?'<span class="lvl goal">'+esc(x.goal.title)+'</span>':'';
+  let meta=[parent,x.milestone?'<span class="lvl milestone">'+esc(x.milestone.title)+'</span>':'',dueMeta(x.deadline,done),x.planned_start?'<span>'+ic('calendar','sm')+esc(fmtDT(x.planned_start))+'</span>':'',x.estimated_minutes?'<span>'+ic('timer','sm')+esc(x.actual_minutes?t('est_vs_actual',{est:dur(x.estimated_minutes),act:dur(x.actual_minutes)}):dur(x.estimated_minutes))+'</span>':'',x.recurring_task_id?'<span>'+ic('repeat','sm')+esc(I18N.row.recurring)+'</span>':'',x.failure_reason?'<span class=late>'+ic('alert','sm')+esc(label(x.failure_reason))+'</span>':''].filter(Boolean).join('');
+  let st=!done&&x.status&&!['inbox','planned','ready'].includes(x.status)?pill(x.status):'';
+  return '<div class="row task'+(done?' done':'')+'"><button class="check" aria-pressed="'+done+'" aria-label="'+esc(done?I18N.row.reopen:I18N.row.complete)+'" onclick="toggleDone('+x.id+','+done+',this)"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><div class=rowmain><div class=rowtitle>'+(x.priority&&['p0','p1'].includes(x.priority)?'<span class="prio '+x.priority+'" title="'+esc(label(x.priority))+'">'+esc(String(label(x.priority)).split('—').pop().trim())+'</span> ':'')+esc(title)+'</div>'+(meta?'<div class=meta>'+meta+'</div>':'')+'</div><div class=rowactions>'+st+rowMenu(menu)+'</div></div>';
+ }
+ let lvl={goal:'goal',project:'project',milestone:'milestone'}[kind],sub=[x.goal&&kind==='project'?'<span class="lvl goal">'+esc(x.goal.title)+'</span>':'',x.deadline?dueMeta(x.deadline,done):x.target_date?'<span>'+ic('flag','sm')+esc(t('target_on',{date:fmt(x.target_date)}))+'</span>':x.scheduled_at?'<span>'+ic('bell','sm')+esc(fmtDT(x.scheduled_at))+'</span>':x.created_at?'<span>'+esc(fmtDT(x.created_at))+'</span>':''].filter(Boolean).join('');
+ return '<div class=row><div class=rowmain><div class=rowtitle>'+(lvl?'<span class="lvl '+lvl+'" aria-hidden=true></span> ':'')+esc(title)+'</div>'+(sub?'<div class=meta>'+sub+'</div>':'')+(x.progress!=null&&kind!=='task'?'<div class=progress aria-label="'+esc(I18N.fields.progress)+'"><i class="'+(x.progress>=100?'ok':'')+'" style="width:'+Math.min(100,Math.max(0,x.progress))+'%"></i></div>':'')+'</div><div class=rowactions>'+(x.progress!=null&&kind!=='task'?'<span class="muted small num">'+esc(num(Math.round(x.progress)))+'%</span>':'')+pill(x.status||x.health||x.priority)+rowMenu(menu)+'</div></div>';
+}
 const F=(n,type,req)=>[n,I18N.fields[n]||n,type,req?1:0];
 const schema={
 area:{ep:'areas',f:[F('name','text',1),F('type','text'),F('status','text'),F('sort_order','number'),F('description','textarea')]},
@@ -95,21 +202,31 @@ const selectOf=(n,map)=>'<select name="'+n+'"><option value="">—</option>'+Obj
 function field(f){let[n,l,ty,req]=f;if(['area','goal','project','milestone','task'].includes(ty))return '<div class="field"><label>'+esc(l)+'</label>'+options(ty).replace('__F',n)+'</div>';if(ty==='status')return '<div class="field"><label>'+esc(l)+'</label>'+selectOf(n,I18N.status)+'</div>';if(ty==='priority')return '<div class="field"><label>'+esc(l)+'</label>'+selectOf(n,I18N.prio)+'</div>';if(ty==='failure')return '<div class="field"><label>'+esc(l)+'</label>'+selectOf(n,I18N.failure)+'</div>';return '<div class="field '+(ty==='textarea'?'full':'')+'"><label>'+esc(l)+'</label>'+(ty==='textarea'?'<textarea name="'+n+'" '+(req?'required':'')+'></textarea>':'<input name="'+n+'" type="'+ty+'" '+(req?'required':'')+'>')+'</div>'}
 /* Collect a form, empty -> null, datetime-local -> ISO instant in the user's timezone. */
 function collect(form){let d={};for(const el of form.elements){if(!el.name)continue;let v=el.value;d[el.name]=v===''?null:(el.type==='datetime-local'?fromInput(v):v)}return d}
-function formHtml(s){return '<form id=f><div class=formgrid>'+s.f.map(field).join('')+'</div><div class=modalactions><button type=button class=btn onclick=closeModal()>'+esc(t('cancel'))+'</button><button class="btn primary">'+esc(t('save'))+'</button></div></form>'}
+const ADVANCED={task:['area_id','goal_id','milestone_id','status','importance','weight','progress','planned_end','energy_level','focus_level','failure_reason'],goal:['importance','weight','progress','start_date','success_criteria'],project:['importance','weight','progress','estimated_minutes','start_date'],milestone:['weight','progress'],schedule:['status','source']};
+function formHtml(s){let adv=ADVANCED[Object.keys(schema).find(k=>schema[k]===s)]||[],main=s.f.filter(f=>!adv.includes(f[0])),more=s.f.filter(f=>adv.includes(f[0]));return '<form id=f><div class=formgrid>'+main.map(field).join('')+'</div>'+(more.length?'<details class=more-fields><summary>'+esc(t('more_options'))+'</summary><div class=formgrid>'+more.map(field).join('')+'</div></details>':'')+'<div class=modalactions><button type=button class=btn onclick=closeModal()>'+esc(t('cancel'))+'</button><button class="btn primary">'+esc(t('save'))+'</button></div></form>'}
 async function openCreate(kind){if(!kind&&view==='recurring'&&window.recurringForm)return recurringForm();if(!kind&&view==='calendar'&&window.calendarAddBlock)return calendarAddBlock();await cacheAll();if(!kind)kind={tasks:'task',inbox:'task',today:'task',goals:'goal',projects:'project',areas:'area',milestones:'milestone',notes:'note',decisions:'decision',calendar:'schedule',reminders:'reminder'}[view]||'task';let s=schema[kind];if(!s)return;modal(t('new_item',{item:entityName(kind)}),formHtml(s));$('f').onsubmit=async e=>{e.preventDefault();try{await api('/'+s.ep,{method:'POST',body:JSON.stringify(collect(e.target))});closeModal();toast(t('saved'));loadView(view)}catch(x){fail(x)}}}
 async function editItem(id,kind){let s=schema[kind];if(!s)return;await cacheAll();let x=await api('/'+s.ep+'/'+id);modal(t('edit_item',{item:entityName(kind)}),formHtml(s));s.f.forEach(([n])=>{let e=document.querySelector('#f [name="'+n+'"]');if(e&&x[n]!=null)e.value=(e.type==='datetime-local'?toInput(x[n]):e.type==='date'?String(x[n]).slice(0,10):x[n])});$('f').onsubmit=async e=>{e.preventDefault();try{await api('/'+s.ep+'/'+id,{method:'PUT',body:JSON.stringify(collect(e.target))});closeModal();toast(t('updated'));loadView(view)}catch(z){fail(z)}}}
 async function skipOccurrence(id){if(!confirm(t('skip_confirm')))return;try{await api('/tasks/'+id+'/skip',{method:'POST'});toast(t('saved'));loadView(view)}catch(e){fail(e)}}
 async function deleteItem(id,kind){let s=schema[kind];if(!s||!confirm(t('confirm_delete')))return;try{await api('/'+s.ep+'/'+id,{method:'DELETE'});toast(t('deleted'));loadView(view)}catch(e){fail(e)}}
-function modal(ti,b){$('mtitle').textContent=ti;$('mbody').innerHTML=b;$('modal').classList.add('show')}function closeModal(){$('modal').classList.remove('show');$('mbody').innerHTML=''}
+let lastFocus=null;function modal(ti,b){lastFocus=document.activeElement;$('mtitle').textContent=ti;$('mbody').innerHTML=b;$('modal').classList.add('show');setTimeout(()=>{let f=$('mbody').querySelector('input:not([type=hidden]),select,textarea,button');f&&f.focus()},30)}function closeModal(){$('modal').classList.remove('show');$('mbody').innerHTML='';lastFocus&&lastFocus.focus&&lastFocus.focus()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('modal').classList.contains('show'))closeModal();document.body.classList.remove('nav-open')}});
 $('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
-const empty=()=>'<div class=empty>'+esc(t('empty'))+'</div>';
-async function loadList(kind,ep=kind){let r=await api('/'+ep+(kind==='tasks'?'?per_page=100':'')),a=r.data||r;if(!Array.isArray(a))a=[];let one=kind.slice(0,-1);$('content').innerHTML='<div class=card><div class=toolbar><input id=q class=search placeholder="'+esc(t('filter_placeholder'))+'" oninput=filterList()><button class="btn primary" onclick="openCreate(\''+one+'\')">＋ '+esc(entityName(one))+'</button></div><div class=list id=rows>'+a.map(x=>itemRow(x,one)).join('')+(a.length?'':empty())+'</div></div>'}
-function filterList(){let q=$('q').value.toLowerCase();document.querySelectorAll('#rows .row').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'flex':'none')}
+/* Empty states explain the area and the next step. */
+function empty(kind){let e=I18N.empties[kind||view];if(!e)return '<div class=empty><div class=empty-text>'+esc(t('empty'))+'</div></div>';let one={tasks:'task',inbox:'task',goals:'goal',projects:'project',areas:'area',milestones:'milestone',notes:'note',decisions:'decision',reminders:'reminder'}[kind||view];return '<div class=empty><div class=empty-mark>'+ic(e.icon||'grid')+'</div><div class=empty-title>'+esc(e.title)+'</div><p class=empty-text>'+esc(e.text)+'</p>'+(e.cta&&one?'<button class="btn primary" onclick="openCreate(\''+one+'\')">'+ic('plus')+esc(e.cta)+'</button>':'')+'</div>'}
+const skeleton=n=>'<div class=skeleton>'+'<i></i>'.repeat(n||4)+'</div>';
+async function loadList(kind,ep=kind){let r=await api('/'+ep+(kind==='tasks'?'?per_page=100':'')),a=r.data||r;if(!Array.isArray(a))a=[];let one=kind.slice(0,-1);if(kind==='tasks')a.sort((x,y)=>(x.status==='completed')-(y.status==='completed'));$('content').innerHTML=a.length?'<div class=toolbar><input id=q class="search input" type=search aria-label="'+esc(t('filter_placeholder'))+'" placeholder="'+esc(t('filter_placeholder'))+'" oninput=filterList()><span class="muted small">'+esc(t('count_items',{n:num(a.length)}))+'</span></div><div class=list id=rows>'+a.map(x=>itemRow(x,one)).join('')+'</div>':'<div class=card>'+empty(kind)+'</div>'}
+function filterList(){let q=$('q').value.toLowerCase();document.querySelectorAll('#rows .row').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'':'none')}
 function metricCards(m){return Object.entries(m).filter(([k,v])=>typeof v!=='object').map(([k,v])=>'<div class=card><div class=muted>'+esc(I18N.metrics[k]||k.replaceAll('_',' '))+'</div><div class=metric>'+esc(num(v))+'</div></div>').join('')}
-async function today(){let d=await api('/system/dashboard?days=1'),m=d.metrics,tk=d.recent_tasks||[];$('content').innerHTML='<div class=cards>'+[[I18N.metrics.tasks_created,num(m.tasks_created)],[I18N.metrics.tasks_completed,num(m.tasks_completed)],[I18N.metrics.completion_rate,num(m.completion_rate)],[I18N.metrics.execution_minutes,num(m.execution_minutes)]].map(x=>'<div class=card><div class=muted>'+esc(x[0])+'</div><div class=metric>'+esc(x[1])+'</div></div>').join('')+'</div><div class=grid2><div class=card><div class=head><h2>'+esc(t('recent_tasks'))+'</h2><button class="btn small" onclick="openCreate(\'task\')">＋ '+esc(entityName('task'))+'</button></div><div class=list>'+(tk.map(x=>itemRow(x,'task')).join('')||empty())+'</div></div><div class=card><div class=head><h2>'+esc(I18N.nav.pending)+'</h2></div><div class=list>'+((d.pending_actions||[]).map(x=>'<div class=row><div><b>'+esc(x.intent)+'</b><div class=rowsub>'+fmtDT(x.created_at)+'</div></div>'+pill(x.status)+'</div>').join('')||empty())+'</div></div></div>'}
+async function today(){let d=await api('/system/dashboard?days=1'),m=d.metrics,tk=d.recent_tasks||[];$('content').innerHTML='<div class=cards>'+[[I18N.metrics.tasks_created,num(m.tasks_created)],[I18N.metrics.tasks_completed,num(m.tasks_completed)],[I18N.metrics.completion_rate,num(m.completion_rate)],[I18N.metrics.execution_minutes,num(m.execution_minutes)]].map(x=>'<div class=card><div class=muted>'+esc(x[0])+'</div><div class=metric>'+esc(x[1])+'</div></div>').join('')+'</div><div class=grid2><div class=card><div class=head><h2>'+esc(t('recent_tasks'))+'</h2><button class="btn small" onclick="openCreate(\'task\')">＋ '+esc(entityName('task'))+'</button></div><div class=list>'+(tk.map(x=>itemRow(x,'task')).join('')||empty('recent'))+'</div></div><div class=card><div class=head><h2>'+esc(I18N.nav.pending)+'</h2></div><div class=list>'+((d.pending_actions||[]).map(x=>'<div class=row><div><b>'+esc(x.intent)+'</b><div class=rowsub>'+fmtDT(x.created_at)+'</div></div>'+pill(x.status)+'</div>').join('')||empty())+'</div></div></div>'}
 async function inbox(){let r=await api('/tasks?status=inbox&per_page=100'),a=(r.data||r||[]).filter(x=>x.status==='inbox');$('content').innerHTML='<div class=card><div class=head><h2>'+esc(I18N.nav.inbox)+'</h2><button class="btn primary" onclick="openCreate(\'task\')">＋ '+esc(entityName('task'))+'</button></div><div class=list>'+(a.map(x=>itemRow(x,'task')).join('')||empty())+'</div></div>'}
-function mapRows(obj,fn){return Object.entries(obj||{}).map(([k,v])=>fn(k,v)).join('')||empty()}
-async function analytics(){let d=await api('/system/dashboard?days=30'),m=d.metrics;$('content').innerHTML='<div class=cards>'+metricCards(m)+'</div><div class=grid2><div class=card><div class=head><h2>'+esc(I18N.metrics.goal_health)+'</h2></div><div class=list>'+mapRows(m.goal_health,(k,v)=>'<div class=row><b>'+esc(label(k))+'</b><span class=pill>'+esc(num(v))+'</span></div>')+'</div></div><div class=card><div class=head><h2>'+esc(I18N.metrics.failure_reasons)+'</h2></div><div class=list>'+mapRows(m.failure_reasons,(k,v)=>'<div class=row><b>'+esc(label(k))+'</b><span class=pill>'+esc(num(v))+'</span></div>')+'</div></div></div>'}
+function mapRows(obj,fn){return Object.entries(obj||{}).map(([k,v])=>fn(k,v)).join('')||'<p class="muted small" style="margin:0">'+esc(t('no_data_yet'))+'</p>'}
+/* Analytics tells a story: 4 headline numbers, then the supporting detail — not a wall of equal cards. */
+async function analytics(){let d=await api('/system/dashboard?days=30'),m=d.metrics,H=['tasks_completed','completion_rate','execution_minutes','overdue_open_tasks'];
+let head=H.map(k=>{let v=m[k],cls=k==='overdue_open_tasks'&&v>0?' style="color:var(--danger)"':'';return '<div class=card><div class="muted small">'+esc(I18N.metrics[k]||k)+'</div><div class=metric'+cls+'>'+esc(num(v))+'</div></div>'}).join('');
+let rest=Object.entries(m).filter(([k,v])=>typeof v!=='object'&&!H.includes(k));
+$('content').innerHTML='<p class="muted small" style="margin:-6px 0 12px">'+esc(t('last_30_days'))+'</p><div class=cards>'+head+'</div>'
++'<div class=grid2><div class=card><div class=head><h2>'+esc(t('details'))+'</h2></div><dl class=kvgrid>'+rest.map(([k,v])=>'<div><dt>'+esc(I18N.metrics[k]||k.replaceAll('_',' '))+'</dt><dd>'+esc(num(v))+'</dd></div>').join('')+'</dl></div>'
++'<div style="display:grid;gap:16px;align-content:start"><div class=card><div class=head><h2>'+esc(I18N.metrics.goal_health)+'</h2></div><div class=list>'+mapRows(m.goal_health,(k,v)=>'<div class=row><span>'+esc(label(k))+'</span><b class=num>'+esc(num(v))+'</b></div>')+'</div></div><div class=card><div class=head><h2>'+esc(I18N.metrics.failure_reasons)+'</h2></div><div class=list>'+mapRows(m.failure_reasons,(k,v)=>'<div class=row><span>'+esc(label(k))+'</span><b class=num>'+esc(num(v))+'</b></div>')+'</div></div></div></div>'}
 async function reports(p='week'){let d=await api('/system/report?period='+p),m=d.metrics,tk=d.tasks||[];$('content').innerHTML='<div class=card><div class=head><h2>'+esc(t('report_'+p))+'</h2><div class=actions><button class="btn small" onclick="reports(\'day\')">'+esc(t('period_day'))+'</button><button class="btn small" onclick="reports(\'week\')">'+esc(t('period_week'))+'</button><button class="btn small" onclick="reports(\'month\')">'+esc(t('period_month'))+'</button></div></div><div class=statgrid>'+Object.entries(m).filter(([k,v])=>typeof v!=='object').map(([k,v])=>'<div><div class=muted>'+esc(I18N.metrics[k]||k.replaceAll('_',' '))+'</div><strong>'+esc(num(v))+'</strong></div>').join('')+'</div><div class=section><div class=tablewrap><table class=table><tr><th>'+esc(entityName('task'))+'</th><th>'+esc(I18N.fields.status)+'</th><th>'+esc(I18N.fields.priority)+'</th><th>'+esc(I18N.fields.progress)+'</th><th>'+esc(t('estimate_vs_actual'))+'</th></tr>'+tk.map(x=>'<tr><td>'+esc(x.title)+'</td><td>'+pill(x.status)+'</td><td>'+pill(x.priority)+'</td><td>'+esc(num(x.progress))+'%</td><td>'+esc(num(x.estimated_minutes))+' / '+esc(num(x.actual_minutes))+'</td></tr>').join('')+'</table></div></div></div>'}
 async function searchView(){$('content').innerHTML='<div class=card><div class=head><h2>'+esc(t('search_title'))+'</h2></div><div class=toolbar><input id=globalq class=search placeholder="'+esc(t('search_placeholder'))+'" onkeydown="if(event.key===\'Enter\')runSearch()"><select id=globalstatus><option value="">'+esc(t('all_statuses'))+'</option>'+Object.entries(I18N.status).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join('')+'</select><button class="btn primary" onclick="runSearch()">'+esc(t('search'))+'</button></div><div id=searchresults class=list></div></div>'}
 async function runSearch(){let q=($('globalq').value||'').trim();if(q.length<2){toast(t('search_min'));return}let st=$('globalstatus').value;try{let r=await api('/search?q='+encodeURIComponent(q)+(st?'&status='+encodeURIComponent(st):''));let a=r.tasks||[];$('searchresults').innerHTML=a.map(x=>itemRow(x,'task')).join('')||'<div class=empty>'+esc(t('no_results'))+'</div>'}catch(e){fail(e)}}
@@ -136,14 +253,23 @@ async function deleteDependency(taskId,id){if(!confirm(t('confirm_delete')))retu
 async function addDependency(){await cacheAll();modal(entityName('dependency'),'<form id=f><div class=formgrid><div class=field><label>'+esc(entityName('task'))+'</label>'+options('task').replace('__F','task_id')+'</div><div class=field><label>'+esc(I18N.fields.depends_on_task_id)+'</label>'+options('task').replace('__F','depends_on_task_id')+'</div><div class=field><label>'+esc(I18N.fields.type)+'</label>'+selectOf('type',I18N.dep)+'</div></div><div class=modalactions><button class="btn primary">'+esc(t('save'))+'</button></div></form>');$('f').onsubmit=async e=>{e.preventDefault();let d=collect(e.target);try{await api('/tasks/'+d.task_id+'/dependencies',{method:'POST',body:JSON.stringify({depends_on_task_id:d.depends_on_task_id,type:d.type||'requires'})});closeModal();toast(t('saved'));dependencies()}catch(x){fail(x)}}}
 async function reviews(){let r=await api('/reviews'),a=r.data||[];$('content').innerHTML='<div class=card><div class=head><h2>'+esc(I18N.nav.reviews)+'</h2><button class="btn primary" onclick="generateReview()">＋ '+esc(t('generate_review'))+'</button></div><div class=list>'+(a.map(x=>'<div class=row><div><b>'+esc(I18N.reviewType[x.type]||x.type)+'</b><div class=rowsub>'+esc(t('range',{from:fmt(x.period_start),to:fmt(x.period_end)}))+' · '+esc(x.summary||'')+'</div></div></div>').join('')||empty())+'</div></div>'}
 async function generateReview(){try{await api('/reviews/generate',{method:'POST',body:JSON.stringify({type:'weekly'})});toast(t('review_generated'));loadView('reviews')}catch(e){fail(e)}}
-async function loadView(v){view=v;$('title').textContent=I18N.nav[{'ai-planner':'ai_planner',ai:'ai_interactions'}[v]||v]||v;try{
+async function loadView(v){view=v;$('title').textContent=v==='today'?I18N.home.title:(I18N.nav[{'ai-planner':'ai_planner',ai:'ai_interactions'}[v]||v]||v);$('subtitle').textContent=v==='today'?new Date().toLocaleDateString(INTL,{timeZone:TZ,weekday:'long',day:'numeric',month:'long'}):(I18N.views[v]||'');setActive(v);document.body.classList.remove('nav-open');$('content').innerHTML=skeleton();try{await (async()=>{
 if(v==='today')return today();if(v==='inbox')return inbox();if(v==='search')return searchView();if(v==='ai-planner')return aiPlanner();if(v==='analytics')return analytics();if(v==='reports')return reports('week');if(v==='daily')return daily();if(v==='calendar')return window.calendarView?calendarView():calendar();if(v==='recurring')return recurringView();if(v==='dependencies')return dependencies();
 if(v==='execution')return execution();if(v==='failures')return failures();if(v==='reviews')return reviews();
 if(v==='ai')return systemList('ai-interactions',I18N.nav.ai_interactions,renderAI);if(v==='pending')return systemList('pending-actions',I18N.nav.pending,renderPending);if(v==='activity')return window.activityTimeline?activityTimeline():systemList('activity',I18N.nav.activity,renderActivity);
 if(['tasks','goals','projects','areas','milestones','reminders','notes','decisions'].includes(v))return loadList(v);
-}catch(e){$('content').innerHTML='<div class=card><div style="color:#b42318">'+esc(e.message)+'</div></div>'}}
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadView(b.dataset.view)});
-document.addEventListener('DOMContentLoaded',()=>loadView(view));
+})();if(view===v)polish(v)}catch(e){$('content').innerHTML='<div class="alert danger" role=alert>'+esc(e.message)+'</div>'}}
+/* Consistent finishing for every view: no heading that repeats the page title, icon buttons instead of text glyphs. */
+function polish(v){let c=$('content'),h=c.querySelector('.card .head h2');if(h&&h.textContent.trim().replace(/^[✦◎↻\s]+/,'')===$('title').textContent.trim())h.remove();
+c.querySelectorAll('button,.btn').forEach(b=>{let f=b.firstChild;if(!f||f.nodeType!==3)return;let m=f.nodeValue.match(/^\s*([＋✦⤓])\s*/);if(!m)return;f.nodeValue=f.nodeValue.slice(m[0].length);b.insertAdjacentHTML('afterbegin',ic({'＋':'plus','✦':'haman','⤓':'download'}[m[1]],'sm'))});
+c.querySelectorAll('h2').forEach(x=>{let f=x.firstChild;if(f&&f.nodeType===3&&/^[✦◎]\s/.test(f.nodeValue))f.nodeValue=f.nodeValue.slice(2)})}
+function setActive(v){document.querySelectorAll('[data-view]').forEach(x=>{let on=x.dataset.view===v;x.classList.toggle('active',on);if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});if(['notes','decisions','activity','ai','pending','search'].includes(v))$('navmore').open=true}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{loadView(b.dataset.view);history.pushState(null,'','#'+b.dataset.view)});
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>loadView(b.dataset.go));
+const navOpen=o=>{document.body.classList.toggle('nav-open',o);$('navtoggle').setAttribute('aria-expanded',String(o));if(o)$('side').querySelector('button,a').focus()};
+$('navtoggle').onclick=()=>navOpen(true);$('tabmore').onclick=()=>navOpen(true);$('scrim').onclick=()=>navOpen(false);
+document.addEventListener('DOMContentLoaded',()=>{let h=location.hash.slice(1);loadView(h&&document.querySelector('[data-view="'+h+'"]')?h:view)});
+addEventListener('hashchange',()=>{let h=location.hash.slice(1);if(h&&h!==view&&document.querySelector('[data-view="'+h+'"]'))loadView(h)});
 let pwaPrompt=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pwaPrompt=e;$('pwa-install').classList.remove('hide')});$('pwa-install').onclick=async()=>{if(!pwaPrompt)return;pwaPrompt.prompt();await pwaPrompt.userChoice;pwaPrompt=null;$('pwa-install').classList.add('hide')};
 </script>
 <script src="{{ asset('js/planner-calendar.js') }}?v={{ @filemtime(public_path('js/planner-calendar.js')) }}"></script>
