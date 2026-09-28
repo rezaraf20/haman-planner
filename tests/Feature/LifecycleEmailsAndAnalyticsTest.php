@@ -45,7 +45,7 @@ final class LifecycleEmailsAndAnalyticsTest extends TestCase
         app()->setLocale('fa');
         $html = $mail->render();
         $this->assertStringContainsString('dir="rtl"', $html);
-        $this->assertStringContainsString('به همان پلنر خوش آمدید', $html);
+        $this->assertStringContainsString('به هامان پلنر خوش آمدید', $html);
         $this->assertStringContainsString('رضا', $html);
         $this->assertStringNotContainsString('unsubscribe', $html, 'essential email has no unsubscribe link');
 

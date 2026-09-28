@@ -22,7 +22,7 @@
 .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700;flex:none}
 .side-search{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);background:var(--surface-2);color:var(--text-3);border-radius:var(--r);padding:7px 10px;margin-bottom:6px;font-size:var(--fs-sm);text-align:start}
 .side-search:hover{border-color:var(--line-strong);color:var(--text-2)}
-.nav{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
+.nav{flex:1;overflow-y:auto;overflow-x:hidden;margin:0 -4px;padding:0 4px}
 .nav .group{font-size:var(--fs-xs);font-weight:var(--w-semibold);color:var(--text-3);margin:16px 10px 4px}
 .nav button,.side-foot a,.side-foot button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--text-2);text-align:start;border-radius:var(--r);padding:7px 10px;font-size:var(--fs-base);font-weight:var(--w-medium);position:relative;text-decoration:none}
 .nav button .i,.side-foot .i{color:var(--text-3)}
@@ -44,7 +44,9 @@
 .side-foot form{margin:0}
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--text-2);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
 .side-foot .lang-switch{font-size:var(--fs-xs);color:var(--text-3);padding:4px 10px}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:var(--text)}
-.main{min-width:0;padding:28px 32px 48px;max-width:1240px;width:100%}
+.main{min-width:0;padding:28px 32px 48px;width:100%}
+/* Desktop: the page never scrolls — the sidebar and the content area scroll independently. */
+@media(min-width:1025px){html,body{height:100%;overflow:hidden}.shell{height:100vh;min-height:0}.main{height:100vh;overflow-y:auto;overscroll-behavior:contain}}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
 .top h1{font-size:var(--fs-xl)}
 .top .sub{color:var(--text-3);font-size:var(--fs-sm);margin-top:2px}

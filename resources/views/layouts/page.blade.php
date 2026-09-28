@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{{ asset('css/haman.css') }}?v={{ @filemtime(public_path('css/haman.css')) }}">
 <style>
 .top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
-.top .in{max-width:1180px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top .in{max-width:1440px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .top .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink-900);text-decoration:none}
 .top .brand img{height:28px;max-width:120px;object-fit:contain}
 .top .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:14px}
@@ -20,15 +20,15 @@
 .top nav a:hover,.top nav button:hover{background:var(--surface-3);color:var(--text);text-decoration:none}
 .top nav a.on{background:var(--accent-soft);color:var(--accent-strong)}
 .top .lang-switch{color:var(--text-3);font-size:var(--fs-xs);padding-inline:8px}.lang-switch .sep{margin-inline:6px}.lang-switch strong{color:var(--text)}
-.wrap{max-width:1180px;margin:24px auto 48px;padding:0 20px}
+.wrap{max-width:1440px;margin:24px auto 48px;padding:0 20px}
 .wrap > h1{margin-bottom:var(--s4)}
 .wrap > .card{margin-bottom:var(--s4)}
-.sub{display:flex;gap:2px;flex-wrap:wrap;margin:-8px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.sub{display:flex;gap:2px;flex-wrap:wrap;margin:-8px 0 20px;border-bottom:1px solid var(--line)}
 .sub a{padding:9px 12px;color:var(--text-2);font-weight:var(--w-medium);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;text-decoration:none}
 .sub a:hover{color:var(--text);text-decoration:none}
 .sub a.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
 .msg{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;margin:10px 0;background:var(--surface);white-space:pre-wrap;line-height:1.9}.msg.staff{background:var(--info-bg);border-color:var(--info-line)}.msg .meta{font-size:var(--fs-sm);color:var(--text-3);margin-bottom:6px;white-space:normal}
-@media(max-width:760px){.top nav{margin-inline-start:0;width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.top nav a,.top nav button{white-space:nowrap}.sub{flex-wrap:nowrap;scrollbar-width:none}.wrap{padding:0 16px;margin-top:16px}}
+@media(max-width:760px){.top nav{margin-inline-start:0;width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.top nav a,.top nav button{white-space:nowrap}.sub{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.wrap{padding:0 16px;margin-top:16px}}
 @stack('styles')
 </style>
 </head>
