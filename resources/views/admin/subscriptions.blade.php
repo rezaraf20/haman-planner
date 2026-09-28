@@ -13,7 +13,7 @@
 @forelse ($subs as $s)
 <tr><td class="muted">{{ $s->id }}</td><td>{{ $s->user?->name ?? '—' }}<div class="muted ltr">{{ $s->user?->email }}</div></td>
 <td>{{ $s->plan?->localizedName() }}@if($s->billing_interval) · {{ __('billing.interval.'.$s->billing_interval) }}@endif</td>
-<td><span class="pill {{ in_array($s->status, ['active','trialing'], true) ? 'g' : ($s->status === 'canceled' ? 'y' : '') }}">{{ __('billing.status.'.$s->status) }}</span></td>
+<td><span class="pill {{ in_array($s->status, ['active','trialing'], true) ? 'g' : ($s->status === 'canceled' ? 'y' : ($s->status === 'past_due' ? 'r' : '')) }}">{{ __('billing.status.'.$s->status) }}</span></td>
 <td>{{ __('billing.provider.'.($s->provider ?? 'manual')) }}</td>
 <td>{{ \App\Support\LocalDate::date($s->current_period_end) }}</td>
 <td>{{ \App\Support\LocalDate::date($s->created_at) }}</td></tr>

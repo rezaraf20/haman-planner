@@ -63,10 +63,16 @@ final class User extends Authenticatable
     /** Records activity at most every 5 minutes, without touching updated_at. */
     public function markSeen(): void
     {
-        if ($this->last_seen_at === null || $this->last_seen_at->lt(now()->subMinutes(5))) {
-            $now = now();
+        $now = now();
+        if ($this->last_seen_at === null || $this->last_seen_at->lt($now->copy()->subMinutes(5)) || !$this->last_seen_at->isSameDay($now)) {
             static::query()->whereKey($this->id)->toBase()->update(['last_seen_at' => $now]);
             $this->last_seen_at = $now;
+            // One row per active day (app timezone) for DAU/WAU/MAU and retention.
+            try {
+                \Illuminate\Support\Facades\DB::table('user_activity_days')->insertOrIgnore(['user_id' => $this->id, 'day' => $now->toDateString()]);
+            } catch (\Throwable) {
+                // Analytics must never break a request.
+            }
         }
     }
 

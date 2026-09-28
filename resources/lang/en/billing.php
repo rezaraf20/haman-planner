@@ -9,6 +9,7 @@ return [
         'canceled' => 'Canceled — active until the period ends',
         'expired' => 'Expired',
         'free' => 'Free',
+        'past_due' => 'Payment failed — retrying',
     ],
     'payment_status' => [
         'pending' => 'Awaiting payment',
@@ -125,4 +126,7 @@ Renew here: :url',
         'nothing_to_cancel' => 'There\'s no active subscription to cancel.',
         'nothing_to_resume' => 'There\'s no canceled subscription to resume.',
     ],
+    'auto_renew_on' => 'Renews automatically on :date.',
+    'past_due_notice' => 'The last renewal payment failed. Stripe will retry; access continues until :date. Please check your card with the payment provider.',
+    'auto_renew_badge' => 'Auto-renew',
 ];

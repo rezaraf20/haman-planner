@@ -38,6 +38,10 @@ Route::get('/fonts/custom/{weight}.font', function (string $weight) {
 // Private iCal feed of planner blocks (token in the URL; read-only).
 Route::get('/calendar/feed/{token}.ics', [\App\Http\Controllers\CalendarController::class, 'feed'])->middleware('throttle:30,1,w-calendar-feed-token-ics')->name('calendar.feed');
 
+// One-click unsubscribe from optional lifecycle email (signed link; no login needed).
+Route::get('/email/unsubscribe/{user}/{preference}', [\App\Http\Controllers\EmailPreferenceController::class, 'show'])->middleware(['signed', 'throttle:20,1,w-email-unsubscribe'])->name('email.unsubscribe');
+Route::post('/email/unsubscribe/{user}/{preference}', [\App\Http\Controllers\EmailPreferenceController::class, 'update'])->middleware(['signed', 'throttle:20,1,w-email-unsubscribe-post'])->name('email.unsubscribe.apply');
+
 // PWA
 Route::get('/manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/offline', [\App\Http\Controllers\PwaController::class, 'offline'])->name('pwa.offline');
@@ -120,6 +124,7 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
         Route::post('/content', [AdminContentController::class, 'saveContent'])->name('admin.content.save');
         Route::post('/content/reset', [AdminContentController::class, 'resetContent'])->name('admin.content.reset');
         Route::get('/system', [AdminBusinessController::class, 'system'])->name('admin.system');
+        Route::get('/analytics', [AdminBusinessController::class, 'analytics'])->name('admin.analytics');
         Route::get('/support', [AdminSupportController::class, 'index'])->name('admin.support');
         Route::get('/support/{ticket}', [AdminSupportController::class, 'show'])->name('admin.support.show');
         Route::post('/support/{ticket}/reply', [AdminSupportController::class, 'reply'])->name('admin.support.reply');

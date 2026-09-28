@@ -14,6 +14,10 @@ Schedule::command('calendar:sync')
     ->everyFifteenMinutes()
     ->withoutOverlapping();
 
+Schedule::command('planner:lifecycle-emails')
+    ->hourly()
+    ->withoutOverlapping();
+
 Schedule::command('billing:lifecycle')
     ->hourly()
     ->withoutOverlapping();

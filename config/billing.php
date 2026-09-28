@@ -42,12 +42,21 @@ return [
         'stripe' => [
             'enabled' => filter_var(env('STRIPE_ENABLED', false), FILTER_VALIDATE_BOOL),
             'secret' => env('STRIPE_SECRET'),
+            // Signing secret of the webhook endpoint (whsec_…). When set, Stripe checkouts create
+            // auto-renewing subscriptions; without it every period is a separate one-time payment.
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
             'currency' => 'USD',
         ],
     ],
 
     // Days before the end of a paid period to remind the user (Telegram/email).
     'renewal_reminder_days' => (int) env('BILLING_RENEWAL_REMINDER_DAYS', 3),
+
+    // Auto-renewing subscriptions: access continues while the provider retries a failed charge
+    // (past_due) for this many days after the period end, and an active period is only expired
+    // locally this many days after its end if no renewal webhook arrived.
+    'past_due_grace_days' => (int) env('BILLING_PAST_DUE_GRACE_DAYS', 7),
+    'webhook_grace_days' => (int) env('BILLING_WEBHOOK_GRACE_DAYS', 3),
 
     // Account deletion: paid invoices are accounting records and are kept, with personal
     // fields replaced by a pseudonym when this is true.

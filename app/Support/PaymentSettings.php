@@ -25,6 +25,7 @@ final class PaymentSettings
         'zarinpal_sandbox' => ['billing.providers.zarinpal.sandbox', false, true],
         'stripe_enabled' => ['billing.providers.stripe.enabled', false, true],
         'stripe_secret' => ['billing.providers.stripe.secret', true, false],
+        'stripe_webhook_secret' => ['billing.providers.stripe.webhook_secret', true, false],
     ];
 
     /** @return array<string,?string> raw stored values (secrets still encrypted) */

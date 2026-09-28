@@ -36,6 +36,16 @@
 @if ($fields['stripe_secret']['source'] === 'panel')<label class="check"><input type="checkbox" name="clear_stripe_secret" value="1"> {{ __('admin.pay_clear') }}</label>@endif
 </div>
 <div class="help">{{ __('admin.pay_stripe_help') }}</div>
+<div class="field"><label>{{ __('admin.pay_webhook_secret') }}</label>
+<input type="password" name="stripe_webhook_secret" dir="ltr" value="" placeholder="{{ $fields['stripe_webhook_secret']['masked'] ?? 'whsec_…' }}" maxlength="255" autocomplete="new-password">
+<div class="help">{{ __('admin.pay_secret_help') }} · {{ __('admin.pay_source.'.$fields['stripe_webhook_secret']['source']) }}</div>
+@if ($fields['stripe_webhook_secret']['source'] === 'panel')<label class="check"><input type="checkbox" name="clear_stripe_webhook_secret" value="1"> {{ __('admin.pay_clear') }}</label>@endif
+</div>
+<div class="help">{{ __('admin.pay_webhook_help') }}</div>
+<p class="help">{{ __('admin.pay_webhook_url') }} <span class="ltr">{{ $stripeWebhookUrl }}</span></p>
+<p class="help">{{ __('admin.pay_webhook_events') }} <span class="ltr">{{ implode(', ', $stripeWebhookEvents) }}</span></p>
+<p class="help">{{ __('admin.pay_mode') }}: <b>{{ $fields['stripe_webhook_secret']['value'] ? __('admin.pay_mode_recurring') : __('admin.pay_mode_one_time') }}</b>
+@if ($lastWebhook) · {{ __('admin.pay_last_webhook') }}: <span class="ltr">{{ $lastWebhook->type }}</span> ({{ __('admin.webhook_status.'.$lastWebhook->status) }}, {{ \App\Support\LocalDate::dateTime($lastWebhook->created_at) }})@endif</p>
 </div>
 
 <div class="card">

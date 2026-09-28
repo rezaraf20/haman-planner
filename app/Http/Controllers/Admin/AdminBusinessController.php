@@ -109,6 +109,11 @@ final class AdminBusinessController extends Controller
         return back()->with('status', __('admin.granted', ['plan' => $plan->localizedName(), 'name' => $user->name, 'months' => $d['months']]));
     }
 
+    public function analytics(\App\Services\Analytics\ProductAnalytics $analytics): View
+    {
+        return view('admin.analytics', ['m' => $analytics->all()]);
+    }
+
     public function system(): View
     {
         $check = function (callable $fn) {

@@ -58,6 +58,7 @@ input[type=email],input[type=password],input[type=number]{direction:ltr;text-ali
 <a href="{{ route('admin.users') }}" class="{{ request()->routeIs('admin.users*') ? 'on' : '' }}">{{ __('admin.nav.users') }}</a>
 <a href="{{ route('admin.subscriptions') }}" class="{{ request()->routeIs('admin.subscriptions*') ? 'on' : '' }}">{{ __('admin.nav.subscriptions') }}</a>
 <a href="{{ route('admin.plans') }}" class="{{ request()->routeIs('admin.plans*') ? 'on' : '' }}">{{ __('admin.nav.plans') }}</a>
+<a href="{{ route('admin.analytics') }}" class="{{ request()->routeIs('admin.analytics*') ? 'on' : '' }}">{{ __('admin.nav.analytics') }}</a>
 <a href="{{ route('admin.payments') }}" class="{{ request()->routeIs('admin.payments*') ? 'on' : '' }}">{{ __('admin.nav.payments') }}</a>
 <a href="{{ route('admin.payment-settings') }}" class="{{ request()->routeIs('admin.payment-settings*') ? 'on' : '' }}">{{ __('admin.nav.payment_settings') }}</a>
 <a href="{{ route('admin.content') }}" class="{{ request()->routeIs('admin.content*') ? 'on' : '' }}">{{ __('admin.nav.content') }}</a>

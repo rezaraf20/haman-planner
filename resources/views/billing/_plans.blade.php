@@ -27,6 +27,10 @@
 <form method="post" action="{{ route('billing.trial') }}">@csrf<input type="hidden" name="plan" value="{{ $p->id }}"><button class="btn" style="width:100%">{{ __('billing.start_trial', ['days' => \App\Support\LocalDate::number($p->trial_days)]) }}</button></form>
 <div class="help">{{ __('billing.trial_note') }}</div>
 @endif
+@php($autoRenewing = $isCurrent && ($summary['subscription'] ?? null)?->auto_renew && in_array($summary['subscription']->status, ['active', 'canceled'], true))
+@if ($autoRenewing)
+<div class="help">{{ __('billing.auto_renew_badge') }}</div>
+@else
 @forelse ($gateways as $g)
 @if ($p->price($g->currency(), $interval))
 <form method="post" action="{{ route('billing.checkout') }}">@csrf
@@ -38,6 +42,7 @@
 @empty
 <div class="help">{{ __('billing.payments_unavailable') }}</div>
 @endforelse
+@endif
 </div>
 @endif
 </div>

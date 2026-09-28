@@ -45,6 +45,9 @@ Route::get('/ready', function () {
 
 Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:30,1,a-telegram-webhook');
 
+// Payment provider webhooks: authenticated by the provider's signature, not by a user session.
+Route::post('/billing/webhook/stripe', \App\Http\Controllers\StripeWebhookController::class)->middleware([RequestIdMiddleware::class, 'throttle:120,1,a-stripe-webhook'])->name('billing.webhook.stripe');
+
 Route::middleware([
     EncryptCookies::class,
     AddQueuedCookiesToResponse::class,

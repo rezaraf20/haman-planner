@@ -19,11 +19,13 @@
 <div class="row" style="justify-content:space-between">
 <div>
 <b style="font-size:20px">{{ $plan?->localizedName() ?? __('billing.free') }}</b>
-<span class="pill {{ $sub ? ($sub->status === 'canceled' ? 'y' : 'g') : '' }}">{{ __('billing.status.'.($sub?->status ?? 'free')) }}</span>
+<span class="pill {{ $sub ? ($sub->status === 'past_due' ? 'r' : ($sub->status === 'canceled' ? 'y' : 'g')) : '' }}">{{ __('billing.status.'.($sub?->status ?? 'free')) }}</span>
 @if ($sub)
 <div class="muted" style="margin-top:6px">
 @if ($sub->status === 'trialing'){{ __('billing.trial_ends_on', ['date' => \App\Support\LocalDate::date($sub->current_period_end)]) }}
 @elseif ($sub->status === 'canceled'){{ __('billing.ends_on', ['date' => \App\Support\LocalDate::date($sub->current_period_end)]) }}
+@elseif ($sub->status === 'past_due'){{ __('billing.past_due_notice', ['date' => \App\Support\LocalDate::date($sub->current_period_end?->copy()->addDays(\App\Models\Subscription::pastDueGraceDays()))]) }}
+@elseif ($sub->auto_renew){{ __('billing.auto_renew_on', ['date' => \App\Support\LocalDate::date($sub->current_period_end)]) }}
 @else{{ __('billing.renews_on', ['date' => \App\Support\LocalDate::date($sub->current_period_end)]) }}@endif
 @if ($sub->provider === 'manual') · {{ __('billing.manual') }}@endif
 </div>

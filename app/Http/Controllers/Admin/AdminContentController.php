@@ -72,6 +72,9 @@ final class AdminContentController extends Controller
             'gateways' => $billing->gateways(),
             'callbackBase' => rtrim((string) config('app.url'), '/').'/billing/callback/…',
             'appUrlIsHttps' => str_starts_with((string) config('app.url'), 'https://'),
+            'stripeWebhookUrl' => rtrim((string) config('app.url'), '/').'/api/billing/webhook/stripe',
+            'stripeWebhookEvents' => ['checkout.session.completed', 'invoice.paid', 'invoice.payment_failed', 'customer.subscription.updated', 'customer.subscription.deleted'],
+            'lastWebhook' => \App\Models\WebhookEvent::query()->where('provider', 'stripe')->latest('id')->first(),
         ]);
     }
 
@@ -80,7 +83,9 @@ final class AdminContentController extends Controller
         $request->validate([
             'zarinpal_merchant_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
             'stripe_secret' => ['nullable', 'string', 'max:255', 'regex:/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/'],
+            'stripe_webhook_secret' => ['nullable', 'string', 'max:255', 'regex:/^whsec_[A-Za-z0-9+\/=]+$/'],
         ], [
+            'stripe_webhook_secret.regex' => __('admin.pay_webhook_invalid'),
             'zarinpal_merchant_id.regex' => __('admin.pay_merchant_invalid'),
             'stripe_secret.regex' => __('admin.pay_stripe_invalid'),
         ]);
@@ -91,6 +96,7 @@ final class AdminContentController extends Controller
             'stripe_enabled' => $request->boolean('stripe_enabled'),
             'zarinpal_merchant_id' => $request->boolean('clear_zarinpal_merchant_id') ? null : (string) $request->input('zarinpal_merchant_id', ''),
             'stripe_secret' => $request->boolean('clear_stripe_secret') ? null : (string) $request->input('stripe_secret', ''),
+            'stripe_webhook_secret' => $request->boolean('clear_stripe_webhook_secret') ? null : (string) $request->input('stripe_webhook_secret', ''),
         ]);
         return redirect()->route('admin.payment-settings')->with('status', __('admin.pay_saved'));
     }
