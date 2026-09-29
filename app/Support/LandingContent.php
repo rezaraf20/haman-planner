@@ -32,7 +32,7 @@ final class LandingContent
         return [
             'seo' => ['marketing.meta_title' => 'text', 'marketing.meta_description' => 'textarea',
                 'marketing.pricing_meta_title' => 'text', 'marketing.pricing_meta_description' => 'textarea'],
-            'hero' => ['marketing.hero_title' => 'text', 'marketing.hero_text' => 'textarea', 'marketing.hero_note' => 'text',
+            'hero' => ['marketing.hero_badge' => 'text', 'marketing.hero_title' => 'text', 'marketing.hero_text' => 'textarea', 'marketing.hero_note' => 'text',
                 'marketing.cta_start' => 'text'],
             'value' => ['marketing.value_title' => 'text',
                 'marketing.value_1_title' => 'text', 'marketing.value_1_text' => 'textarea',

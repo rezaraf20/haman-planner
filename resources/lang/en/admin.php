@@ -320,6 +320,7 @@ return [
         'terms_title' => 'Page title',
         'terms_meta' => 'SEO description',
         'terms' => 'Sections',
+        'hero_badge' => 'Small label above the headline',
     ],
     'pay_title' => 'Payment provider settings',
     'pay_help' => 'Values saved here take precedence over the .env file. Keys are stored encrypted and, once saved, only their last 4 characters are shown.',
