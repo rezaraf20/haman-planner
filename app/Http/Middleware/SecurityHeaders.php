@@ -47,7 +47,9 @@ final class SecurityHeaders
 
     public static function policy(): string
     {
-        $formTargets = ["'self'", 'https://checkout.stripe.com', 'https://payment.zarinpal.com', 'https://sandbox.zarinpal.com', 'https://www.zarinpal.com', 'https://accounts.google.com'];
+        // Browsers apply form-action to the redirect that follows a form post, so every payment
+        // provider the checkout form redirects to must be listed here (keep in sync with the gateways).
+        $formTargets = ["'self'", 'https://checkout.stripe.com', 'https://payment.zarinpal.com', 'https://sandbox.zarinpal.com', 'https://www.zarinpal.com', 'https://gateway.zibal.ir', 'https://accounts.google.com'];
         return implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline'",

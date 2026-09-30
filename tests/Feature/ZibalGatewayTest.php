@@ -213,6 +213,21 @@ final class ZibalGatewayTest extends TestCase
         $this->assertStringNotContainsString('value="zibal"', $en);
     }
 
+    public function test_checkout_redirect_to_every_gateway_is_allowed_by_the_csp(): void
+    {
+        // Browsers check form-action against the redirect after POST /billing/checkout.
+        $csp = (string) $this->actingAs($this->user)->get('/billing')->headers->get('Content-Security-Policy');
+        preg_match('/form-action ([^;]+)/', $csp, $m);
+        $allowed = explode(' ', trim($m[1]));
+        $this->checkout();
+        $target = Payment::latest('id')->first();
+        foreach ([ZibalGateway::BASE.'/start/1', 'https://payment.zarinpal.com/pg/StartPay/A1', 'https://sandbox.zarinpal.com/pg/StartPay/A1', 'https://checkout.stripe.com/c/pay/cs_1'] as $url) {
+            $origin = parse_url($url, PHP_URL_SCHEME).'://'.parse_url($url, PHP_URL_HOST);
+            $this->assertContains($origin, $allowed, $origin.' must be allowed in form-action');
+        }
+        $this->assertNotNull($target);
+    }
+
     public function test_admin_configures_zibal_without_seeing_the_merchant(): void
     {
         $admin = User::create(['name' => 'A', 'email' => 'a@example.com', 'password' => 'secret-pass-123', 'is_active' => true, 'is_admin' => true, 'onboarded_at' => now()]);
