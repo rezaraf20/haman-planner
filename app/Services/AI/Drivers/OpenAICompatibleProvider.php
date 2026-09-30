@@ -12,25 +12,47 @@ final class OpenAICompatibleProvider implements AIProviderInterface
     public function __construct(
         private readonly string $baseUrl,
         private readonly string $apiKey,
-        private readonly string $model
+        private readonly string $model,
+        /** fn(bool $ok, array $json, int $ms, ?string $error): void — usage accounting hook */
+        private readonly ?\Closure $onResponse = null,
     ) {}
 
     public function chat(array $messages, array $options = []): array
     {
-        $response = Http::withToken($this->apiKey)
-            ->acceptJson()
-            ->timeout(60)
-            ->retry(3, 1000, throw: false)
-            ->post(rtrim($this->baseUrl, '/').'/chat/completions', array_merge([
-                'model' => $this->model,
-                'messages' => $messages,
-            ], $options));
+        $started = microtime(true);
+        try {
+            $response = Http::withToken($this->apiKey)
+                ->acceptJson()
+                ->timeout(60)
+                ->retry(2, 800, throw: false)
+                ->post(rtrim($this->baseUrl, '/').'/chat/completions', array_merge([
+                    'model' => $this->model,
+                    'messages' => $messages,
+                ], $options));
+        } catch (\Throwable $e) {
+            $this->report(false, [], $started, 'connection: '.mb_substr($e->getMessage(), 0, 120));
+            throw new RuntimeException('AI provider unreachable: '.$e->getMessage(), 0, $e);
+        }
 
         if ($response->failed()) {
+            $this->report(false, (array) $response->json(), $started, 'HTTP '.$response->status().' '.mb_substr((string) ($response->json('error.message') ?? ''), 0, 120));
             throw new RuntimeException('AI provider request failed: '.$response->status());
         }
 
-        return $response->json();
+        $json = (array) $response->json();
+        $this->report(true, $json, $started, null);
+        return $json;
+    }
+
+    private function report(bool $ok, array $json, float $started, ?string $error): void
+    {
+        if ($this->onResponse) {
+            try {
+                ($this->onResponse)($ok, $json, (int) round((microtime(true) - $started) * 1000), $error);
+            } catch (\Throwable) {
+                // accounting must never break an AI call
+            }
+        }
     }
 
     public function parseIntent(string $input, array $context = []): array

@@ -130,6 +130,13 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
         Route::post('/content/reset', [AdminContentController::class, 'resetContent'])->name('admin.content.reset');
         Route::get('/system', [AdminBusinessController::class, 'system'])->name('admin.system');
         Route::get('/analytics', [AdminBusinessController::class, 'analytics'])->name('admin.analytics');
+        Route::get('/ai', [\App\Http\Controllers\Admin\AdminAiController::class, 'index'])->name('admin.ai');
+        Route::post('/ai', [\App\Http\Controllers\Admin\AdminAiController::class, 'store'])->name('admin.ai.store');
+        Route::post('/ai/{provider}', [\App\Http\Controllers\Admin\AdminAiController::class, 'update'])->name('admin.ai.update');
+        Route::post('/ai/{provider}/delete', [\App\Http\Controllers\Admin\AdminAiController::class, 'destroy'])->name('admin.ai.delete');
+        Route::post('/ai/{provider}/toggle', [\App\Http\Controllers\Admin\AdminAiController::class, 'toggle'])->name('admin.ai.toggle');
+        Route::post('/ai/{provider}/test', [\App\Http\Controllers\Admin\AdminAiController::class, 'test'])->middleware('throttle:10,1,w-admin-ai-test')->name('admin.ai.test');
+        Route::post('/ai/{provider}/balance', [\App\Http\Controllers\Admin\AdminAiController::class, 'balance'])->middleware('throttle:10,1,w-admin-ai-balance')->name('admin.ai.balance');
         Route::get('/support', [AdminSupportController::class, 'index'])->name('admin.support');
         Route::get('/support/{ticket}', [AdminSupportController::class, 'show'])->name('admin.support.show');
         Route::post('/support/{ticket}/reply', [AdminSupportController::class, 'reply'])->name('admin.support.reply');

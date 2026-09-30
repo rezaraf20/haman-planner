@@ -265,3 +265,13 @@ Plan names and prices on the page come from Admin → Plans.
 plan, grant, activate/deactivate, CSV export), subscriptions, plans, payments/revenue, support tickets,
 platform settings (name, logo, taglines per language, registration), and system health (DB, queue, scheduler
 heartbeat, provider configuration, recent errors with credentials masked).
+
+## AI connections (`/admin/ai`)
+
+Admins add AI API connections (OpenAI, Gemini, OpenRouter, Groq, xAI, DeepSeek or any OpenAI-compatible endpoint).
+Keys are encrypted with `APP_KEY` and never shown again (only the last 4 characters). Active connections are tried
+in priority order; on an error, or when a connection's optional monthly token budget is used up, the next one is used.
+Every call records only counts (prompt/completion tokens, latency, success, feature, user) in `ai_usage` — never the
+prompt or answer text. Live account balance is available for OpenRouter and DeepSeek (the only providers with a
+balance API); for others the page shows tokens used against the monthly budget. Cost is estimated from the per-million
+prices entered for each connection. When no connection exists, the `AI_*` / provider keys in `.env` are used as before.

@@ -39,7 +39,7 @@ final class PlanningAssistantService
         return $user->preference('ai_enabled') !== false
             && $this->entitlements->canUse($user, 'ai_planner')
             && $this->entitlements->canUse($user, 'advanced_ai_planning')
-            && filled(config('services.ai.api_key'));
+            && \App\Services\AI\AIProviderFactory::available();
     }
 
     public function generate(User $user, string $kind, ?string $message = null): PlanProposal
@@ -114,12 +114,12 @@ final class PlanningAssistantService
                 .'You cannot add or change actions. Nothing is applied without the user\'s confirmation — never claim that a change was made. '
                 .'Return a JSON object with exactly these keys. Write all text in '.$language.'.'],
             ['role' => 'user', 'content' => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)],
-        ], ['temperature' => 0.2, 'response_format' => ['type' => 'json_object']]);
+        ], ['temperature' => 0.2, 'response_format' => ['type' => 'json_object'], '_feature' => 'plan_proposal']);
 
         $raw = (string) ($response['choices'][0]['message']['content'] ?? '');
         $out = json_decode($raw, true);
         AiInteraction::create([
-            'user_id' => $user->id, 'provider' => (string) config('services.ai.provider', 'configured'), 'model' => (string) config('services.ai.model', 'configured'),
+            'user_id' => $user->id, 'provider' => AIProviderFactory::lastUsed()['provider'], 'model' => AIProviderFactory::lastUsed()['model'],
             'intent' => 'PLAN_'.strtoupper($draft['kind']), 'input_hash' => hash('sha256', $requestId),
             'input_payload' => ['kind' => $draft['kind'], 'actions' => count($draft['actions'])], 'output_payload' => is_array($out) ? $out : ['raw' => mb_substr($raw, 0, 2000)],
             'confidence' => null, 'status' => is_array($out) ? 'completed' : 'invalid', 'request_id' => $requestId,

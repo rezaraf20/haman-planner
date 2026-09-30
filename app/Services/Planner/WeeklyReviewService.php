@@ -136,7 +136,7 @@ final class WeeklyReviewService
     private function aiSummary(User $user, array $m, array $recs): ?string
     {
         if ($user->preference('ai_enabled') === false || !$this->entitlements->canUse($user, 'ai_planner')
-            || !$this->entitlements->canUse($user, 'advanced_ai_planning') || !filled(config('services.ai.api_key'))) {
+            || !$this->entitlements->canUse($user, 'advanced_ai_planning') || !AIProviderFactory::available()) {
             return null;
         }
         try {
@@ -149,9 +149,9 @@ final class WeeklyReviewService
             $r = AIProviderFactory::make()->chat([
                 ['role' => 'system', 'content' => 'You are Haman AI. Summarise the user\'s week in at most 90 words using ONLY these metrics and recommendation codes. Do not invent numbers, tasks or causes; if a metric is zero or missing, do not speculate. Return JSON {"summary": string}. Write in '.AIPlannerService::responseLanguage($user).'.'],
                 ['role' => 'user', 'content' => json_encode(['metrics' => $m, 'recommendations' => array_column($recs, 'key')], JSON_UNESCAPED_UNICODE)],
-            ], ['temperature' => 0.2, 'response_format' => ['type' => 'json_object']]);
+            ], ['temperature' => 0.2, 'response_format' => ['type' => 'json_object'], '_feature' => 'weekly_review']);
             $out = json_decode((string) ($r['choices'][0]['message']['content'] ?? ''), true);
-            AiInteraction::create(['user_id' => $user->id, 'provider' => (string) config('services.ai.provider'), 'model' => (string) config('services.ai.model'),
+            AiInteraction::create(['user_id' => $user->id, 'provider' => AIProviderFactory::lastUsed()['provider'], 'model' => AIProviderFactory::lastUsed()['model'],
                 'intent' => 'WEEKLY_REVIEW', 'input_hash' => hash('sha256', $requestId), 'input_payload' => ['week_start' => $m['week_start']],
                 'output_payload' => is_array($out) ? $out : null, 'confidence' => null, 'status' => is_array($out) ? 'completed' : 'invalid', 'request_id' => $requestId]);
             $text = is_array($out) && is_string($out['summary'] ?? null) ? trim(strip_tags($out['summary'])) : null;

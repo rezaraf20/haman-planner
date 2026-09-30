@@ -72,14 +72,14 @@ final class AIPlannerService
         $response = $provider->chat([
             ['role' => 'system', 'content' => 'You are Haman Planner planning assistant. Use only supplied planner data. Do not invent tasks, IDs, dates, or facts. Return JSON with summary, risks, recommendations. Recommendations are proposals only; never claim a mutation occurred. Write all text values in '.$language.'.'],
             ['role' => 'user', 'content' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)],
-        ], ['temperature' => 0, 'response_format' => ['type' => 'json_object']]);
+        ], ['temperature' => 0, 'response_format' => ['type' => 'json_object'], '_feature' => 'recommendations']);
         $raw = $response['choices'][0]['message']['content'] ?? '{}';
         $value = json_decode((string) $raw, true);
         $valid = is_array($value);
         AiInteraction::create([
             'user_id' => $userId,
-            'provider' => (string) config('services.ai.provider', 'configured'),
-            'model' => (string) config('services.ai.model', 'configured'),
+            'provider' => AIProviderFactory::lastUsed()['provider'],
+            'model' => AIProviderFactory::lastUsed()['model'],
             'intent' => 'AI_PLANNER',
             'input_hash' => hash('sha256', json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             'input_payload' => $context,

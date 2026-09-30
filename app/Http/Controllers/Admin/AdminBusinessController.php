@@ -131,7 +131,7 @@ final class AdminBusinessController extends Controller
             'overdue_reminders' => $this->countRow($check(fn () => Reminder::withoutGlobalScopes()->where('status', 'pending')->where('scheduled_at', '<', now()->subMinutes(10))->count()), 1),
             'failed_reminders' => $this->countRow($check(fn () => Reminder::withoutGlobalScopes()->where('status', 'failed')->where('updated_at', '>=', now()->subDays(7))->count()), 1),
             'telegram' => $this->configuredRow(filled(config('services.telegram.bot_token')) && filled(config('services.telegram.webhook_secret'))),
-            'ai' => $this->configuredRow(filled(config('services.ai.api_key')) || config('services.ai.provider') === 'ollama'),
+            'ai' => $this->configuredRow(\App\Services\AI\AIProviderFactory::available()),
             'mail' => $this->configuredRow(filled(config('mail.default')) && config('mail.default') !== 'log' && (config('mail.default') !== 'smtp' || filled(config('mail.mailers.smtp.host')))),
             'storage' => $check(fn () => $this->storageRow()) ?? ['down', '—'],
             'zibal' => $this->configuredRow($check(fn () => app(\App\Services\Billing\Gateways\ZibalGateway::class)->isConfigured()) === true),
@@ -217,12 +217,22 @@ final class AdminBusinessController extends Controller
         $text = (string) preg_replace('/(Bearer\s+)[A-Za-z0-9._~+\/=-]{8,}/i', '$1***', $text);
         foreach ([config('services.telegram.bot_token'), config('services.ai.api_key'), config('billing.providers.stripe.secret'),
             config('billing.providers.zarinpal.merchant_id'), config('database.connections.pgsql.password'), config('app.key'),
-            config('services.haman_planner.api_token'), config('services.telegram.webhook_secret'), ...\App\Support\PaymentSettings::secrets(), ...\App\Support\IntegrationSettings::secrets()] as $secret) {
+            config('services.haman_planner.api_token'), config('services.telegram.webhook_secret'), ...\App\Support\PaymentSettings::secrets(), ...\App\Support\IntegrationSettings::secrets(), ...self::aiKeys()] as $secret) {
             if (is_string($secret) && strlen($secret) >= 6) {
                 $text = str_replace($secret, '***', $text);
             }
         }
         return $text;
+    }
+
+    /** @return list<string> */
+    private static function aiKeys(): array
+    {
+        try {
+            return \App\Models\AiProvider::query()->get()->map(function ($p) { try { return (string) $p->api_key; } catch (\Throwable) { return ''; } })->filter()->values()->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function recentErrors(): array
