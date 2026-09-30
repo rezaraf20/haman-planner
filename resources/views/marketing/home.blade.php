@@ -69,6 +69,7 @@
 .pcard .pname small{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent-600)}
 .pcard .pdesc{color:var(--muted);font-size:14px;min-height:46px}
 .pcard .price{font-size:30px;font-weight:900;margin-top:6px}.pcard .price small{display:block;font-size:13px;color:var(--muted);font-weight:600}
+.pcard .ptrial{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);padding:4px 10px;border-radius:999px}
 .pcard .checks{font-size:14px;margin:12px 0 18px}.pcard .checks li{margin:7px 0}
 .pcard .btn{margin-top:auto;width:100%}.pcard:not(.featured) .btn{background:#fff;color:var(--ink);border-color:var(--line);box-shadow:none}
 /* faq */
@@ -194,10 +195,11 @@
 <div class="pname">{{ $p->localizedName() }}@if($n === $featuredIndex)<small>{{ __('marketing.plan_popular') }}</small>@endif</div>
 <div class="pdesc">{{ $p->localizedDescription() }}</div>
 <div class="price">@if($p->isFree()){{ __('billing.free') }}@elseif($price === null)<span style="font-size:15px;color:var(--muted)">{{ __('billing.not_sold') }}</span>@else{{ \App\Support\Money::format($price, $currency) }}<small>{{ __('billing.per_interval.monthly') }}</small>@endif</div>
+@if(!$p->isFree() && $p->trial_days > 0)<div class="ptrial">{{ __('marketing.plan_trial', ['days' => \App\Support\LocalDate::number($p->trial_days)]) }}</div>@endif
 <ul class="checks">
 @foreach (array_keys((array) config('billing.metrics')) as $m)
 @php($lim = $p->limit($m))
-@if ($lim !== null || $m === 'ai_requests')<li>{{ __('billing.metric.'.$m) }}: <b>{{ $lim === null ? __('common.unlimited') : \App\Support\LocalDate::number($lim) }}</b></li>@endif
+@if ($lim !== null || $m === 'ai_requests' || $publicPlans->contains(fn ($o) => $o->limit($m) !== null))<li>{{ __('billing.metric.'.$m) }}: <b>{{ $lim === null ? __('common.unlimited') : \App\Support\LocalDate::number($lim) }}</b></li>@endif
 @endforeach
 @foreach ((array) config('billing.features') as $f)@if($p->hasFeature($f))<li>{{ __('billing.feature.'.$f) }}</li>@endif @endforeach
 </ul>

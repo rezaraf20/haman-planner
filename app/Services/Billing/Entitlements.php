@@ -186,8 +186,20 @@ final class Entitlements
         }
     }
 
+    /**
+     * How many days of history analytics may cover: the requested span, capped for plans
+     * without the advanced_analytics feature.
+     */
+    public function historyDays(User $user, int $requested): int
+    {
+        return $this->canUse($user, 'advanced_analytics') ? $requested : min($requested, max(1, (int) config('billing.basic_analytics_days', 7)));
+    }
+
     private function count(User $user, string $metric): int
     {
+        if ($metric === 'active_recurring') {
+            return \App\Models\RecurringTask::withoutGlobalScopes()->where('user_id', $user->id)->where('status', 'active')->count();
+        }
         $closed = ['completed', 'cancelled', 'canceled'];
         $query = match ($metric) {
             'active_goals' => Goal::withoutGlobalScopes(),

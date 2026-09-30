@@ -16,10 +16,14 @@ return [
         'active_goals' => ['type' => 'count'],           // goals not completed/cancelled
         'active_projects' => ['type' => 'count'],        // projects not completed/cancelled
         'open_tasks' => ['type' => 'count'],             // tasks not completed/cancelled
+        'active_recurring' => ['type' => 'count'],       // recurring series that are active
         'attachment_storage_mb' => ['type' => 'storage'], // total size of a user's attachments
     ],
 
     // Boolean capabilities a plan may grant.
+    // Without the advanced_analytics feature, analytics and insights look back this many days.
+    'basic_analytics_days' => 7,
+
     'features' => ['telegram', 'ai_planner', 'advanced_analytics', 'priority_support',
         'recurring_tasks', 'calendar', 'advanced_ai_planning', 'attachments'],
 

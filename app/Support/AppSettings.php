@@ -23,6 +23,7 @@ final class AppSettings
             'app_tagline_en' => '',   // English tagline (empty = translated default)
             'logo' => null,
             'registration_enabled' => (bool) config('services.haman_planner.registration', true),
+            'signup_trial' => true,   // new accounts get the first public plan trial (Admin → Settings)
             'support_enabled' => true,
             'support_note' => '',
             'announcement' => '',

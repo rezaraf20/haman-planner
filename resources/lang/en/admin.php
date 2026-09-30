@@ -125,6 +125,8 @@ return [
     'remove_logo' => 'Remove logo',
     'logo_help' => 'PNG, JPG or WEBP, up to 300 KB. A wide image around 64px tall with a transparent background works best.',
     'registration_support' => 'Sign-up & support',
+    'signup_trial' => 'Free trial for new sign-ups',
+    'signup_trial_help' => 'New accounts immediately start the trial of the first public plan with trial days (Admin → Plans). When it ends they return to the free plan — no payment is taken.',
     'registration_enabled' => 'Allow public sign-up',
     'support_enabled' => 'Enable the support section for users',
     'support_note' => 'Support page note',

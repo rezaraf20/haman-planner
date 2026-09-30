@@ -94,12 +94,12 @@ return [
         'Privacy: every account\'s data is kept separate, and you can export or delete it at any time',
     ],
     'pricing_title' => 'Pricing',
-    'pricing_text' => 'Start free and upgrade whenever you need more AI.',
+    'pricing_text' => 'Start free; upgrade when you want Haman AI to plan your week, Google Calendar sync and your full history analysed.',
     'faq_title' => 'Frequently asked questions',
     'faq' => [
         [
             'Is it free?',
-            'Yes. The Free plan includes every planning feature, the Telegram bot and a monthly AI Planner allowance. Paid plans raise the AI allowance.',
+            'Yes. The Free plan covers daily planning: tasks, goals and projects, the Telegram bot and a small monthly AI allowance. Pro adds Haman AI week planning and weekly reviews, Google Calendar sync, full-history analytics and higher allowances — and you can try it free first.',
         ],
         [
             'Where is my data stored, and who can see it?',
@@ -132,6 +132,7 @@ return [
     'pricing_meta_title' => 'Pricing | Haman Planner',
     'pricing_meta_description' => 'Compare Haman Planner\'s Free, Pro and Business plans — AI allowance and features.',
     'hero_badge' => 'Planner + AI + Telegram',
+    'plan_trial' => 'Try it free for :days days — no card needed',
     'plan_popular' => 'Recommended',
     'plan_compare' => 'Compare all plans',
 ];

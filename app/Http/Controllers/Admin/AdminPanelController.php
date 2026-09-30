@@ -161,6 +161,7 @@ final class AdminPanelController extends Controller
             'support_note' => trim((string) ($data['support_note'] ?? '')),
             'announcement' => trim((string) ($data['announcement'] ?? '')),
             'registration_enabled' => $request->boolean('registration_enabled'),
+            'signup_trial' => $request->boolean('signup_trial'),
             'support_enabled' => $request->boolean('support_enabled'),
         ];
         if ($request->hasFile('logo')) {

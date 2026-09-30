@@ -17,6 +17,9 @@ final class RecurringTask extends Model
 {
     use BelongsToPlannerUser;
 
+    /** Plan limit applied when a new series is created (see Entitlements). */
+    protected string $planLimitMetric = 'active_recurring';
+
     /** Fields copied from the series into each occurrence. */
     public const TEMPLATE_FIELDS = ['title', 'description', 'area_id', 'goal_id', 'project_id', 'milestone_id', 'priority', 'importance', 'weight', 'estimated_minutes'];
 

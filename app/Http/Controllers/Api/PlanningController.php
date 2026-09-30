@@ -121,15 +121,19 @@ final class PlanningController extends Controller
 
     public function insights(Request $request, PlanInsightsService $insights): JsonResponse
     {
-        $days = (int) ($request->validate(['days' => ['nullable', 'integer', 'min:7', 'max:365']])['days'] ?? 90);
+        $asked = (int) ($request->validate(['days' => ['nullable', 'integer', 'min:7', 'max:365']])['days'] ?? 90);
         $user = $request->user();
+        $days = app(\App\Services\Billing\Entitlements::class)->historyDays($user, $asked);
         $loc = $user->preferredLocale();
         $pva = $insights->planVsActual($user, $days);
         $pva['insights_text'] = array_map(fn ($i) => PlanInsightsService::text($i, $loc), $pva['insights']);
-        $patterns = $insights->failurePatterns($user, CarbonImmutable::now()->subDays(30), CarbonImmutable::now());
+        $patterns = $insights->failurePatterns($user, CarbonImmutable::now()->subDays(min(30, $days)), CarbonImmutable::now());
         $patterns['top_reasons_text'] = array_map(fn ($r) => __('planner.failure_reason.'.$r['code'], [], $loc), $patterns['top_reasons']);
         $patterns['most_common_missed_text'] = $patterns['missed']['most_common'] ? __('planner.failure_reason.'.$patterns['missed']['most_common']['code'], [], $loc) : null;
         return response()->json([
+            'history_days' => $days,
+            'history_limited' => $days < $asked,
+            'upgrade_url' => $days < $asked ? route('billing.index') : null,
             'plan_vs_actual' => $pva,
             'failure_patterns' => $patterns,
             'not_enough_history' => !$pva['enough_history'] ? __('insights.not_enough', ['n' => LocalDate::number(PlanInsightsService::minSamples(), $loc)], $loc) : null,
@@ -142,7 +146,9 @@ final class PlanningController extends Controller
         $user = $request->user();
         $start = isset($data['week_start']) ? $reviews->weekStart($user, CarbonImmutable::parse($data['week_start'], $user->preferredTimezone())) : null;
         $review = $reviews->generate($user, $start);
-        return response()->json($reviews->present($review, $user), 201);
+        $out = $reviews->present($review, $user);
+        $out['ai_upgrade_url'] = empty($out['ai_summary']) && app(\App\Services\Planner\PlanningAssistantService::class)->needsUpgradeForAi($user) ? route('billing.index') : null;
+        return response()->json($out, 201);
     }
 
     public function showReview(Request $request, Review $review, WeeklyReviewService $reviews): JsonResponse

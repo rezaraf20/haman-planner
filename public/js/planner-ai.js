@@ -26,7 +26,7 @@
       + '<div><div class=muted>' + esc(T('plan_overload')) + '</div><strong>' + esc(m.overload) + '</strong></div></div>'
       + (p.metrics && p.metrics.history_used ? '<p class=muted>ⓘ ' + esc(T('plan_history_used')) + '</p>' : '');
     if (p.summary) h += '<div class=aisum><b>' + ic('haman', 'sm') + ' ' + esc(T('plan_ai_label')) + '</b><p>' + esc(p.summary) + '</p></div>';
-    else if (p.ai_note) h += '<p class=muted>ⓘ ' + esc(p.ai_note) + '</p>';
+    else if (p.ai_note) h += '<p class=muted>ⓘ ' + esc(p.ai_note) + (p.ai_upgrade_url ? ' <a href="' + esc(p.ai_upgrade_url) + '">' + esc(t('upgrade')) + '</a>' : '') + '</p>';
     (p.ai_warnings || []).forEach(w => h += '<div class="notice">⚠ ' + esc(w) + '</div>');
     if (!p.actions.length) return h + '</div>';
     h += '<div class=list style="margin-top:12px">' + p.actions.map(a => {
@@ -227,7 +227,7 @@
       + '<div class=grid2><div><h3>' + esc(T('weekly_blockers')) + '</h3>' + (w.blockers_text.length ? '<ul>' + w.blockers_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '<p class=muted>' + esc(T('weekly_no_blockers')) + '</p>')
       + '<h3>' + esc(T('weekly_projects')) + '</h3>' + ((m.projects_attention || []).length ? '<ul>' + m.projects_attention.map(p => '<li>' + esc(p.title) + ' — ' + esc(T('weekly_project_line', { overdue: num(p.overdue), missed: num(p.missed) })) + '</li>').join('') + '</ul>' : '<p class=muted>—</p>') + '</div>'
       + '<div><h3>' + esc(T('weekly_recs')) + '</h3><ul>' + w.recommendations_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
-      + (w.ai_summary ? '<div class=aisum><b>' + ic('haman', 'sm') + ' ' + esc(T('plan_ai_label')) + '</b><p>' + esc(w.ai_summary) + '</p><p class=muted>' + esc(T('weekly_ai_note')) + '</p></div>' : '') + '</div></div></div>';
+      + (w.ai_summary ? '<div class=aisum><b>' + ic('haman', 'sm') + ' ' + esc(T('plan_ai_label')) + '</b><p>' + esc(w.ai_summary) + '</p><p class=muted>' + esc(T('weekly_ai_note')) + '</p></div>' : (w.ai_upgrade_url ? '<p class=muted>ⓘ ' + esc(T('weekly_ai_upgrade')) + ' <a href="' + esc(w.ai_upgrade_url) + '">' + esc(t('upgrade')) + '</a></p>' : '')) + '</div></div></div>';
   }
 
   // ------------------------------------------------------------------ analytics: insights
@@ -238,7 +238,7 @@
     try {
       const r = await api('/planning/insights'), p = r.plan_vs_actual, f = r.failure_patterns, m = p.metrics;
       const box = document.createElement('div'); box.className = 'grid2';
-      box.innerHTML = '<div class=card><div class=head><h2>' + esc(T('insights_title')) + '</h2></div>'
+      box.innerHTML = '<div class=card><div class=head><h2>' + esc(T('insights_title', { n: num(r.history_days || 90) })) + '</h2></div>'
         + (r.not_enough_history ? '<p class=muted>' + esc(r.not_enough_history) + '</p>' : '<ul>' + (p.insights_text.map(x => '<li>' + esc(x) + '</li>').join('') || '<li>' + esc(T('insights_none')) + '</li>') + '</ul>')
         + '<div class=statgrid>' + [['insights_estimated', dur(m.estimated_minutes)], ['insights_actual', dur(m.actual_minutes)], ['insights_variance', m.variance_percent == null ? '—' : num(m.variance_percent) + '%'],
           ['insights_deadline', m.deadline_reliability_percent == null ? '—' : num(m.deadline_reliability_percent) + '%'], ['insights_completion', m.completion_rate_percent == null ? '—' : num(m.completion_rate_percent) + '%'],

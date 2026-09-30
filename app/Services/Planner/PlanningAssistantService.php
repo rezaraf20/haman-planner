@@ -42,6 +42,15 @@ final class PlanningAssistantService
             && \App\Services\AI\AIProviderFactory::available();
     }
 
+    /** AI is set up and the user wants it, but their plan does not include advanced AI planning. */
+    public function needsUpgradeForAi(User $user): bool
+    {
+        return $user->preference('ai_enabled') !== false
+            && $this->entitlements->canUse($user, 'ai_planner')
+            && !$this->entitlements->canUse($user, 'advanced_ai_planning')
+            && \App\Services\AI\AIProviderFactory::available();
+    }
+
     public function generate(User $user, string $kind, ?string $message = null): PlanProposal
     {
         $requestId = (string) Str::uuid();
@@ -64,6 +73,8 @@ final class PlanningAssistantService
             } catch (PlanLimitReached) {
                 $aiNote = 'ai_limit_reached';
             }
+        } elseif ($draft['actions'] !== [] && $this->needsUpgradeForAi($user)) {
+            $aiNote = 'ai_needs_upgrade';
         }
 
         $proposal = PlanProposal::create([
@@ -172,6 +183,7 @@ final class PlanningAssistantService
             'headline' => __('planning.headline.'.($headline['key'] === 'overloaded' ? 'overloaded_'.($p->kind === 'day' ? 'day' : 'week') : $headline['key']), $hp, $loc),
             'summary' => $p->summary,
             'ai_note' => isset($m['ai_note']) && $m['ai_note'] ? __('planning.ai_note.'.$m['ai_note'], [], $loc) : null,
+            'ai_upgrade_url' => ($m['ai_note'] ?? null) === 'ai_needs_upgrade' ? route('billing.index') : null,
             'ai_warnings' => $m['ai_warnings'] ?? [],
             'metrics' => array_intersect_key($m, array_flip(['working_days', 'usable_minutes', 'scheduled_minutes_before', 'overload_minutes_before', 'proposed_minutes', 'candidates', 'history_used', 'estimate_factor'])),
             'metrics_text' => [

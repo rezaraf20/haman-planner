@@ -411,12 +411,33 @@ final class BillingService
 
     // ----------------------------------------------------------------- lifecycle
 
+    /**
+     * New accounts start a free trial of the first public plan that offers one, when the
+     * admin has "trial on sign-up" switched on. The plan is chosen by data (trial_days, order),
+     * never by code. Failure never blocks registration.
+     */
+    public function startSignupTrial(User $user): ?Subscription
+    {
+        if (!\App\Support\AppSettings::bool('signup_trial')) {
+            return null;
+        }
+        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->where('trial_days', '>', 0)->orderBy('sort_order')->first();
+        if ($plan === null) {
+            return null;
+        }
+        try {
+            return $this->startTrial($user, $plan, false);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function hadTrial(User $user): bool
     {
         return Subscription::query()->where('user_id', $user->id)->whereNotNull('trial_ends_at')->exists();
     }
 
-    public function startTrial(User $user, Plan $plan): Subscription
+    public function startTrial(User $user, Plan $plan, bool $notify = true): Subscription
     {
         if (!$plan->is_active || $plan->trial_days <= 0) {
             throw new BillingException('billing.errors.no_trial');
@@ -435,10 +456,12 @@ final class BillingService
         ]);
         $this->entitlements->forget($user);
         ProductEvents::record($user, ProductEvents::TRIAL_STARTED, ['plan' => $plan->code]);
-        $this->notify($user, 'trial_started', 'trial-start-'.$sub->id, [
-            'plan' => $plan->localizedName($user->preferredLocale()),
-            'date' => \App\Support\LocalDate::date($end, $user->preferredLocale(), $user->preferredTimezone()),
-        ]);
+        if ($notify) {
+            $this->notify($user, 'trial_started', 'trial-start-'.$sub->id, [
+                'plan' => $plan->localizedName($user->preferredLocale()),
+                'date' => \App\Support\LocalDate::date($end, $user->preferredLocale(), $user->preferredTimezone()),
+            ]);
+        }
         return $sub;
     }
 

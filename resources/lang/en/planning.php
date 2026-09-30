@@ -32,6 +32,7 @@ return [
         'recovery_buffer' => 'the plan is full — keep an hour free to catch up',
     ],
     'ai_note' => [
+        'ai_needs_upgrade' => 'This proposal was built from the planning rules. On Pro, Haman AI refines it using your history and explains each change.',
         'ai_unavailable' => 'Haman AI wasn\'t available; this proposal was built from the planning rules only.',
         'ai_limit_reached' => 'This month\'s AI allowance is used up; this proposal was built from the planning rules only.',
     ],

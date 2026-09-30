@@ -42,6 +42,8 @@
 <div class="card">
 <h2>{{ __('admin.registration_support') }}</h2>
 <label class="check"><input type="checkbox" name="registration_enabled" value="1" @checked($s['registration_enabled'])> {{ __('admin.registration_enabled') }}</label>
+<label class="check"><input type="checkbox" name="signup_trial" value="1" @checked($s['signup_trial'])> {{ __('admin.signup_trial') }}</label>
+<div class="help">{{ __('admin.signup_trial_help') }}</div>
 <label class="check"><input type="checkbox" name="support_enabled" value="1" @checked($s['support_enabled'])> {{ __('admin.support_enabled') }}</label>
 <div class="field"><label>{{ __('admin.support_note') }}</label><textarea name="support_note" maxlength="2000" placeholder="{{ __('admin.support_note_placeholder') }}">{{ old('support_note', $s['support_note']) }}</textarea><div class="help">{{ __('admin.support_note_help') }}</div></div>
 </div>

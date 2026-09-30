@@ -15,7 +15,7 @@
 <ul class="plan-features">
 @foreach (array_keys((array) config('billing.metrics')) as $m)
 @php($lim = $p->limit($m))
-@if ($lim !== null || $m === 'ai_requests')<li>{{ __('billing.metric.'.$m) }}: <b>{{ $lim === null ? __('common.unlimited') : \App\Support\LocalDate::number($lim) }}</b>{{ $m === 'ai_requests' ? ' / '.__('billing.per_interval.monthly') : '' }}</li>@endif
+@if ($lim !== null || $m === 'ai_requests' || $plans->contains(fn ($o) => $o->limit($m) !== null))<li>{{ __('billing.metric.'.$m) }}: <b>{{ $lim === null ? __('common.unlimited') : \App\Support\LocalDate::number($lim) }}</b>{{ $m === 'ai_requests' ? ' / '.__('billing.per_interval.monthly') : '' }}</li>@endif
 @endforeach
 @foreach ((array) config('billing.features') as $f)
 <li class="{{ $p->hasFeature($f) ? '' : 'no' }}">{{ $p->hasFeature($f) ? '✓' : '—' }} {{ __('billing.feature.'.$f) }}</li>
