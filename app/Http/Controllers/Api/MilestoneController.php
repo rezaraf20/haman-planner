@@ -47,11 +47,11 @@ final class MilestoneController extends Controller
     public function update(Request $request, Milestone $milestone): JsonResponse
     {
         $data = $request->validate([
-            'project_id' => 'sometimes|integer|exists:projects,id',
+            'project_id' => 'sometimes|nullable|integer|exists:projects,id',
             'title' => 'sometimes|string|max:255',
-            'status' => 'sometimes|string|max:50',
-            'weight' => 'sometimes|numeric|min:0',
-            'progress' => 'sometimes|numeric|min:0|max:100',
+            'status' => 'sometimes|nullable|string|max:50',
+            'weight' => 'sometimes|nullable|numeric|min:0',
+            'progress' => 'sometimes|nullable|numeric|min:0|max:100',
             'target_date' => 'sometimes|nullable|date',
             'completed_at' => 'sometimes|nullable|date',
         ]);

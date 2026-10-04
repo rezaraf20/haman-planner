@@ -285,6 +285,12 @@ div.err, p.err, .alert.danger { background: var(--danger-bg); color: var(--dange
 [dir="rtl"] .toast { transform: translateX(50%); }
 .toast.show { display: block; animation: hp-rise var(--t) var(--ease); }
 .toast a { color: #c7ccff; }
+.toast.err { background: var(--danger); color: #fff; }
+.toast.err a { color: #fff; text-decoration: underline; }
+/* Field-level validation messages */
+.field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+.field label .req { color: var(--danger); font-weight: 700; }
+.field .ferr { color: var(--danger); font-size: var(--fs-xs, 12px); margin-top: 4px; line-height: 1.5; }
 :root[data-theme="dark"] .toast { color: #111827; }
 
 /* dropdown menu (row "more" actions) */

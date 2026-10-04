@@ -41,6 +41,7 @@ trait BelongsToPlannerUser
                     $model->setAttribute('user_id', $ownerId);
                 }
             }
+            $model->fillRequiredColumnDefaults();
             $model->assertPlannerReferencesOwned();
             if (!$model->exists) {
                 $model->assertPlanAllowsCreation();
@@ -53,6 +54,72 @@ trait BelongsToPlannerUser
                 \App\Services\Analytics\ProductEvents::record(User::find($model->getAttribute('user_id')), $event, [], true);
             }
         });
+    }
+
+    private const NO_DEFAULT = "\0no-default";
+
+    /** @var array<string,array<string,mixed>> table => [column => default or NO_DEFAULT] for NOT NULL columns */
+    private static array $requiredColumnDefaults = [];
+
+    /**
+     * Forms send an untouched optional select as "" (→ null). For a NOT NULL column, null means
+     * "not chosen": a new record gets the column's database default (status, priority, type,
+     * importance…) and an existing record keeps its current value — instead of the query failing
+     * with a server error.
+     */
+    public function fillRequiredColumnDefaults(): void
+    {
+        foreach (self::requiredColumnDefaults($this->getTable()) as $column => $default) {
+            if (!array_key_exists($column, $this->getAttributes()) || $this->getAttributes()[$column] !== null) {
+                continue;
+            }
+            if ($this->exists) {
+                $this->setAttribute($column, $this->getOriginal($column)); // cleared required field: keep what it was
+            } elseif ($default === self::NO_DEFAULT) {
+                continue; // genuinely required: validation / the friendly database-error response covers it
+            } elseif ($default === self::class) {
+                unset($this->attributes[$column]); // not a plain literal: let the database apply it
+            } else {
+                $this->setAttribute($column, $default);
+            }
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private static function requiredColumnDefaults(string $table): array
+    {
+        if (!isset(self::$requiredColumnDefaults[$table])) {
+            $out = [];
+            try {
+                foreach (\Illuminate\Support\Facades\Schema::getColumns($table) as $col) {
+                    if (($col['nullable'] ?? true) || ($col['auto_increment'] ?? false) || in_array($col['name'], ['id', 'user_id', 'created_at', 'updated_at'], true)) {
+                        continue;
+                    }
+                    $out[$col['name']] = ($col['default'] ?? null) === null ? self::NO_DEFAULT : self::literalDefault((string) $col['default']);
+                }
+            } catch (\Throwable) {
+                $out = [];
+            }
+            self::$requiredColumnDefaults[$table] = $out;
+        }
+        return self::$requiredColumnDefaults[$table];
+    }
+
+    /** Turns a column default such as 'p2'::character varying, 0, 1.00 or true into a PHP value. */
+    private static function literalDefault(string $raw): mixed
+    {
+        $raw = trim($raw);
+        if (preg_match("/^'((?:[^']|'')*)'(?:::[\\w\\s]+)?$/", $raw, $m)) {
+            return str_replace("''", "'", $m[1]);
+        }
+        if (preg_match('/^\(?(-?\d+(?:\.\d+)?)\)?(?:::[\w\s]+)?$/', $raw, $m)) {
+            return str_contains($m[1], '.') ? (float) $m[1] : (int) $m[1];
+        }
+        $lower = strtolower($raw);
+        if ($lower === 'true' || $lower === 'false') {
+            return $lower === 'true';
+        }
+        return self::class; // expression (now(), nextval…) → database applies it
     }
 
     /** Count-based plan limits (e.g. open tasks) — enforced here so web, API and Telegram all obey them. */

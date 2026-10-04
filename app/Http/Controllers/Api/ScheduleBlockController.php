@@ -43,10 +43,10 @@ final class ScheduleBlockController extends Controller
             'task_id' => ['nullable','integer','exists:tasks,id'],
             'starts_at' => ['sometimes','date'],
             'ends_at' => ['sometimes','date','after:starts_at'],
-            'source' => ['sometimes','string','max:50'],
-            'status' => ['sometimes','string','max:50'],
-            'kind' => ['sometimes', \Illuminate\Validation\Rule::in(ScheduleBlock::KINDS)],
-            'is_fixed' => ['sometimes','boolean'],
+            'source' => ['sometimes','nullable','string','max:50'],
+            'status' => ['sometimes','nullable','string','max:50'],
+            'kind' => ['sometimes','nullable',\Illuminate\Validation\Rule::in(ScheduleBlock::KINDS)],
+            'is_fixed' => ['sometimes','nullable','boolean'],
             'title' => ['sometimes','nullable','string','max:255'],
         ]));
 

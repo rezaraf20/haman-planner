@@ -353,7 +353,7 @@
       try {
         await api('/recurring-tasks' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: JSON.stringify(gather()) });
         closeModal(); toast(t('saved')); recurringView();
-      } catch (z) { fail(z); }
+      } catch (z) { fail(z, e.target); }
     };
   };
 

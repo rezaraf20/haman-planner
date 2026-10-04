@@ -96,13 +96,13 @@ final class RecurringTaskController extends Controller
             'goal_id' => ['sometimes', 'nullable', 'integer'],
             'project_id' => ['sometimes', 'nullable', 'integer'],
             'milestone_id' => ['sometimes', 'nullable', 'integer'],
-            'priority' => ['sometimes', Rule::in(['p0', 'p1', 'p2', 'p3'])],
-            'importance' => ['sometimes', 'integer', 'min:0', 'max:100'],
-            'weight' => ['sometimes', 'numeric', 'min:0', 'max:1000'],
+            'priority' => ['sometimes', 'nullable', Rule::in(['p0', 'p1', 'p2', 'p3'])],
+            'importance' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
+            'weight' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:1000'],
             'estimated_minutes' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:1440'],
             'frequency' => [$s, Rule::in(RecurrenceRule::FREQUENCIES)],
-            'calendar' => ['sometimes', Rule::in(['gregorian', 'jalali'])],
-            'interval' => ['sometimes', 'integer', 'min:1', 'max:365'],
+            'calendar' => ['sometimes', 'nullable', Rule::in(['gregorian', 'jalali'])],
+            'interval' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:365'],
             'by_weekday' => ['sometimes', 'nullable', 'array', 'max:7'],
             'by_weekday.*' => ['integer', 'min:1', 'max:7'],
             'by_month_day' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:31'],
@@ -112,6 +112,10 @@ final class RecurringTaskController extends Controller
             'max_occurrences' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:5000'],
             'time_of_day' => ['sometimes', 'nullable', 'date_format:H:i'],
         ]);
+        // An untouched optional select arrives empty: treat it as "not chosen" (series default / unchanged).
+        foreach (['priority', 'importance', 'weight', 'calendar', 'interval'] as $k) {
+            if (array_key_exists($k, $data) && $data[$k] === null) unset($data[$k]);
+        }
         if (isset($data['by_weekday'])) {
             $data['by_weekday'] = array_values(array_unique(array_map('intval', $data['by_weekday'])));
             sort($data['by_weekday']);

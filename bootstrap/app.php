@@ -46,5 +46,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             return redirect()->back()->withErrors(['plan' => $e->userMessage()])->withInput();
         });
+
+        // API/JSON: readable, localized errors with a support reference instead of "Server Error".
+        $isApi = fn (Request $request) => $request->expectsJson() || $request->is('api/*');
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $request) use ($isApi) {
+            return $isApi($request) ? \App\Support\ApiErrors::query($e) : null;
+        });
+        $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
+            return $isApi($request) ? \App\Support\ApiErrors::other($e) : null;
+        });
     })
     ->create();

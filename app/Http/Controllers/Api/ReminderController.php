@@ -36,7 +36,7 @@ final class ReminderController extends Controller
             'scheduled_at' => 'sometimes|date',
             'chat_id' => 'nullable|string|max:100',
             'message' => 'nullable|string|max:4000',
-            'status' => 'sometimes|in:pending,sent,failed,cancelled',
+            'status' => 'sometimes|nullable|in:pending,sent,failed,cancelled',
         ]);
         $payload = $reminder->payload ?? [];
         if (array_key_exists('chat_id',$data)) $payload['chat_id']=$this->chatIdFor($request, $data['chat_id']);

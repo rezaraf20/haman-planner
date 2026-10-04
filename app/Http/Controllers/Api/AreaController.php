@@ -33,10 +33,10 @@ final class AreaController extends Controller
     {
         $area->update($request->validate([
             'name' => ['sometimes','string','max:255'],
-            'type' => ['sometimes','string','max:50'],
+            'type' => ['sometimes','nullable','string','max:50'],
             'description' => ['nullable','string'],
-            'status' => ['sometimes','string','max:50'],
-            'sort_order' => ['sometimes','integer','min:0'],
+            'status' => ['sometimes','nullable','string','max:50'],
+            'sort_order' => ['sometimes','nullable','integer','min:0'],
         ]));
 
         return response()->json($area->refresh());

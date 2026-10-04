@@ -48,10 +48,10 @@ final class DailyPlanController extends Controller
     public function update(Request $request, DailyPlan $dailyPlan): JsonResponse
     {
         $dailyPlan->update($request->validate([
-            'available_minutes' => ['sometimes','integer','min:0'],
-            'planned_minutes' => ['sometimes','integer','min:0'],
-            'completed_minutes' => ['sometimes','integer','min:0'],
-            'buffer_minutes' => ['sometimes','integer','min:0'],
+            'available_minutes' => ['sometimes','nullable','integer','min:0'],
+            'planned_minutes' => ['sometimes','nullable','integer','min:0'],
+            'completed_minutes' => ['sometimes','nullable','integer','min:0'],
+            'buffer_minutes' => ['sometimes','nullable','integer','min:0'],
             'focus_level' => ['nullable','integer','min:0','max:100'],
             'energy_level' => ['nullable','integer','min:0','max:100'],
             'notes' => ['nullable','string'],

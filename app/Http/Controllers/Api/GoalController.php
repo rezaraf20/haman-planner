@@ -14,6 +14,6 @@ final class GoalController extends Controller
   return response()->json(Goal::create($data),201);
  }
  public function show(Goal $goal): JsonResponse { return response()->json($goal->load(['area','projects','tasks'])); }
- public function update(Request $request, Goal $goal): JsonResponse { $goal->update($request->validate(['title'=>'sometimes|string|max:255','description'=>'nullable|string','status'=>'sometimes|string','target_date'=>'nullable|date','importance'=>'sometimes|integer|min:0|max:100','progress'=>'sometimes|numeric|min:0|max:100','health'=>'sometimes|string','success_criteria'=>'nullable|string'])); return response()->json($goal->refresh()); }
+ public function update(Request $request, Goal $goal): JsonResponse { $goal->update($request->validate(['title'=>'sometimes|string|max:255','description'=>'nullable|string','status'=>'sometimes|nullable|string','target_date'=>'nullable|date','importance'=>'sometimes|nullable|integer|min:0|max:100','progress'=>'sometimes|nullable|numeric|min:0|max:100','health'=>'sometimes|nullable|string','success_criteria'=>'nullable|string'])); return response()->json($goal->refresh()); }
  public function destroy(Goal $goal): JsonResponse { $goal->delete(); return response()->json(null,204); }
 }
