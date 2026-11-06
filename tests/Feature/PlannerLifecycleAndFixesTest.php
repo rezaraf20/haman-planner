@@ -259,4 +259,53 @@ final class PlannerLifecycleAndFixesTest extends TestCase
         Http::assertSent(fn ($req) => str_contains($req->url(), 'sendMessage') && str_contains((string) $req['text'], 'حساب دیگری'));
         $this->assertTrue(Cache::has('telegram:link:CODE1234'), 'the code is not burned');
     }
+
+    public function test_bot_can_complete_archive_and_restore_a_project(): void
+    {
+        $p = Project::create(['user_id' => $this->u->id, 'title' => 'Website']);
+        Task::create(['user_id' => $this->u->id, 'title' => 'Open one', 'project_id' => $p->id]);
+        $bot = app(TelegramPlannerBotService::class);
+        $cb = fn (string $d) => $bot->handleCallback('5005', 'u', 'cb-'.uniqid(), 10, $d);
+        $last = function () {
+            $out = '';
+            foreach (Http::recorded() as [$req]) {
+                if (preg_match('/(sendMessage|editMessageText)$/', $req->url())) $out = (string) ($req->data()['text'] ?? '');
+            }
+            return $out;
+        };
+        $keyboard = function () {
+            $kb = [];
+            foreach (Http::recorded() as [$req]) {
+                if (preg_match('/(sendMessage|editMessageText)$/', $req->url())) $kb = json_decode($req->data()['reply_markup'] ?? '{}', true)['inline_keyboard'] ?? [];
+            }
+            return array_merge(...array_map(fn ($row) => array_column($row, 'callback_data'), $kb));
+        };
+
+        $cb("v:project:{$p->id}");
+        $this->assertContains("lc:project:{$p->id}:complete", $keyboard());
+        $this->assertContains("lc:project:{$p->id}:archive", $keyboard());
+
+        $cb("lc:project:{$p->id}:complete");               // asks about the open task first
+        $this->assertStringContainsString('کار باز', $last());
+        $this->assertSame('active', $p->fresh()->status);
+        $cb("lc:project:{$p->id}:complete:1");             // complete and cancel the open task
+        $this->assertSame('completed', $p->fresh()->status);
+        $this->assertSame('cancelled', Task::where('project_id', $p->id)->value('status'));
+        $this->assertContains("lc:project:{$p->id}:reopen", $keyboard());
+
+        $cb("lc:project:{$p->id}:archive");                // nothing open any more: no question
+        $this->assertNotNull($p->fresh()->archived_at);
+        $cb('ls:project:0');
+        $this->assertStringNotContainsString('Website', $last());
+        $cb('lsa:project:0');
+        $this->assertStringContainsString('Website', $last());
+        $cb("lc:project:{$p->id}:unarchive");
+        $this->assertNull($p->fresh()->archived_at);
+
+        // Someone else's project cannot be touched.
+        $other = User::create(['name' => 'X', 'email' => 'x@example.com', 'password' => 'secret123', 'is_active' => true]);
+        $theirs = Project::create(['user_id' => $other->id, 'title' => 'Theirs']);
+        $cb("lc:project:{$theirs->id}:archive");
+        $this->assertNull($theirs->fresh()->archived_at);
+    }
 }

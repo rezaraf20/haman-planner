@@ -234,6 +234,8 @@ final class TelegramPlannerBotService
             'knowledge' => $this->knowledgeMenu($c, $m),
 
             'ls' => $this->entityList($c, $m, $s1, $i2),
+            'lsa' => $this->entityList($c, $m, $s1, $i2, true),
+            'lc' => $this->lifecycleAction($c, $m, $s1, $i2, $p[3] ?? '', $p[4] ?? null),
             'v' => $this->entityView($c, $m, $s1, $i2),
             'ed' => $this->editMenu($c, $m, $s1, $i2),
             'f' => $this->beginEditField($c, $m, $s1, $i2, $p[3] ?? ''),
@@ -806,9 +808,12 @@ final class TelegramPlannerBotService
     // Lists & views
     // =====================================================================
 
-    private function listQuery(string $e): Builder
+    private function listQuery(string $e, bool $archived = false): Builder
     {
         $q = $this->owned($this->entity($e)['class']);
+        if ($archived) {
+            return $q->whereNotNull('archived_at')->orderByDesc('archived_at');
+        }
         return match ($e) {
             'task' => $q->whereNotIn('status', ['completed', 'cancelled'])
                 ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")
@@ -822,7 +827,7 @@ final class TelegramPlannerBotService
         };
     }
 
-    private function entityList(string|int $c, int $m, string $e, int $page = 0): void
+    private function entityList(string|int $c, int $m, string $e, int $page = 0, bool $archived = false): void
     {
         $def = $this->entity($e);
         if (!$def) {
@@ -830,35 +835,70 @@ final class TelegramPlannerBotService
             return;
         }
         $this->clearState($c);
-        $query = $this->listQuery($e);
+        $lifecycle = in_array($e, self::LIFECYCLE, true);
+        $archived = $archived && $lifecycle;
+        $query = $this->listQuery($e, $archived);
         $total = (clone $query)->count();
         $items = $query->skip($page * self::PAGE)->take(self::PAGE)->get();
 
         $lines = $items->map(function (Model $x) use ($e) {
             $suffix = match ($e) {
                 'task' => ' — '.strtoupper((string) $x->priority).' · '.$this->enumLabel((string) $x->status),
-                'goal', 'project', 'milestone' => ' — '.(float) $x->progress.'%',
+                'goal', 'project', 'milestone' => ' — '.(float) $x->progress.'%'.(in_array($x->status, ['completed', 'cancelled'], true) ? ' · '.$this->enumLabel((string) $x->status) : ''),
                 'reminder' => ' — '.$this->enumLabel((string) $x->status),
                 default => '',
             };
             return '• '.$this->titleOf($e, $x).$suffix;
         })->implode("\n");
 
-        $text = $def['plural'].' ('.LocalDate::number($total).")\n\n".($items->isEmpty() ? $this->t('empty') : $lines);
-        $kb = [[$this->btn($this->t('create_entity', ['entity' => $def['label']]), 'new:'.$e)]];
+        $text = ($archived ? $this->t('archive_title', ['items' => $def['plural']]) : $def['plural']).' ('.LocalDate::number($total).")\n\n".($items->isEmpty() ? $this->t($archived ? 'archive_empty' : 'empty') : $lines);
+        $kb = $archived ? [] : [[$this->btn($this->t('create_entity', ['entity' => $def['label']]), 'new:'.$e)]];
         foreach ($items as $x) {
             $kb[] = [$this->btn('👁 '.$this->titleOf($e, $x), "v:$e:{$x->id}")];
         }
+        $ls = $archived ? 'lsa' : 'ls';
         $nav = [];
         if ($page > 0) {
-            $nav[] = $this->btn($this->t('btn.prev_page'), "ls:$e:".($page - 1));
+            $nav[] = $this->btn($this->t('btn.prev_page'), "$ls:$e:".($page - 1));
         }
         if (($page + 1) * self::PAGE < $total) {
-            $nav[] = $this->btn($this->t('btn.next_page'), "ls:$e:".($page + 1));
+            $nav[] = $this->btn($this->t('btn.next_page'), "$ls:$e:".($page + 1));
         }
         $kb[] = $nav;
-        $kb[] = $this->back($def['parent']);
+        if ($lifecycle && !$archived) {
+            $kb[] = [$this->btn($this->t('btn.archive_list'), "lsa:$e:0")];
+        }
+        $kb[] = $archived ? $this->back("ls:$e:0") : $this->back($def['parent']);
         $this->show($c, $m, $text, $kb);
+    }
+
+    /** Entities that can be completed / archived (same rules as the web app). */
+    private const LIFECYCLE = ['goal', 'project', 'milestone', 'area'];
+
+    /**
+     * Complete / reopen / cancel / archive / restore. When open tasks would be left behind,
+     * ask first whether to cancel them too (they are never deleted).
+     */
+    private function lifecycleAction(string|int $c, int $m, string $e, int $id, string $action, ?string $withTasks): void
+    {
+        $x = in_array($e, self::LIFECYCLE, true) ? $this->findOwned($e, $id) : null;
+        $allowed = $e === 'area' ? ['archive', 'unarchive'] : ['complete', 'reopen', 'cancel', 'archive', 'unarchive'];
+        if (!$x || !in_array($action, $allowed, true)) {
+            $this->show($c, $m, $this->t('not_owned'), [$this->back('home')]);
+            return;
+        }
+        $service = app(\App\Services\Planner\LifecycleService::class);
+        $open = $service->openTasks($x)->count();
+        if ($withTasks === null && $open > 0 && in_array($action, ['complete', 'cancel', 'archive'], true)) {
+            $this->show($c, $m, $this->t('lc_open_tasks', ['n' => LocalDate::number($open), 'title' => $this->titleOf($e, $x)]), [
+                [$this->btn($this->t('btn.lc_only'), "lc:$e:$id:$action:0")],
+                [$this->btn($this->t('btn.lc_with_tasks', ['n' => LocalDate::number($open)]), "lc:$e:$id:$action:1")],
+                $this->back("v:$e:$id"),
+            ]);
+            return;
+        }
+        $service->apply($x, $action, $withTasks === '1');
+        $this->entityView($c, $m, $e, $id, $this->t('lc_done.'.$action));
     }
 
     private function entityView(string|int $c, ?int $m, string $e, int $id, ?string $notice = null): void
@@ -881,8 +921,26 @@ final class TelegramPlannerBotService
         if ($e === 'reminder' && $x->status === 'pending') {
             $kb[] = [$this->btn($this->t('btn.cancel_reminder'), 'rcancel:'.$id)];
         }
+        $archived = in_array($e, self::LIFECYCLE, true) && $x->archived_at !== null;
+        if (in_array($e, self::LIFECYCLE, true)) {
+            if ($archived) {
+                $kb[] = [$this->btn($this->t('btn.unarchive'), "lc:$e:$id:unarchive")];
+            } else {
+                $row = [];
+                if ($e !== 'area') {
+                    if (in_array($x->status, ['completed', 'cancelled'], true)) {
+                        $row[] = $this->btn($this->t('btn.reopen'), "lc:$e:$id:reopen");
+                    } else {
+                        $row[] = $this->btn($this->t('btn.complete'), "lc:$e:$id:complete");
+                        $row[] = $this->btn($this->t('btn.cancel_item'), "lc:$e:$id:cancel");
+                    }
+                }
+                $row[] = $this->btn($this->t('btn.archive'), "lc:$e:$id:archive");
+                $kb[] = $row;
+            }
+        }
         $kb[] = [$this->btn($this->t('btn.edit'), "ed:$e:$id"), $this->btn($this->t('btn.delete'), "del:$e:$id")];
-        $kb[] = $this->back("ls:$e:0");
+        $kb[] = $this->back(($archived ? 'lsa' : 'ls').":$e:0");
         $this->show($c, $m, $text, $kb);
     }
 
@@ -910,6 +968,11 @@ final class TelegramPlannerBotService
             if ($x->completed_at) {
                 $out[] = $this->t('completed_on', ['date' => $this->dt($x->completed_at)]);
             }
+        }
+        if (in_array($e, self::LIFECYCLE, true) && $x->archived_at) {
+            $out[] = $this->t('archived_on', ['date' => $this->dt($x->archived_at)]);
+        } elseif (in_array($e, ['goal', 'project', 'milestone'], true) && $x->status === 'completed' && $x->completed_at) {
+            $out[] = $this->t('completed_on', ['date' => $this->dt($x->completed_at)]);
         }
         if (in_array($e, ['goal', 'project'], true) && $x->health) {
             $out[] = $this->t('health', ['health' => $this->enumLabel((string) $x->health)]);
