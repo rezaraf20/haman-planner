@@ -290,13 +290,23 @@
       + (a.map(x => '<div class=row><div class=rowmain><div class=rowtitle>🔁 ' + esc(x.title) + '</div><div class=rowsub>' + esc(x.rule_label)
         + (x.next_date ? ' · ' + esc(t('recurring_next', { date: fmt(x.next_date + 'T12:00:00Z') })) : '') + '</div></div><div class=rowactions>'
         + '<span class="pill ' + (x.status === 'active' ? 'ok' : '') + '">' + esc(t('recurring_status_' + x.status)) + '</span>'
-        + (x.status === 'active' ? '<button class="btn small" onclick="recurringForm(' + x.id + ')">' + esc(t('recurring_edit_future')) + '</button><button class="btn small danger" onclick="recurringStop(' + x.id + ')">' + esc(t('recurring_stop')) + '</button>' : '')
+        + (x.status === 'active' ? '<button class="btn small" onclick="recurringForm(' + x.id + ')">' + esc(t('recurring_edit_future')) + '</button><button class="btn small danger" onclick="recurringStop(' + x.id + ')">' + esc(t('recurring_stop')) + '</button>'
+          : '<button class="btn small" onclick="recurringResume(' + x.id + ')">' + esc(t('recurring_resume')) + '</button><button class="btn small danger" onclick="recurringDelete(' + x.id + ')">' + esc(t('delete')) + '</button>')
         + '</div></div>').join('') || empty()) + '</div></div>';
   };
 
   window.recurringStop = async function (id) {
     if (!confirm(t('recurring_stop_confirm'))) return;
     try { await api('/recurring-tasks/' + id + '/stop', { method: 'POST' }); toast(t('saved')); recurringView(); } catch (e) { fail(e); }
+  };
+
+  window.recurringResume = async function (id) {
+    try { await api('/recurring-tasks/' + id + '/resume', { method: 'POST' }); toast(t('saved')); recurringView(); } catch (e) { fail(e); }
+  };
+
+  window.recurringDelete = async function (id) {
+    if (!confirm(t('recurring_delete_confirm'))) return;
+    try { await api('/recurring-tasks/' + id, { method: 'DELETE' }); toast(t('deleted')); recurringView(); } catch (e) { fail(e); }
   };
 
   window.recurringForm = async function (id) {

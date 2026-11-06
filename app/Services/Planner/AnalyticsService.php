@@ -40,7 +40,7 @@ final class AnalyticsService
 
         $deepWork = (int) $logs->filter(fn ($log) => (int) $log->duration_minutes >= 45)->sum('duration_minutes');
         $velocity = $days = max(1, $from->diffInDays($to) + 1);
-        $activeGoals = $own(Goal::query())->whereNotIn('status', ['completed','cancelled'])->get();
+        $activeGoals = $own(Goal::query())->open()->get();
         $health = $activeGoals->groupBy(fn ($g) => $g->health ?: 'unknown')->map->count()->all();
         $planningDays = $own(DailyPlan::query())->whereBetween('plan_date', [$from->toDateString(), $to->toDateString()])->get();
         $overloadedDays = $planningDays->filter(fn ($p) => (int)$p->planned_minutes > (int)$p->available_minutes)->count();

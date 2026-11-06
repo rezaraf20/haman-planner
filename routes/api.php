@@ -61,7 +61,14 @@ Route::middleware([
 ])->group(function (): void {
     Route::get('/me', fn () => response()->json(['user' => request()->user()]));
 
+    // Complete / reopen / cancel / archive / restore (registered before the resources).
+    Route::post('/{kind}/{id}/{action}', \App\Http\Controllers\Api\LifecycleController::class)
+        ->whereIn('kind', ['goals', 'projects', 'milestones', 'areas'])->whereNumber('id')
+        ->whereIn('action', ['complete', 'reopen', 'cancel', 'archive', 'unarchive']);
+    Route::get('/{kind}/{id}/open-tasks', [\App\Http\Controllers\Api\LifecycleController::class, 'openTasks'])
+        ->whereIn('kind', ['goals', 'projects', 'milestones', 'areas'])->whereNumber('id');
     Route::apiResource('areas', AreaController::class);
+    Route::post('/tasks/{task}/failure', [TaskController::class, 'logFailure']);
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
@@ -111,6 +118,8 @@ Route::middleware([
     Route::get('/recurring-tasks/{recurringTask}', [\App\Http\Controllers\Api\RecurringTaskController::class, 'show']);
     Route::put('/recurring-tasks/{recurringTask}', [\App\Http\Controllers\Api\RecurringTaskController::class, 'update']);
     Route::post('/recurring-tasks/{recurringTask}/stop', [\App\Http\Controllers\Api\RecurringTaskController::class, 'stop']);
+    Route::post('/recurring-tasks/{recurringTask}/resume', [\App\Http\Controllers\Api\RecurringTaskController::class, 'resume']);
+    Route::delete('/recurring-tasks/{recurringTask}', [\App\Http\Controllers\Api\RecurringTaskController::class, 'destroy']);
     Route::post('/tasks/{task}/skip', [\App\Http\Controllers\Api\RecurringTaskController::class, 'skip']);
 
     Route::get('/search', SearchController::class);

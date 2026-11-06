@@ -109,7 +109,7 @@ final class PlannerIntentService
 
     private function queryGoalList(string|int $chatId): array
     {
-        $result = Goal::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
+        $result = Goal::query()->open()->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
         $message = __('assistant.active_goals', ['count' => count($result)]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_GOALS', 'result' => $result, 'message' => $message];
@@ -117,7 +117,7 @@ final class PlannerIntentService
 
     private function queryProjectList(string|int $chatId): array
     {
-        $result = Project::query()->whereNotIn('status', ['completed','cancelled'])->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
+        $result = Project::query()->open()->orderByDesc('importance')->limit(20)->get(['id','title','status','progress','health'])->toArray();
         $message = __('assistant.active_projects', ['count' => count($result)]);
         $this->telegram->sendMessage($chatId, $message);
         return ['intent' => 'QUERY_PROJECTS', 'result' => $result, 'message' => $message];
@@ -543,10 +543,30 @@ final class PlannerIntentService
     private function updateModel(Model $model, array $data): Model
     {
         $before = $model->toArray();
+        $old = ['milestone' => $model->milestone_id ?? null, 'project' => $model->project_id ?? null, 'goal' => $model->goal_id ?? null];
         $model->fill($data);
         $model->save();
         $this->activity->log('updated', $model::class, $model->id, $before, $model->fresh()->toArray());
+        $this->propagate($model, $old);
         return $model->refresh();
+    }
+
+    /** Keep milestone → project → goal progress current after AI/command changes (old parents too). */
+    private function propagate(Model $model, array $old): void
+    {
+        $p = app(\App\Services\Planner\ProgressPropagationService::class);
+        if ($model instanceof \App\Models\Task) {
+            $p->recalculateFromTask($model);
+        } elseif ($model instanceof \App\Models\Milestone) {
+            $p->milestone($model);
+            if ($pr = $model->project()->first()) { $p->project($pr); if ($g = $pr->goal()->first()) $p->goal($g); }
+        } elseif ($model instanceof \App\Models\Project) {
+            $p->project($model);
+            if ($g = $model->goal()->first()) $p->goal($g);
+        }
+        if ($old['milestone'] && $old['milestone'] !== ($model->milestone_id ?? null) && ($m = \App\Models\Milestone::find($old['milestone']))) $p->milestone($m);
+        if ($old['project'] && $old['project'] !== ($model->project_id ?? null) && ($pr = \App\Models\Project::find($old['project']))) $p->project($pr);
+        if ($old['goal'] && $old['goal'] !== ($model->goal_id ?? null) && ($g = \App\Models\Goal::find($old['goal']))) $p->goal($g);
     }
 
     private function resolvedReference(string $intent, array $args): array

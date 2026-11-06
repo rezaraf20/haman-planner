@@ -23,6 +23,21 @@ class Task extends Model
     protected $fillable=['user_id', 'area_id','goal_id','project_id','milestone_id','parent_task_id','title','description','status','priority','importance','weight','progress','estimated_minutes','actual_minutes','planned_start','planned_end','deadline','energy_level','focus_level','failure_reason','completed_at','recurring_task_id','occurrence_date','recurrence_exception'];
     protected $casts=['planned_start'=>'datetime','planned_end'=>'datetime','deadline'=>'datetime','completed_at'=>'datetime','occurrence_date'=>'date:Y-m-d','progress'=>'decimal:2','weight'=>'decimal:2'];
 
+    /** Status changes keep completed_at and progress consistent on every path (web, bot, AI, API). */
+    protected static function booted(): void
+    {
+        static::saving(function (Task $t) {
+            if (!$t->isDirty('status')) return;
+            if ($t->status === 'completed') {
+                $t->completed_at ??= now();
+                if (!$t->isDirty('progress')) $t->progress = 100;
+            } elseif ($t->getOriginal('status') === 'completed') {
+                $t->completed_at = null;
+                if (!$t->isDirty('progress')) $t->progress = 0;
+            }
+        });
+    }
+
     public function area(): BelongsTo { return $this->belongsTo(Area::class); }
     public function goal(): BelongsTo { return $this->belongsTo(Goal::class); }
     public function project(): BelongsTo { return $this->belongsTo(Project::class); }

@@ -22,6 +22,21 @@ class Reminder extends Model
         'payload' => 'array',
     ];
 
+    /** Exposed for the edit form and lists (they live inside payload). */
+    protected $appends = ['message', 'title'];
+
+    public function getMessageAttribute(): ?string
+    {
+        $m = is_array($this->payload) ? ($this->payload['message'] ?? null) : null;
+        return $m !== null && $m !== '' ? (string) $m : null;
+    }
+
+    /** What a list shows: the message, else the task's title. */
+    public function getTitleAttribute(): ?string
+    {
+        return $this->message ?? ($this->relationLoaded('task') ? $this->task?->title : null);
+    }
+
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);

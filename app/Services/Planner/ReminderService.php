@@ -36,6 +36,15 @@ final class ReminderService
             $reminder->update(['status'=>'cancelled','payload'=>array_merge($payload,['skipped'=>$owner->is_active?'disabled_by_user':'account_inactive'])]);
             return false;
         }
+        // A reminder about a task that is already done (or gone) is noise.
+        if($reminder->task_id!==null){$task=\App\Models\Task::withoutGlobalScopes()->find($reminder->task_id);
+            if(!$task||in_array($task->status,['completed','cancelled'],true)){$reminder->update(['status'=>'cancelled','payload'=>array_merge($payload,['skipped'=>'task_closed'])]);return false;}}
+        // Always deliver to the owner's *current* Telegram chat (they may have unlinked or relinked);
+        // only admins can target another chat explicitly.
+        if($owner && !$owner->is_admin){
+            if($owner->telegram_chat_id===null){$reminder->update(['status'=>'cancelled','payload'=>array_merge($payload,['skipped'=>'telegram_unlinked'])]);return false;}
+            $chatId=(string)$owner->telegram_chat_id;
+        }
         $claimed=Reminder::query()->whereKey($reminder->id)->where('status','pending')->update(['status'=>'processing']);
         if($claimed!==1)return false;
         $text=(string)($payload['message']??$this->defaultMessage($reminder,$owner?->preferredLocale()));

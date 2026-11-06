@@ -31,27 +31,35 @@ final class ProgressPropagationService
 
     public function milestone(Milestone $milestone): Milestone
     {
-        $progress = $this->weighted($milestone->tasks()->get());
+        $progress = $milestone->status === 'completed' ? 100.0 : $this->weighted($milestone->tasks()->get());
         $milestone->update(['progress' => $progress]);
         return $milestone->refresh();
     }
 
     public function project(Project $project): Project
     {
-        $milestones = $project->milestones()->get();
-        $children = $milestones->isNotEmpty() ? $milestones : $project->tasks()->get();
-        $progress = $this->weighted($children);
+        // Milestones plus the tasks that sit directly on the project (not inside a milestone).
+        $children = $this->counted($project->milestones()->get())
+            ->concat($project->tasks()->whereNull('milestone_id')->get());
+        $progress = $project->status === 'completed' ? 100.0 : $this->weighted($children);
         $project->update(['progress' => $progress]);
         return $project->refresh();
     }
 
     public function goal(Goal $goal): Goal
     {
-        $projects = $goal->projects()->get();
-        $children = $projects->isNotEmpty() ? $projects : $goal->tasks()->get();
-        $progress = $this->weighted($children);
+        // Projects plus the tasks that sit directly on the goal (not inside a project).
+        $children = $this->counted($goal->projects()->get())
+            ->concat($goal->tasks()->whereNull('project_id')->get());
+        $progress = $goal->status === 'completed' ? 100.0 : $this->weighted($children);
         $goal->update(['progress' => $progress]);
         return $goal->refresh();
+    }
+
+    /** Cancelled or archived-without-completion children don't count towards (or against) progress. */
+    private function counted(\Illuminate\Support\Collection $children): \Illuminate\Support\Collection
+    {
+        return $children->reject(fn ($c) => $c->status === 'cancelled' || (($c->archived_at ?? null) !== null && $c->status !== 'completed'))->values();
     }
 
     private function weighted(iterable $children): float
@@ -59,6 +67,7 @@ final class ProgressPropagationService
         $sum = 0.0;
         $weights = 0.0;
         foreach ($children as $child) {
+            if (($child->status ?? null) === 'cancelled') continue;
             $weight = max(0.0, (float) ($child->weight ?? 1));
             $sum += (float) ($child->progress ?? 0) * $weight;
             $weights += $weight;

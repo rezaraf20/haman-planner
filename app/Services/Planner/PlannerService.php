@@ -31,6 +31,7 @@ final class PlannerService
         $before = $task->toArray();
         $task->update(['status' => 'completed', 'progress' => 100, 'completed_at' => $task->completed_at ?? now()]);
         $this->activity->log('completed', Task::class, $task->id, $before, $task->fresh()->toArray());
+        app(ProgressPropagationService::class)->recalculateFromTask($task);
         if ($task->user_id) {
             \App\Services\Analytics\ProductEvents::record(\App\Models\User::find($task->user_id), \App\Services\Analytics\ProductEvents::FIRST_TASK_COMPLETED, [], true);
         }
@@ -77,7 +78,9 @@ final class PlannerService
     {
         $before = $task->toArray();
         $task->update(['failure_reason' => $data['reason'] ?? $data['failure_reason'] ?? 'other']);
-        $this->activity->log('failure_logged', Task::class, $task->id, $before, $task->fresh()->toArray());
+        $after = $task->fresh()->toArray();
+        if (!empty($data['note'])) $after['failure_note'] = mb_substr((string) $data['note'], 0, 1000); // kept in the history, never written over the description
+        $this->activity->log('failure_logged', Task::class, $task->id, $before, $after);
         return $task->refresh();
     }
 

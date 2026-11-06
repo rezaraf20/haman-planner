@@ -14,7 +14,11 @@ final class ReminderController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Reminder::query()->with('task')->orderBy('scheduled_at');
+        // Upcoming first (soonest on top), then everything already sent/cancelled (newest on top).
+        $query = Reminder::query()->with('task')
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN status = 'pending' THEN scheduled_at END ASC")
+            ->orderByDesc('scheduled_at');
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status')->toString());
@@ -43,6 +47,10 @@ final class ReminderController extends Controller
         if (array_key_exists('message',$data)) $payload['message']=$data['message'];
         unset($data['chat_id'],$data['message']);
         if ($payload) $data['payload']=$payload;
+        // A new time makes it a new reminder: send it again even if the old time already fired.
+        if (isset($data['scheduled_at']) && !$reminder->scheduled_at?->equalTo(\Illuminate\Support\Carbon::parse($data['scheduled_at'])) && !array_key_exists('status', $data)) {
+            $data += ['status' => 'pending', 'attempts' => 0, 'next_attempt_at' => null];
+        }
         $reminder->update($data);
         return response()->json($reminder->refresh()->load('task'));
     }

@@ -207,7 +207,11 @@ final class Entitlements
             'open_tasks' => Task::withoutGlobalScopes(),
             default => null,
         };
-        return $query ? $query->where('user_id', $user->id)->where(fn ($w) => $w->whereNull('status')->orWhereNotIn('status', $closed))->count() : 0;
+        if (!$query) return 0;
+        $query->where('user_id', $user->id)->where(fn ($w) => $w->whereNull('status')->orWhereNotIn('status', $closed));
+        // Archived goals/projects never count towards the plan allowance.
+        if (in_array($metric, ['active_goals', 'active_projects'], true)) $query->whereNull('archived_at');
+        return $query->count();
     }
 
     /** @return array{plan:?Plan,subscription:?Subscription,metrics:array<string,array{used:int,limit:?int}>,features:array<string,bool>} */

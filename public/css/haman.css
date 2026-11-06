@@ -197,15 +197,15 @@ hr { border: 0; border-top: 1px solid var(--line); margin: var(--s5) 0; }
 .meta .soon { color: var(--warning); font-weight: var(--w-semibold); }
 
 /* task row */
-.task { align-items: flex-start !important; }
-.task .check {
+.task, .row.life { align-items: flex-start !important; }
+.task .check, .row.life .check {
   flex: none; width: 20px; height: 20px; margin-top: 2px; border-radius: 6px; border: 1.5px solid var(--line-strong);
   background: var(--surface); display: grid; place-items: center; padding: 0; color: transparent;
   transition: background var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease);
 }
-.task .check:hover { border-color: var(--success); }
-.task .check svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 3; fill: none; }
-.task.done .check { background: var(--success); border-color: var(--success); color: #fff; }
+.task .check:hover, .row.life .check:hover { border-color: var(--success); }
+.task .check svg, .row.life .check svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 3; fill: none; }
+.task.done .check, .row.life.done .check { background: var(--success); border-color: var(--success); color: #fff; }
 .task.done .rowtitle { color: var(--text-3); text-decoration: line-through; text-decoration-thickness: 1px; }
 .task.just-done { animation: hp-done 420ms var(--ease); }
 .task .more { opacity: .6; }
@@ -369,3 +369,10 @@ div.err, p.err, .alert.danger { background: var(--danger-bg); color: var(--dange
 @media (max-width: 760px) { .kvgrid { grid-template-columns: minmax(0, 1fr); } }
 
 .toolbar select, .toolbar input:not([type=checkbox]):not(.search) { min-height: 38px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface); }
+
+/* Segmented tabs (list states: Active / Completed / Archive) */
+.seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-3); border: 1px solid var(--line); border-radius: 10px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; font: inherit; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.seg button:hover { color: var(--text); }
+.seg button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(15, 27, 45, .08); }
+.row.done .rowtitle { color: var(--text-3); }

@@ -70,6 +70,21 @@ final class RecurringTaskController extends Controller
     }
 
     /** Skip one occurrence (it stays in history as skipped and is never recreated). */
+    public function resume(RecurringTask $recurringTask, Entitlements $entitlements): JsonResponse
+    {
+        if (!$recurringTask->isActive()) {
+            $entitlements->ensureCanCreate(request()->user(), 'active_recurring');
+            $this->recurrence->resume($recurringTask);
+        }
+        return response()->json($this->present($recurringTask->refresh()));
+    }
+
+    public function destroy(RecurringTask $recurringTask): JsonResponse
+    {
+        $this->recurrence->delete($recurringTask);
+        return response()->json(null, 204);
+    }
+
     public function skip(Task $task): JsonResponse
     {
         abort_unless($task->isOccurrence(), 422, __('recurrence.not_occurrence'));

@@ -32,10 +32,23 @@ final class TaskController extends Controller
             'milestone_id' => 'nullable|integer',
             'q' => 'nullable|string|max:100',
             'overdue' => 'nullable|boolean',
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'state' => 'nullable|in:open,closed,all',
+            'failed' => 'nullable|boolean',
+            'hide_future' => 'nullable|boolean',
         ]);
 
+        // Recurring occurrences further ahead than tomorrow clutter the list; they appear when due.
+        $horizon = now($request->user()?->timezone ?: config('app.timezone'))->addDay()->endOfDay()->utc();
+        $future = fn ($q) => $q->whereNotNull('recurring_task_id')
+            ->whereRaw('COALESCE(planned_start, deadline) > ?', [$horizon]);
+        $hideFuture = (bool) ($data['hide_future'] ?? false);
+
         $tasks = Task::query()->with(['goal', 'project', 'milestone'])
+            ->when(($data['state'] ?? null) === 'open', fn ($q) => $q->whereNotIn('status', ['completed', 'cancelled']))
+            ->when(($data['state'] ?? null) === 'closed', fn ($q) => $q->whereIn('status', ['completed', 'cancelled']))
+            ->when($hideFuture, fn ($q) => $q->whereNot(fn ($w) => $future($w)))
+            ->when($data['failed'] ?? false, fn ($q) => $q->whereNotNull('failure_reason'))
             ->when($data['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($data['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
             ->when($data['area_id'] ?? null, fn ($q, $v) => $q->where('area_id', $v))
@@ -52,11 +65,18 @@ final class TaskController extends Controller
                     ->whereNotNull('deadline')
                     ->where('deadline', '<', now())
             )
+            ->when(($data['state'] ?? null) === 'closed', fn ($q) => $q->orderByDesc('completed_at')->orderByDesc('updated_at'))
+            ->orderByRaw("CASE WHEN status IN ('completed','cancelled') THEN 1 ELSE 0 END")
             ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")
-            ->orderBy('deadline')
+            ->orderByRaw('deadline asc nulls last')
+            ->orderByDesc('id')
             ->paginate($data['per_page'] ?? 50);
 
-        return response()->json($tasks);
+        $out = $tasks->toArray();
+        if ($hideFuture) {
+            $out['hidden_future'] = Task::query()->whereNotIn('status', ['completed', 'cancelled'])->where(fn ($w) => $future($w))->count();
+        }
+        return response()->json($out);
     }
 
     public function store(Request $request): JsonResponse
@@ -69,7 +89,7 @@ final class TaskController extends Controller
             'project_id' => 'nullable|integer',
             'milestone_id' => 'nullable|integer',
             'parent_task_id' => 'nullable|integer',
-            'status' => 'nullable|string',
+            'status' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Domain\Planner\TaskStatus::class)],
             'priority' => 'nullable|in:p0,p1,p2,p3',
             'importance' => 'nullable|integer|min:0|max:100',
             'weight' => 'nullable|numeric|min:0',
@@ -92,6 +112,16 @@ final class TaskController extends Controller
         return response()->json($task->load(['goal', 'project', 'milestone', 'children']));
     }
 
+    /** Why a task slipped: reason (catalog code) + optional note. The task's description is left alone. */
+    public function logFailure(Request $request, Task $task): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys((array) __('planner.failure_reason')))],
+            'note' => 'nullable|string|max:1000',
+        ]);
+        return response()->json($this->planner->logFailure($task, $data)->load(['goal', 'project', 'milestone']));
+    }
+
     public function update(Request $request, Task $task): JsonResponse
     {
         $data = $request->validate([
@@ -102,7 +132,7 @@ final class TaskController extends Controller
             'project_id' => 'sometimes|nullable|integer|exists:projects,id',
             'milestone_id' => 'sometimes|nullable|integer|exists:milestones,id',
             'parent_task_id' => 'sometimes|nullable|integer|exists:tasks,id',
-            'status' => 'sometimes|nullable|string',
+            'status' => ['sometimes', 'nullable', \Illuminate\Validation\Rule::in(array_unique(array_merge(array_column(\App\Domain\Planner\TaskStatus::cases(), 'value'), [(string) $task->status])))],
             'priority' => 'sometimes|nullable|in:p0,p1,p2,p3',
             'importance' => 'sometimes|nullable|integer|min:0|max:100',
             'progress' => 'sometimes|nullable|numeric|min:0|max:100',

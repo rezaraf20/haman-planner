@@ -78,6 +78,7 @@ final class RecurrenceService
         $total = 0;
         RecurringTask::withoutGlobalScopes()->where('status', 'active')
             ->where(fn ($q) => $q->whereNull('generated_until')->orWhere('generated_until', '<', now()->addDays(self::horizonDays())->toDateString()))
+            ->whereIn('user_id', \App\Models\User::query()->where('is_active', true)->select('id'))
             ->orderBy('id')->chunkById(100, function ($chunk) use (&$total): void {
                 foreach ($chunk as $series) {
                     try {
@@ -189,6 +190,30 @@ final class RecurrenceService
             $series->update(['status' => 'stopped', 'stopped_at' => now(), 'ends_on' => $today]);
             $this->activity->log('recurrence_stopped', RecurringTask::class, $series->id, null, ['ends_on' => $today]);
             return $series->refresh();
+        });
+    }
+
+    /** Restart a stopped series from today (the user may have stopped it by mistake or for a break). */
+    public function resume(RecurringTask $series): RecurringTask
+    {
+        return DB::transaction(function () use ($series): RecurringTask {
+            $today = $this->localToday($series)->toDateString();
+            // Generation restarts from today; existing occurrences (done, skipped, edited) are never duplicated.
+            $series->forceFill(['status' => 'active', 'stopped_at' => null, 'ends_on' => null,
+                'generated_until' => CarbonImmutable::parse($today)->subDay()->toDateString()])->save();
+            $this->activity->log('recurrence_updated', RecurringTask::class, $series->id, null, ['resumed' => $today]);
+            $this->generate($series->refresh());
+            return $series->refresh();
+        });
+    }
+
+    /** Remove a series. Future untouched occurrences go with it; past and edited ones stay as normal tasks. */
+    public function delete(RecurringTask $series): void
+    {
+        DB::transaction(function () use ($series) {
+            if ($series->isActive()) $this->stop($series);
+            $this->activity->log('deleted', RecurringTask::class, $series->id, ['title' => $series->title], null);
+            $series->delete();
         });
     }
 

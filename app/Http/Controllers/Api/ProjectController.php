@@ -15,12 +15,16 @@ final class ProjectController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $data = $request->validate(['state' => 'nullable|in:open,closed,archived,all', 'per_page' => 'nullable|integer|min:1|max:200']);
         $projects = Project::query()
             ->with(['goal', 'milestones'])
+            ->inState($data['state'] ?? null)
+            ->withCount(['tasks as open_tasks_count' => fn ($q) => $q->whereNotIn('status', ['completed', 'cancelled'])])
             ->when($request->goal_id, fn ($q, $v) => $q->where('goal_id', $v))
             ->when($request->status, fn ($q, $v) => $q->where('status', $v))
+            ->orderByRaw('archived_at desc nulls last')->orderByRaw('completed_at desc nulls last')
             ->latest('id')
-            ->paginate(50);
+            ->paginate($data['per_page'] ?? 50);
 
         return response()->json($projects);
     }
@@ -31,7 +35,7 @@ final class ProjectController extends Controller
             'goal_id' => 'nullable|integer|exists:goals,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'nullable|string|max:50',
+            'status' => 'nullable|'.Project::statusRule(),
             'importance' => 'nullable|integer|min:0|max:100',
             'weight' => 'nullable|numeric|min:0',
             'progress' => 'nullable|numeric|min:0|max:100',
@@ -57,7 +61,7 @@ final class ProjectController extends Controller
             'goal_id' => 'sometimes|nullable|integer|exists:goals,id',
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'sometimes|nullable|string|max:50',
+            'status' => 'sometimes|nullable|'.Project::statusRule($project->status),
             'importance' => 'sometimes|nullable|integer|min:0|max:100',
             'weight' => 'sometimes|nullable|numeric|min:0',
             'progress' => 'sometimes|nullable|numeric|min:0|max:100',

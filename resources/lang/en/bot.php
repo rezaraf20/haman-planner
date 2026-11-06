@@ -1,6 +1,7 @@
 <?php
 return [
     'link_invalid' => 'That connection code is invalid or has expired.',
+    'chat_taken' => 'This Telegram account is already linked to another Haman Planner account. Unlink it there first (Settings → Telegram), then get a new code.',
     'link_other_chat' => 'This account is already connected to a different Telegram account.',
     'linked' => 'You\'re connected. Hi :name 👋
 

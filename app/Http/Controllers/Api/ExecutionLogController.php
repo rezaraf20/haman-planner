@@ -25,13 +25,21 @@ final class ExecutionLogController extends Controller
             'energy_level' => 'nullable|integer|min:0|max:100', 'result' => 'nullable|string',
             'blocker' => 'nullable|string', 'notes' => 'nullable|string',
         ]);
-        $executionLog->update($data);
+        $old = (int) $executionLog->duration_minutes;
+        $executionLog->fill($data);
+        // Duration follows start/end unless given explicitly.
+        if (!array_key_exists('duration_minutes', $data) || $data['duration_minutes'] === null) {
+            $executionLog->duration_minutes = $executionLog->ended_at ? max(0, (int) $executionLog->started_at->diffInMinutes($executionLog->ended_at)) : $old;
+        }
+        $executionLog->save();
+        $this->adjust($task, (int) $executionLog->duration_minutes - $old);
         return response()->json($executionLog->refresh());
     }
 
     public function destroy(Task $task, ExecutionLog $executionLog): JsonResponse
     {
         abort_unless((int) $executionLog->task_id === (int) $task->id, 404);
+        $this->adjust($task, -(int) $executionLog->duration_minutes);
         $executionLog->delete();
         return response()->json(null, 204);
     }
@@ -49,12 +57,17 @@ final class ExecutionLogController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $log = $task->executionLogs()->create($data);
-
-        if (($data['duration_minutes'] ?? 0) > 0) {
-            $task->increment('actual_minutes', (int) $data['duration_minutes']);
-        }
+        // Same path as the bot: duration from start/end, actual minutes and the activity history updated.
+        $log = app(\App\Services\Planner\PlannerService::class)->logTime($task, $data);
 
         return response()->json($log, 201);
+    }
+
+    /** Keep the task's actual_minutes equal to the sum of its logs. */
+    private function adjust(Task $task, int $delta): void
+    {
+        if ($delta !== 0) {
+            $task->update(['actual_minutes' => max(0, (int) $task->actual_minutes + $delta)]);
+        }
     }
 }

@@ -101,6 +101,13 @@ final class TelegramPlannerBotService
     public function start(string|int $chatId, string $username, ?string $code = null, ?string $languageCode = null): void
     {
         if ($code !== null && $code !== '') {
+            // This chat already belongs to another account: say so instead of failing on the unique index.
+            $holder = User::where('telegram_chat_id', (string) $chatId)->first();
+            $pendingId = Cache::get('telegram:link:'.strtoupper($code));
+            if ($holder && $pendingId && (int) $holder->id !== (int) $pendingId) {
+                $this->inLocale($holder->preferredLocale(), fn () => $this->telegram->sendMessage($chatId, $this->t('chat_taken')));
+                return;
+            }
             $userId = Cache::pull('telegram:link:'.strtoupper($code));
             $user = $userId ? User::find($userId) : null;
             if (!$user || !$user->is_active) {
@@ -757,9 +764,9 @@ final class TelegramPlannerBotService
             'task.failure_reason', 'fail.reason' => $this->failureOptions(),
             'area.type' => $pairs(array_merge(['custom'], $inUse(Area::class, 'type'))),
             'area.status' => $pairs(array_merge(['active'], $inUse(Area::class, 'status'))),
-            'goal.status' => $pairs(array_merge(['active', 'in_progress', 'completed', 'cancelled'], $inUse(Goal::class, 'status'))),
-            'project.status' => $pairs(array_merge(['active', 'in_progress', 'completed', 'cancelled'], $inUse(Project::class, 'status'))),
-            'milestone.status' => $pairs(array_merge(['pending', 'completed'], $inUse(Milestone::class, 'status'))),
+            'goal.status' => $pairs(array_merge(Goal::STATUSES, $inUse(Goal::class, 'status'))),
+            'project.status' => $pairs(array_merge(Project::STATUSES, $inUse(Project::class, 'status'))),
+            'milestone.status' => $pairs(array_merge(Milestone::STATUSES, $inUse(Milestone::class, 'status'))),
             'reminder.type' => $pairs(array_merge(['telegram'], $inUse(Reminder::class, 'type'))),
             'reminder.status' => $pairs(['pending', 'sent', 'failed', 'cancelled']),
             'dep.type' => array_map(fn ($d) => [$d, $d.' — '.__('planner.dependency_type.'.$d)], ['requires', 'blocks', 'related']),
@@ -807,7 +814,10 @@ final class TelegramPlannerBotService
                 ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")
                 ->orderBy('deadline')->orderByDesc('id'),
             'reminder' => $q->orderByRaw("CASE status WHEN 'pending' THEN 0 ELSE 1 END")->orderByDesc('scheduled_at'),
-            'area' => $q->orderBy('sort_order')->orderBy('id'),
+            'area' => $q->whereNull('archived_at')->orderBy('sort_order')->orderBy('id'),
+            // Archived items live only in the web app's Archive tab; open items come first.
+            'goal', 'project', 'milestone' => $q->whereNull('archived_at')
+                ->orderByRaw("CASE WHEN status IN ('completed','cancelled') THEN 1 ELSE 0 END")->latest('id'),
             default => $q->latest('id'),
         };
     }
@@ -1783,14 +1793,24 @@ final class TelegramPlannerBotService
             if ($old['project'] && $old['project'] !== $x->project_id && ($pr = $this->owned(Project::class)->find($old['project']))) $this->progress->project($pr);
             if ($old['goal'] && $old['goal'] !== $x->goal_id && ($go = $this->owned(Goal::class)->find($old['goal']))) $this->progress->goal($go);
         } else {
-            if ($e === 'reminder' && $field === 'scheduled_at' && in_array($x->status, ['failed'], true)) {
+            if ($e === 'reminder' && $field === 'scheduled_at' && in_array($x->status, ['failed', 'sent'], true)) {
                 $attr['status'] = 'pending';
                 $attr['attempts'] = 0;
                 $attr['next_attempt_at'] = null;
             }
+            $oldParent = ['project' => $x->project_id ?? null, 'goal' => $x->goal_id ?? null];
             $x->update($attr);
-            if ($e === 'milestone' && $x->project) $this->progress->project($x->project);
-            if ($e === 'project' && $x->goal) $this->progress->goal($x->goal);
+            if ($e === 'milestone') {
+                $this->progress->milestone($x);
+                if ($x->project) $this->progress->project($x->project);
+                if ($oldParent['project'] && $oldParent['project'] !== $x->project_id && ($pr = $this->owned(Project::class)->find($oldParent['project']))) $this->progress->project($pr);
+            }
+            if ($e === 'project') {
+                $this->progress->project($x);
+                if ($x->goal) $this->progress->goal($x->goal);
+                if ($oldParent['goal'] && $oldParent['goal'] !== $x->goal_id && ($go = $this->owned(Goal::class)->find($oldParent['goal']))) $this->progress->goal($go);
+            }
+            if ($e === 'goal') $this->progress->goal($x);
         }
         $this->clearState($c);
         $this->entityView($c, $m, $e, (int) $x->id, $this->t('saved'));

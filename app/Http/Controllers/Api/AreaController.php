@@ -11,9 +11,10 @@ use Illuminate\Http\Request;
 
 final class AreaController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Area::query()->orderBy('sort_order')->orderBy('name')->get());
+        $state = $request->validate(['state' => 'nullable|in:open,archived,all'])['state'] ?? null;
+        return response()->json(Area::query()->inState($state === 'open' ? null : $state)->orderBy('sort_order')->orderBy('name')->get());
     }
 
     public function store(Request $request): JsonResponse

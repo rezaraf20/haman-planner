@@ -60,9 +60,9 @@ final class PlannerQueryService
         return [
             'found' => true,
             'type' => 'overview',
-            'goals' => Goal::query()->whereIn('status', ['active', 'in_progress'])->orderByDesc('importance')->limit(20)
+            'goals' => Goal::query()->notArchived()->whereIn('status', ['active', 'in_progress'])->orderByDesc('importance')->limit(20)
                 ->get(['id','title','progress','health','status','target_date'])->toArray(),
-            'projects' => Project::query()->whereIn('status', ['active', 'in_progress'])->orderByDesc('importance')->limit(20)
+            'projects' => Project::query()->notArchived()->whereIn('status', ['active', 'in_progress'])->orderByDesc('importance')->limit(20)
                 ->get(['id','goal_id','title','progress','health','status','target_date'])->toArray(),
         ];
     }

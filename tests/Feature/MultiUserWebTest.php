@@ -203,6 +203,7 @@ final class MultiUserWebTest extends TestCase
 
     public function test_reminder_worker_still_sees_all_users(): void
     {
+        $this->b->update(['telegram_chat_id' => '2002']); // reminders go to the owner's linked chat
         Reminder::create(['user_id' => $this->a->id, 'type' => 'telegram', 'scheduled_at' => now()->subMinute(), 'status' => 'pending', 'payload' => ['chat_id' => '1001', 'message' => 'a']]);
         Reminder::create(['user_id' => $this->b->id, 'type' => 'telegram', 'scheduled_at' => now()->subMinute(), 'status' => 'pending', 'payload' => ['chat_id' => '2002', 'message' => 'b']]);
         $this->assertSame(2, app(\App\Services\Planner\ReminderService::class)->dispatchDue());
