@@ -63,6 +63,7 @@ return [
         'first_habit_checkin' => 'First habit check-in',
         'first_morning_plan' => 'First morning plan',
         'first_shutdown' => 'First evening shutdown',
+        'first_breakdown' => 'First task breakdown',
         'first_focus_session' => 'First focus session',
         'first_project' => 'First project',
         'first_task_completed' => 'First task completed',

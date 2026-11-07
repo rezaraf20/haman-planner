@@ -26,18 +26,36 @@
 
   // ------------------------------------------------------------------ data
 
+  // Day-of-month in the user's calendar (Jalali for Persian, Gregorian for English).
+  const dayFmt = new Intl.DateTimeFormat(INTL, { day: 'numeric', timeZone: 'UTC' });
+  const latin = x => String(x).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  const dom = dateStr => +latin(dayFmt.formatToParts(new Date(dateStr + 'T12:00:00Z')).find(p => p.type === 'day').value);
+  const monthStart = dateStr => addDays(dateStr, 1 - dom(dateStr));
+  function monthEnd(dateStr) { let d = addDays(monthStart(dateStr), 27); while (dom(addDays(d, 1)) !== 1) d = addDays(d, 1); return d; }
+  const AGENDA_DAYS = 14;
+
   async function load() {
-    const days = CAL.mode === 'day' ? 1 : 7;
-    const from = CAL.mode === 'day' ? CAL.anchor : weekStart(CAL.anchor);
+    let from, days;
+    if (CAL.mode === 'month') {
+      CAL.mStart = monthStart(CAL.anchor); CAL.mEnd = monthEnd(CAL.anchor);
+      from = weekStart(CAL.mStart);
+      days = Math.ceil(((new Date(CAL.mEnd) - new Date(from)) / 864e5 + 1) / 7) * 7;
+    } else if (CAL.mode === 'agenda') {
+      from = CAL.anchor; days = AGENDA_DAYS;
+    } else {
+      days = CAL.mode === 'day' ? 1 : 7;
+      from = CAL.mode === 'day' ? CAL.anchor : weekStart(CAL.anchor);
+    }
     CAL.from = from;
     CAL.days = Array.from({ length: days }, (_, i) => addDays(from, i));
-    CAL.data = await api('/schedule?from=' + from + '&to=' + CAL.days[days - 1]);
-    render();
+    const extra = CAL.mode === 'month' || CAL.mode === 'agenda' ? '&deadlines=1' : '';
+    CAL.data = await api('/schedule?from=' + from + '&to=' + CAL.days[days - 1] + extra);
+    if (CAL.mode === 'month') renderMonth(); else if (CAL.mode === 'agenda') renderAgenda(); else render();
   }
 
   window.calendarView = async function () {
     CAL.anchor = CAL.anchor || localDate(new Date());
-    CAL.mode = CAL.mode || (isMobile() ? 'day' : 'week');
+    if (!CAL.mode) { let saved = null; try { saved = localStorage.getItem('hp-cal-mode'); } catch (e) {} CAL.mode = ['day', 'week', 'month', 'agenda'].includes(saved) ? saved : (isMobile() ? 'day' : 'week'); }
     await load();
   };
 
@@ -55,6 +73,70 @@
     return [Math.max(0, Math.floor(min / 60) * 60), Math.min(24 * 60, Math.ceil(max / 60) * 60)];
   }
 
+  function toolbar(title) {
+    const m = (k, lbl) => '<button class="btn small' + (CAL.mode === k ? ' primary' : '') + '" data-cal="' + k + '" aria-pressed="' + (CAL.mode === k) + '">' + esc(t(lbl)) + '</button>';
+    return '<div class="card calwrap"><div class="head"><div class="actions">'
+      + '<button class="btn small" data-cal="prev" aria-label="' + esc(t('cal_prev')) + '">' + (document.dir === 'rtl' ? '→' : '←') + '</button>'
+      + '<button class="btn small" data-cal="today">' + esc(t('cal_today')) + '</button>'
+      + '<button class="btn small" data-cal="next" aria-label="' + esc(t('cal_next')) + '">' + (document.dir === 'rtl' ? '←' : '→') + '</button>'
+      + '<b style="margin-inline-start:8px">' + esc(title) + '</b></div><div class="actions"><div class="calmodes" role="group">'
+      + m('day', 'cal_day_view') + m('week', 'cal_week_view') + m('month', 'cal_month_view') + m('agenda', 'cal_agenda_view') + '</div>'
+      + '<button class="btn small" data-cal="block">＋ ' + esc(t('cal_add_block')) + '</button>'
+      + (typeof window.openPlanner === 'function' && (CAL.mode === 'day' || CAL.mode === 'week') ? '<button class="btn small primary" data-cal="plan">✦ ' + esc(t('ai_plan_' + (CAL.mode === 'day' ? 'day' : 'week'))) + '</button>' : '')
+      + '</div></div>';
+  }
+
+  const dayLabel = (d, o) => new Date(d + 'T12:00:00Z').toLocaleDateString(INTL, Object.assign({ timeZone: 'UTC' }, o));
+  const hhmm = iso => new Date(iso).toLocaleTimeString(INTL, { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  const onDay = (it, d) => localDate(new Date(it.starts_at)) <= d && localDate(new Date(it.ends_at)) >= d;
+
+  function renderMonth() {
+    const today = localDate(new Date());
+    const title = dayLabel(addDays(CAL.mStart, 10), { month: 'long', year: 'numeric' });
+    let html = toolbar(title) + '<div class="calmonth" role="grid" aria-label="' + esc(title) + '"><div class="cm-row cm-wd" role="row">'
+      + CAL.days.slice(0, 7).map(d => '<div role="columnheader">' + esc(dayLabel(d, { weekday: isMobile() ? 'narrow' : 'short' })) + '</div>').join('') + '</div>';
+    for (let w = 0; w < CAL.days.length / 7; w++) {
+      html += '<div class="cm-row" role="row">' + CAL.days.slice(w * 7, w * 7 + 7).map((d, k) => {
+        const i = w * 7 + k, c = CAL.data.days[i] || {}, out = d < CAL.mStart || d > CAL.mEnd;
+        const its = CAL.data.items.filter(x => onDay(x, d)).sort((a, b) => a.starts_at < b.starts_at ? -1 : 1);
+        const dls = (CAL.data.deadlines || []).filter(x => localDate(new Date(x.deadline)) === d);
+        const chips = its.map(x => '<span class="cm-chip k-' + esc(x.kind || 'task') + (x.status === 'completed' ? ' done' : '') + '">' + esc(hhmm(x.starts_at)) + ' ' + esc(x.title || t('cal_kind_' + (x.kind || 'focus'))) + '</span>')
+          .concat(dls.map(x => '<span class="cm-chip dl" title="' + esc(t('cal_deadline')) + '">⏰ ' + esc(x.title) + '</span>'));
+        const pct = c.working && c.usable_minutes ? Math.min(100, Math.round(c.scheduled_minutes / c.usable_minutes * 100)) : 0;
+        return '<button type="button" role="gridcell" class="cm-cell' + (out ? ' out' : '') + (d === today ? ' today' : '') + (c.working ? '' : ' off') + '" data-day="' + d + '" aria-label="' + esc(dayLabel(d, { weekday: 'long', day: 'numeric', month: 'long' }) + (chips.length ? ' — ' + chips.length : '')) + '">'
+          + '<span class="cm-num">' + esc(dayLabel(d, { day: 'numeric' })) + '</span>'
+          + (pct ? '<span class="cm-cap' + (c.warning && c.warning.level === 'over' ? ' over' : '') + '"><i style="width:' + pct + '%"></i></span>' : '')
+          + chips.slice(0, 3).join('') + (chips.length > 3 ? '<span class="cm-more">' + esc(t('cal_more', { n: num(chips.length - 3) })) + '</span>' : '') + '</button>';
+      }).join('') + '</div>';
+    }
+    $('content').innerHTML = html + '</div><p class="muted small" style="margin:10px 2px 0">' + esc(t('cal_month_hint')) + '</p></div>';
+    bind();
+    document.querySelectorAll('.cm-cell').forEach(b => b.onclick = () => { CAL.anchor = b.dataset.day; CAL.mode = 'day'; load(); });
+  }
+
+  function renderAgenda() {
+    const today = localDate(new Date());
+    const title = dayLabel(CAL.days[0], { day: 'numeric', month: 'short' }) + ' – ' + dayLabel(CAL.days[CAL.days.length - 1], { day: 'numeric', month: 'short', year: 'numeric' });
+    let body = '';
+    CAL.days.forEach((d, i) => {
+      const c = CAL.data.days[i] || {};
+      const rows = CAL.data.items.filter(x => onDay(x, d)).map(x => ({ at: x.starts_at, html: '<div class="ag-row calitemlike k-' + esc(x.kind || 'task') + (x.status === 'completed' ? ' done' : '') + '" tabindex="0" data-type="' + esc(x.type) + '" data-id="' + x.id + '" data-task="' + (x.task_id || '') + '">'
+          + '<span class="ag-time">' + esc(hhmm(x.starts_at) + '–' + hhmm(x.ends_at)) + '</span><span class="ag-title">' + (x.recurring ? '🔁 ' : '') + esc(x.title || t('cal_kind_' + (x.kind || 'focus'))) + '</span>'
+          + (x.status === 'completed' ? '<span class="pill ok">' + esc(I18N.status.completed || '✓') + '</span>' : '') + '</div>' }))
+        .concat(CAL.data.busy.filter(x => onDay(x, d)).map(x => ({ at: x.starts_at, html: '<div class="ag-row busy"><span class="ag-time">' + esc(x.all_day ? t('cal_all_day') : hhmm(x.starts_at) + '–' + hhmm(x.ends_at)) + '</span><span class="ag-title">' + esc(x.title || t('cal_busy')) + '</span></div>' })))
+        .concat((CAL.data.deadlines || []).filter(x => localDate(new Date(x.deadline)) === d && !x.scheduled).map(x => ({ at: x.deadline, html: '<div class="ag-row dl" tabindex="0" data-edit="' + x.id + '"><span class="ag-time">⏰ ' + esc(hhmm(x.deadline)) + '</span><span class="ag-title">' + esc(x.title) + '</span><span class="pill">' + esc(t('cal_deadline')) + '</span></div>' })))
+        .sort((a, b) => a.at < b.at ? -1 : 1);
+      if (!rows.length && d !== today) return;
+      body += '<section class="ag-day' + (d === today ? ' today' : '') + '"><h3>' + esc(dayLabel(d, { weekday: 'long', day: 'numeric', month: 'long' }))
+        + (c.working ? '<span class="muted small">' + esc(dur(c.scheduled_minutes)) + ' / ' + esc(dur(c.usable_minutes)) + '</span>' : '') + '</h3>'
+        + (rows.length ? rows.map(r => r.html).join('') : '<p class="muted small">' + esc(t('cal_agenda_free')) + '</p>') + '</section>';
+    });
+    $('content').innerHTML = toolbar(title) + '<div class="agenda">' + (body || '<p class="muted">' + esc(t('cal_agenda_empty')) + '</p>') + '</div></div>';
+    bind();
+    document.querySelectorAll('.ag-row[data-id]').forEach(el => { el.onclick = () => itemMenu(el); el.onkeydown = e => { if (e.key === 'Enter') itemMenu(el); }; });
+    document.querySelectorAll('.ag-row[data-edit]').forEach(el => { const go = () => editItem(+el.dataset.edit, 'task'); el.onclick = go; el.onkeydown = e => { if (e.key === 'Enter') go(); }; });
+  }
+
   function render() {
     const [h0, h1] = hourRange();
     CAL.h0 = h0; CAL.h1 = h1;
@@ -63,16 +145,7 @@
       ? new Date(CAL.days[0] + 'T12:00:00Z').toLocaleDateString(INTL, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
       : new Date(CAL.days[0] + 'T12:00:00Z').toLocaleDateString(INTL, { day: 'numeric', month: 'short', timeZone: 'UTC' }) + ' – ' + new Date(CAL.days[CAL.days.length - 1] + 'T12:00:00Z').toLocaleDateString(INTL, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
-    let html = '<div class="card calwrap"><div class="head"><div class="actions">'
-      + '<button class="btn small" data-cal="prev" aria-label="' + esc(t('cal_prev')) + '">' + (document.dir === 'rtl' ? '→' : '←') + '</button>'
-      + '<button class="btn small" data-cal="today">' + esc(t('cal_today')) + '</button>'
-      + '<button class="btn small" data-cal="next" aria-label="' + esc(t('cal_next')) + '">' + (document.dir === 'rtl' ? '←' : '→') + '</button>'
-      + '<b style="margin-inline-start:8px">' + esc(title) + '</b></div><div class="actions">'
-      + '<button class="btn small' + (CAL.mode === 'day' ? ' primary' : '') + '" data-cal="day">' + esc(t('cal_day_view')) + '</button>'
-      + '<button class="btn small' + (CAL.mode === 'week' ? ' primary' : '') + '" data-cal="week">' + esc(t('cal_week_view')) + '</button>'
-      + '<button class="btn small" data-cal="block">＋ ' + esc(t('cal_add_block')) + '</button>'
-      + (typeof window.openPlanner === 'function' ? '<button class="btn small primary" data-cal="plan">✦ ' + esc(t('ai_plan_' + (CAL.mode === 'day' ? 'day' : 'week'))) + '</button>' : '')
-      + '</div></div>';
+    let html = toolbar(title);
 
     // capacity strip
     html += '<div class="calgrid" style="--cols:' + CAL.days.length + '"><div></div>' + CAL.days.map((d, i) => {
@@ -135,9 +208,14 @@
   function bind() {
     document.querySelectorAll('[data-cal]').forEach(b => b.onclick = () => {
       const a = b.dataset.cal;
-      if (a === 'prev' || a === 'next') { CAL.anchor = addDays(CAL.anchor, (a === 'prev' ? -1 : 1) * (CAL.mode === 'day' ? 1 : 7)); return load(); }
+      if (a === 'prev' || a === 'next') {
+        const dir = a === 'prev' ? -1 : 1;
+        if (CAL.mode === 'month') CAL.anchor = dir < 0 ? addDays(monthStart(CAL.anchor), -1) : addDays(monthEnd(CAL.anchor), 1);
+        else CAL.anchor = addDays(CAL.anchor, dir * ({ day: 1, week: 7, agenda: AGENDA_DAYS }[CAL.mode] || 7));
+        return load();
+      }
       if (a === 'today') { CAL.anchor = localDate(new Date()); return load(); }
-      if (a === 'day' || a === 'week') { CAL.mode = a; return load(); }
+      if (['day', 'week', 'month', 'agenda'].includes(a)) { CAL.mode = a; try { localStorage.setItem('hp-cal-mode', a); } catch (e) {} return load(); }
       if (a === 'block') return blockForm();
       if (a === 'plan') return window.openPlanner(CAL.mode === 'day' ? 'day' : 'week');
     });

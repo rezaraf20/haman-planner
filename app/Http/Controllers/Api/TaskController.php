@@ -58,7 +58,8 @@ final class TaskController extends Controller
             ->whereRaw('COALESCE(planned_start, deadline) > ?', [$horizon]);
         $hideFuture = (bool) ($data['hide_future'] ?? false);
 
-        $tasks = Task::query()->with(['goal', 'project', 'milestone', 'tags:id,name,color'])
+        $tasks = Task::query()->with(['goal', 'project', 'milestone', 'tags:id,name,color', 'parent:id,title'])
+            ->withCount(['children as subtasks_total', 'children as subtasks_done' => fn ($c) => $c->where('status', 'completed')])
             ->when($definition !== null, fn ($q) => $filters->apply($q, $definition, $request->user()))
             ->when(($data['state'] ?? null) === 'open', fn ($q) => $q->whereNotIn('status', ['completed', 'cancelled']))
             ->when(($data['state'] ?? null) === 'closed', fn ($q) => $q->whereIn('status', ['completed', 'cancelled']))

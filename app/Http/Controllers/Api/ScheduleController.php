@@ -35,7 +35,19 @@ final class ScheduleController extends Controller
             ->orderByRaw("CASE priority WHEN 'p0' THEN 0 WHEN 'p1' THEN 1 WHEN 'p2' THEN 2 ELSE 3 END")->orderBy('deadline')
             ->limit(60)->get(['id', 'title', 'priority', 'status', 'deadline', 'estimated_minutes', 'recurring_task_id']);
 
+        // Month / agenda views also show open tasks that are due in the range (not only scheduled work).
+        $deadlines = [];
+        if ($request->boolean('deadlines')) {
+            $tz = $user->preferredTimezone();
+            $deadlines = Task::query()->whereNotIn('status', ['completed', 'cancelled'])->whereNotNull('deadline')
+                ->whereBetween('deadline', [\App\Support\LocalDate::db(CarbonImmutable::parse($from, $tz)->startOfDay()), \App\Support\LocalDate::db(CarbonImmutable::parse($to, $tz)->endOfDay())])
+                ->orderBy('deadline')->limit(300)->get(['id', 'title', 'priority', 'status', 'deadline', 'estimated_minutes', 'planned_start'])
+                ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'priority' => $t->priority, 'status' => $t->status, 'deadline' => $t->deadline?->toIso8601String(),
+                    'estimated_minutes' => (int) $t->estimated_minutes, 'scheduled' => $t->planned_start !== null])->all();
+        }
+
         return response()->json($this->scheduling->range($user, $from, $to) + [
+            'deadlines' => $deadlines,
             'unscheduled' => $unscheduled,
             'settings' => [
                 'default_task_minutes' => (int) $user->preference('default_task_minutes'),

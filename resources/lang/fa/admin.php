@@ -63,6 +63,7 @@ return [
         'first_habit_checkin' => 'اولین ثبت عادت',
         'first_morning_plan' => 'اولین برنامه‌ریزی صبح',
         'first_shutdown' => 'اولین جمع‌بندی شب',
+        'first_breakdown' => 'اولین شکستن کار به مراحل',
         'first_focus_session' => 'اولین جلسه‌ی تمرکز',
         'first_project' => 'اولین پروژه',
         'first_task_completed' => 'اولین کار انجام‌شده',

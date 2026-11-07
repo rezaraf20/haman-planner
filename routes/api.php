@@ -97,6 +97,10 @@ Route::middleware([
 
     Route::apiResource('areas', AreaController::class);
     Route::post('/tasks/{task}/failure', [TaskController::class, 'logFailure']);
+    Route::get('/tasks/{task}/breakdown', [\App\Http\Controllers\Api\BreakdownController::class, 'show']);
+    Route::post('/tasks/{task}/breakdown', [\App\Http\Controllers\Api\BreakdownController::class, 'propose']);
+    Route::post('/tasks/{task}/subtasks', [\App\Http\Controllers\Api\BreakdownController::class, 'store']);
+    Route::post('/estimate', [\App\Http\Controllers\Api\BreakdownController::class, 'estimate']);
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('goals', GoalController::class);
     Route::apiResource('projects', ProjectController::class);
