@@ -235,6 +235,9 @@ final class TelegramPlannerBotService
 
             'ls' => $this->entityList($c, $m, $s1, $i2),
             'lsa' => $this->entityList($c, $m, $s1, $i2, true),
+            'hb' => $this->habitsToday($c, $m),
+            'hbt' => $this->habitCheck($c, $m, $i1, null),
+            'hba' => $this->habitCheck($c, $m, $i1, 1.0),
             'lc' => $this->lifecycleAction($c, $m, $s1, $i2, $p[3] ?? '', $p[4] ?? null),
             'v' => $this->entityView($c, $m, $s1, $i2),
             'ed' => $this->editMenu($c, $m, $s1, $i2),
@@ -491,6 +494,7 @@ final class TelegramPlannerBotService
             [$this->btn($this->t('menu.today'), 'today'), $this->btn($this->t('menu.tasks'), 'tasks')],
             [$this->btn($this->t('menu.inbox'), 'inbox'), $this->btn($this->t('menu.search'), 'search')],
             [$this->btn($this->t('menu.what_now'), 'hnow'), $this->btn($this->t('menu.plan_day'), 'hplan:day')],
+            [$this->btn($this->t('menu.habits'), 'hb')],
             [$this->btn($this->t('menu.structure'), 'structure')],
             [$this->btn($this->t('menu.execution'), 'execution')],
             [$this->btn($this->t('menu.analysis'), 'analysis')],
@@ -870,6 +874,45 @@ final class TelegramPlannerBotService
         }
         $kb[] = $archived ? $this->back("ls:$e:0") : $this->back($def['parent']);
         $this->show($c, $m, $text, $kb);
+    }
+
+    /** Today's habits with one-tap check-in (binary: toggle, numeric: +1). */
+    private function habitsToday(string|int $c, ?int $m, ?string $notice = null): void
+    {
+        $this->clearState($c);
+        $svc = app(\App\Services\Planner\HabitService::class);
+        $o = $svc->overview($this->user, 1);
+        $due = collect($o['habits'])->filter(fn ($h) => $h['due_today'] || $h['frequency'] === 'weekly')->values();
+        $lines = [];
+        $kb = [];
+        foreach ($due as $h) {
+            $icon = $h['icon'] ? $h['icon'].' ' : '';
+            $streak = $h['current_streak'] > 0 ? ' · 🔥 '.LocalDate::number($h['current_streak']) : '';
+            if ($h['measure'] === 'numeric') {
+                $v = $h['today_entry']['value'] ?? 0;
+                $lines[] = ($h['done_today'] ? '✅ ' : '▫️ ').$icon.$h['title'].' — '.LocalDate::number($v).($h['target_value'] !== null ? '/'.LocalDate::number($h['target_value']) : '').' '.($h['unit'] ?? '').$streak;
+                $kb[] = [$this->btn('➕ '.$icon.$h['title'], 'hba:'.$h['id'])];
+            } else {
+                $lines[] = ($h['done_today'] ? '✅ ' : '▫️ ').$icon.$h['title'].$streak;
+                $kb[] = [$this->btn(($h['done_today'] ? '↩️ ' : '✅ ').$icon.$h['title'], 'hbt:'.$h['id'])];
+            }
+        }
+        $text = ($notice ? $notice."\n\n" : '').$this->t('habits_title')."\n\n"
+            .($due->isEmpty() ? $this->t(count($o['habits']) ? 'habits_none_today' : 'habits_empty') : implode("\n", $lines)
+                ."\n\n".$this->t('habits_progress', ['done' => LocalDate::number($o['today']['done']), 'due' => LocalDate::number($o['today']['due'])]));
+        $kb[] = $this->back('home');
+        $this->show($c, $m, $text, $kb);
+    }
+
+    private function habitCheck(string|int $c, ?int $m, int $id, ?float $add): void
+    {
+        $h = $id > 0 ? $this->owned(\App\Models\Habit::class)->whereNull('archived_at')->find($id) : null;
+        if (!$h) {
+            $this->show($c, $m, $this->t('not_owned'), [$this->back('hb')]);
+            return;
+        }
+        app(\App\Services\Planner\HabitService::class)->check($h, $this->user, $add !== null && $h->measure === 'numeric' ? ['add' => $add] : []);
+        $this->habitsToday($c, $m);
     }
 
     /** Entities that can be completed / archived (same rules as the web app). */

@@ -10,6 +10,10 @@ Schedule::command('planner:recurring')
     ->hourly()
     ->withoutOverlapping();
 
+Schedule::command('planner:focus-cleanup')
+    ->hourly()
+    ->withoutOverlapping();
+
 Schedule::command('calendar:sync')
     ->everyFifteenMinutes()
     ->withoutOverlapping();

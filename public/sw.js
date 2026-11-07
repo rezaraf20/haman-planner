@@ -3,8 +3,8 @@
  * Private data is never cached: API responses, dashboard HTML, account, billing and admin pages
  * always go to the network. Logging out clears these caches (Clear-Site-Data: "cache").
  */
-const VERSION = 'hp-shell-v1';
-const SHELL = ['/offline', '/js/planner-calendar.js', '/js/planner-ai.js', '/fonts/vazirmatn/Vazirmatn-wght.woff2',
+const VERSION = 'hp-shell-v2';
+const SHELL = ['/offline', '/js/planner-calendar.js', '/js/planner-ai.js', '/js/planner-growth.js', '/fonts/vazirmatn/Vazirmatn-wght.woff2',
   '/fonts/poppins/poppins-latin-400-normal.woff2', '/fonts/poppins/poppins-latin-700-normal.woff2', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -23,10 +23,11 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Static assets: cache first, refreshed in the background.
+  // Static assets: cache first, refreshed in the background. Pages reference scripts with a
+  // ?v=<mtime> query, so a new deploy is a new URL (cache miss → network): HTML and JS never mismatch.
   if (isStatic(url)) {
     e.respondWith(caches.open(VERSION).then(async c => {
-      const hit = await c.match(req, { ignoreSearch: true });
+      const hit = await c.match(req, { ignoreSearch: !url.search });
       const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit);
       return hit || net;
     }));

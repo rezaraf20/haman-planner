@@ -197,6 +197,9 @@ final class Entitlements
 
     private function count(User $user, string $metric): int
     {
+        if ($metric === 'active_habits') {
+            return \App\Models\Habit::withoutGlobalScopes()->where('user_id', $user->id)->whereNull('archived_at')->count();
+        }
         if ($metric === 'active_recurring') {
             return \App\Models\RecurringTask::withoutGlobalScopes()->where('user_id', $user->id)->where('status', 'active')->count();
         }

@@ -131,6 +131,7 @@
         + (!cur && top.deadline ? dueMeta(top.deadline, false) : '') + (!cur && top.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(top.estimated_minutes)) + '</span>' : '')
         + (!cur && top.reasons_text && top.reasons_text.length ? '<span>' + esc(top.reasons_text[0]) + '</span>' : '') + '</div>'
         + '<div class=actions style="margin-top:12px">' + ((cur ? cur.task_id : top.id) ? '<button class="btn primary" onclick="homeDone(' + (cur ? cur.task_id : top.id) + ',this)">' + ic('check') + esc(H('mark_done')) + '</button><button class=btn onclick="executionForm()">' + ic('timer') + esc(t('log_work')) + '</button>' : '')
+        + ((cur ? cur.task_id : top.id) && window.startFocusOn ? '<button class="btn" onclick="startFocusOn(' + (cur ? cur.task_id : top.id) + ')">' + ic('focus') + esc((I18N.focus || {}).start || 'Focus') + '</button>' : '')
         + '<button class="btn ghost" onclick="openPlanner(\'now\')">' + esc(H('why_this')) + '</button></div></section>';
     }
     // schedule

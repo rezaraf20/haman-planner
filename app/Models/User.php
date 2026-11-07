@@ -31,6 +31,13 @@ final class User extends Authenticatable
         // Non-essential email (transactional/security email is always sent)
         'email_weekly_review' => false,
         'email_product_updates' => true,   // onboarding tips and inactivity reminders
+        // Focus Mode (Pomodoro)
+        'focus_minutes' => 25,
+        'focus_break_minutes' => 5,
+        'focus_long_break_minutes' => 15,
+        'focus_long_break_every' => 4,
+        'focus_sound' => true,
+        'focus_notify' => false,
     ];
 
     protected $fillable = [

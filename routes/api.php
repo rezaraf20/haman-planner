@@ -67,6 +67,24 @@ Route::middleware([
         ->whereIn('action', ['complete', 'reopen', 'cancel', 'archive', 'unarchive']);
     Route::get('/{kind}/{id}/open-tasks', [\App\Http\Controllers\Api\LifecycleController::class, 'openTasks'])
         ->whereIn('kind', ['goals', 'projects', 'milestones', 'areas'])->whereNumber('id');
+    // Focus Mode
+    Route::get('/focus', [\App\Http\Controllers\Api\FocusController::class, 'state']);
+    Route::post('/focus/start', [\App\Http\Controllers\Api\FocusController::class, 'start'])->middleware('throttle:30,1');
+    Route::post('/focus/settings', [\App\Http\Controllers\Api\FocusController::class, 'settings']);
+    Route::get('/focus/sessions', [\App\Http\Controllers\Api\FocusController::class, 'sessions']);
+    Route::get('/focus/stats', [\App\Http\Controllers\Api\FocusController::class, 'stats']);
+    foreach (['pause', 'resume', 'finish', 'cancel'] as $focusAction) {
+        Route::post('/focus/{session}/'.$focusAction, [\App\Http\Controllers\Api\FocusController::class, $focusAction])->whereNumber('session');
+    }
+    // Habits
+    Route::get('/habits', [\App\Http\Controllers\Api\HabitController::class, 'index']);
+    Route::post('/habits', [\App\Http\Controllers\Api\HabitController::class, 'store']);
+    Route::get('/habits/{habit}', [\App\Http\Controllers\Api\HabitController::class, 'show'])->whereNumber('habit');
+    Route::put('/habits/{habit}', [\App\Http\Controllers\Api\HabitController::class, 'update'])->whereNumber('habit');
+    Route::delete('/habits/{habit}', [\App\Http\Controllers\Api\HabitController::class, 'destroy'])->whereNumber('habit');
+    Route::post('/habits/{habit}/check', [\App\Http\Controllers\Api\HabitController::class, 'check'])->whereNumber('habit');
+    Route::post('/habits/{habit}/{action}', [\App\Http\Controllers\Api\HabitController::class, 'action'])->whereNumber('habit')->whereIn('action', ['pause', 'resume', 'archive', 'unarchive']);
+
     Route::apiResource('areas', AreaController::class);
     Route::post('/tasks/{task}/failure', [TaskController::class, 'logFailure']);
     Route::apiResource('tasks', TaskController::class);

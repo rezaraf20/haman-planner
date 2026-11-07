@@ -17,6 +17,7 @@ return [
         'active_projects' => ['type' => 'count'],        // projects not completed/cancelled
         'open_tasks' => ['type' => 'count'],             // tasks not completed/cancelled
         'active_recurring' => ['type' => 'count'],       // recurring series that are active
+        'active_habits' => ['type' => 'count'],          // habits that are not archived
         'attachment_storage_mb' => ['type' => 'storage'], // total size of a user's attachments
     ],
 

@@ -106,6 +106,8 @@
 <div class="group">{{ __('app.nav.group_today') }}</div>
 {!! $nb('today', 'today', 'today') !!}{!! $nb('daily', 'daily', 'daily') !!}{!! $nb('calendar', 'calendar', 'calendar') !!}{!! $nb('inbox', 'inbox', 'inbox') !!}
 {!! $nb('ai-planner', 'haman', 'ai_planner') !!}
+<div class="group">{{ __('app.nav.group_growth') }}</div>
+{!! $nb('focus', 'focus', 'focus') !!}{!! $nb('habits', 'habit', 'habits') !!}
 <div class="group">{{ __('app.nav.group_planning') }}</div>
 {!! $nb('areas', 'areas', 'areas') !!}{!! $nb('goals', 'goal', 'goals') !!}{!! $nb('projects', 'project', 'projects') !!}{!! $nb('milestones', 'flag', 'milestones') !!}{!! $nb('recurring', 'repeat', 'recurring') !!}
 <div class="group">{{ __('app.nav.group_execution') }}</div>
@@ -143,7 +145,7 @@
 </nav>
 <div class="modalback" id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle"><div class="modal"><div class="head"><h2 id="mtitle"></h2><button class="btn ghost icon" onclick="closeModal()" aria-label="{{ __('common.close') }}"><svg class="i"><use href="#i-x"/></svg></button></div><div id="mbody"></div></div></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
-const I18N={t:@json(__('app.js')),err:@json(__('errors')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days')),activity:@json(__('activity')),home:@json(__('app.home')),empties:@json(__('app.empty')),row:@json(__('app.row')),views:@json(__('app.view_sub')),life:@json(__('planner.lifecycle')),kindStatuses:@json(['goal'=>\App\Models\Goal::STATUSES,'project'=>\App\Models\Project::STATUSES,'milestone'=>\App\Models\Milestone::STATUSES])};
+const I18N={t:@json(__('app.js')),err:@json(__('errors')),nav:@json(__('app.nav')),fields:@json(__('planner.fields')),entities:@json(__('planner.entities')),status:@json(__('planner.task_status')),prio:@json(__('planner.priority')),generic:@json(__('planner.generic_status')),dep:@json(__('planner.dependency_type')),failure:@json(__('planner.failure_reason')),metrics:@json(__('planner.metrics')),reviewType:@json(__('planner.review_type')),recur:{frequency:@json(__('recurrence.frequency')),weekdays:@json(__('recurrence.weekdays')),calendar:@json(__('recurrence.calendar'))},workDays:@json($u->preference('work_days')),activity:@json(__('activity')),home:@json(__('app.home')),empties:@json(__('app.empty')),row:@json(__('app.row')),views:@json(__('app.view_sub')),life:@json(__('planner.lifecycle')),focus:@json(__('focus')),habits:@json(__('habits')),kindStatuses:@json(['goal'=>\App\Models\Goal::STATUSES,'project'=>\App\Models\Project::STATUSES,'milestone'=>\App\Models\Milestone::STATUSES])};
 const LOCALE=@json($loc),TZ=@json($u->preferredTimezone()),INTL=LOCALE==='fa'?'fa-IR':'en-US',BILLING_URL=@json(route('billing.index')),USER_NAME=@json($u->name);
 const csrf=document.querySelector('meta[name=csrf-token]').content,$=id=>document.getElementById(id);let view='today',cache={areas:[],goals:[],projects:[],milestones:[],tasks:[]};
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -178,7 +180,7 @@ function itemRow(x,kind){
  let title=x.title||x.name||x.intent||t('untitled'),done=x.status==='completed',menu=[],L=I18N.life,life=['goal','project','milestone','area'].includes(kind),arch=!!x.archived_at,closed=['completed','cancelled'].includes(x.status);
  menu.push(mi('edit',t('edit'),"editItem("+x.id+",'"+kind+"')"));
  if(life){let go=a=>"lifecycle('"+kind+"',"+x.id+",'"+a+"')";if(kind!=='area'&&!arch){if(closed)menu.push(mi('refresh',L.reopen,go('reopen')));else{menu.push(mi('check',L.complete,go('complete')));menu.push(mi('x',L.cancel,go('cancel')))}}menu.push(arch?mi('refresh',L.unarchive,go('unarchive')):mi('inbox',L.archive,go('archive')))}
- if(kind==='task'||kind==='project')menu.push(mi('clip',t('att_title'),"attachmentsModal('"+kind+"',"+x.id+")"));
+ if(kind==='task'||kind==='project')if(kind==='task'&&!['completed','cancelled'].includes(x.status)&&window.startFocusOn)menu.push(mi('focus',I18N.focus.start_on_task,'startFocusOn('+x.id+')'));menu.push(mi('clip',t('att_title'),"attachmentsModal('"+kind+"',"+x.id+")"));
  if(x.recurring_task_id&&!['completed','cancelled'].includes(x.status))menu.push(mi('skip',t('skip_occurrence'),'skipOccurrence('+x.id+')'));
  menu.push(mi('trash',t('delete'),'deleteItem('+x.id+",'"+kind+"')",'danger'));
  if(kind==='task'){
@@ -279,7 +281,7 @@ async function addDependency(){await cacheAll();modal(entityName('dependency'),'
 async function reviews(){let r=await api('/reviews'),a=r.data||[];$('content').innerHTML='<div class=card><div class=head><h2>'+esc(I18N.nav.reviews)+'</h2><button class="btn primary" onclick="generateReview()">＋ '+esc(t('generate_review'))+'</button></div><div class=list>'+(a.map(x=>'<div class=row><div><b>'+esc(I18N.reviewType[x.type]||x.type)+'</b><div class=rowsub>'+esc(t('range',{from:fmt(x.period_start),to:fmt(x.period_end)}))+' · '+esc(x.summary||'')+'</div></div></div>').join('')||empty())+'</div></div>'}
 async function generateReview(){try{await api('/reviews/generate',{method:'POST',body:JSON.stringify({type:'weekly'})});toast(t('review_generated'));loadView('reviews')}catch(e){fail(e)}}
 async function loadView(v){view=v;$('title').textContent=v==='today'?I18N.home.title:(I18N.nav[{'ai-planner':'ai_planner',ai:'ai_interactions'}[v]||v]||v);$('subtitle').textContent=v==='today'?new Date().toLocaleDateString(INTL,{timeZone:TZ,weekday:'long',day:'numeric',month:'long'}):(I18N.views[v]||'');setActive(v);document.body.classList.remove('nav-open');$('content').innerHTML=skeleton();try{await (async()=>{
-if(v==='today')return today();if(v==='inbox')return inbox();if(v==='search')return searchView();if(v==='ai-planner')return aiPlanner();if(v==='analytics')return analytics();if(v==='reports')return reports('week');if(v==='daily')return daily();if(v==='calendar')return window.calendarView?calendarView():calendar();if(v==='recurring')return recurringView();if(v==='dependencies')return dependencies();
+if(window.VIEWS&&VIEWS[v])return VIEWS[v]();if(v==='today')return today();if(v==='inbox')return inbox();if(v==='search')return searchView();if(v==='ai-planner')return aiPlanner();if(v==='analytics')return analytics();if(v==='reports')return reports('week');if(v==='daily')return daily();if(v==='calendar')return window.calendarView?calendarView():calendar();if(v==='recurring')return recurringView();if(v==='dependencies')return dependencies();
 if(v==='execution')return execution();if(v==='failures')return failures();if(v==='reviews')return reviews();
 if(v==='ai')return systemList('ai-interactions',I18N.nav.ai_interactions,renderAI);if(v==='pending')return systemList('pending-actions',I18N.nav.pending,renderPending);if(v==='activity')return window.activityTimeline?activityTimeline():systemList('activity',I18N.nav.activity,renderActivity);
 if(['tasks','goals','projects','areas','milestones','reminders','notes','decisions'].includes(v))return loadList(v);
@@ -298,4 +300,5 @@ addEventListener('hashchange',()=>{let h=location.hash.slice(1);if(h&&h!==view&&
 let pwaPrompt=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pwaPrompt=e;$('pwa-install').classList.remove('hide')});$('pwa-install').onclick=async()=>{if(!pwaPrompt)return;pwaPrompt.prompt();await pwaPrompt.userChoice;pwaPrompt=null;$('pwa-install').classList.add('hide')};
 </script>
 <script src="{{ asset('js/planner-calendar.js') }}?v={{ @filemtime(public_path('js/planner-calendar.js')) }}"></script>
-<script src="{{ asset('js/planner-ai.js') }}?v={{ @filemtime(public_path('js/planner-ai.js')) }}"></script></body></html>
+<script src="{{ asset('js/planner-ai.js') }}?v={{ @filemtime(public_path('js/planner-ai.js')) }}"></script>
+<script src="{{ asset('js/planner-growth.js') }}?v={{ @filemtime(public_path('js/planner-growth.js')) }}"></script></body></html>

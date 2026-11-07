@@ -1,6 +1,9 @@
 <?php
 return [
     'nav' => [
+        'focus' => 'Focus',
+        'habits' => 'Habits',
+        'group_growth' => 'Personal growth',
         'today' => 'Today',
         'tasks' => 'Tasks',
         'inbox' => 'Inbox',
@@ -298,6 +301,8 @@ return [
         'recurring' => 'Repeats',
     ],
     'view_sub' => [
+        'focus' => 'One task, one timer, no distractions. Real time is logged automatically.',
+        'habits' => 'Behaviours you want to build or reduce — without the pressure.',
         'tasks' => 'Everything you have to do, most important first.',
         'inbox' => 'New tasks that still need a place, a date or a project.',
         'goals' => 'What you want to achieve. Projects and tasks roll up into goals.',
