@@ -141,6 +141,7 @@ final class AccountController extends Controller
             'planning_buffer_percent' => (int) $data['planning_buffer_percent'],
             'calendar_blocks_planning' => $request->boolean('calendar_blocks_planning'),
             'rituals_enabled' => $request->boolean('rituals_enabled'),
+            'ritual_bot_nudges' => $request->boolean('ritual_bot_nudges'),
         ])])->save();
         return redirect()->to(route('account.settings').'#planning')->with('status', __('settings.planning_saved'));
     }

@@ -34,6 +34,7 @@ final class User extends Authenticatable
         'theme' => 'system',               // system | light | dark
         'dashboard_layout' => null,        // {order: [...], hidden: [...]} — Today widgets
         'rituals_enabled' => true,         // morning planning / evening shutdown prompts on Today
+        'ritual_bot_nudges' => false,      // also send the ritual reminders to Telegram
         // Focus Mode (Pomodoro)
         'focus_minutes' => 25,
         'focus_break_minutes' => 5,

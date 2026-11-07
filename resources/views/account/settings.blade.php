@@ -69,6 +69,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{color:va
 </div>
 <label class="check"><input type="checkbox" name="calendar_blocks_planning" value="1" @checked($prefs['calendar_blocks_planning'])> {{ __('settings.calendar_blocks_planning') }}</label>
 <label class="check"><input type="checkbox" name="rituals_enabled" value="1" @checked($prefs['rituals_enabled'])> {{ __('settings.rituals_enabled') }}</label>
+<label class="check"><input type="checkbox" name="ritual_bot_nudges" value="1" @checked($prefs['ritual_bot_nudges'])> {{ __('settings.ritual_bot_nudges') }}</label>
 <button class="btn primary">{{ __('settings.save_planning') }}</button>
 </form>
 </div>

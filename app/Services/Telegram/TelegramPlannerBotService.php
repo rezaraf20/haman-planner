@@ -49,6 +49,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class TelegramPlannerBotService
 {
+    use Concerns\BotGrowthFeatures;
+
+    public const FOCUS_UUID_PREFIX = 'b07b07b0'; // first block of client_uuid for focus sessions started in Telegram
     private const TTL = 1800;
     private const PAGE = 8;
     /** Task fields used by PlannerService::recalculatePriority(). */
@@ -157,6 +160,8 @@ final class TelegramPlannerBotService
                 'search' => $this->runSearch($chatId, $text),
                 'ai' => $this->runAI($chatId, $text),
                 'wizard' => $this->wizardText($chatId, $state, $text),
+                'ritual' => $this->ritualText($chatId, $state, $text),
+                'bdadd' => $this->breakdownText($chatId, $state, $text),
                 default => $this->show($chatId, null, $this->t('use_menu'), $this->mainKeyboard()),
             };
         }, $chatId, null);
@@ -217,6 +222,9 @@ final class TelegramPlannerBotService
     {
         $p = explode(':', $data);
         $a = $p[0] ?? 'home';
+        if ($this->routeGrowth($c, $m, $a, $p)) {
+            return;
+        }
         $s1 = $p[1] ?? '';
         $i1 = $this->int($p[1] ?? null);
         $i2 = $this->int($p[2] ?? null);
@@ -494,7 +502,8 @@ final class TelegramPlannerBotService
             [$this->btn($this->t('menu.today'), 'today'), $this->btn($this->t('menu.tasks'), 'tasks')],
             [$this->btn($this->t('menu.inbox'), 'inbox'), $this->btn($this->t('menu.search'), 'search')],
             [$this->btn($this->t('menu.what_now'), 'hnow'), $this->btn($this->t('menu.plan_day'), 'hplan:day')],
-            [$this->btn($this->t('menu.habits'), 'hb')],
+            [$this->btn($this->t('menu.habits'), 'hb'), $this->btn($this->g('menu.focus'), 'fc')],
+            [$this->btn($this->g('menu.rituals'), 'rit')],
             [$this->btn($this->t('menu.structure'), 'structure')],
             [$this->btn($this->t('menu.execution'), 'execution')],
             [$this->btn($this->t('menu.analysis'), 'analysis')],
@@ -519,7 +528,7 @@ final class TelegramPlannerBotService
             [$this->btn($this->t('menu.new_task'), 'new:task')],
             [$this->btn($this->t('menu.today'), 'today'), $this->btn($this->t('menu.tomorrow'), 'tomorrow')],
             [$this->btn($this->t('menu.inbox'), 'inbox'), $this->btn($this->t('menu.search'), 'search')],
-            [$this->btn($this->t('menu.all_open'), 'ls:task:0')],
+            [$this->btn($this->t('menu.all_open'), 'ls:task:0'), $this->btn($this->g('menu.smart'), 'sl')],
             $this->back(),
         ]);
     }
@@ -953,10 +962,14 @@ final class TelegramPlannerBotService
             return;
         }
         $text = ($notice ? $notice."\n\n" : '').$this->t('item_heading', ['entity' => $def['label'], 'id' => $x->id])."\n\n".$this->describe($e, $x);
+        if ($e === 'task' && ($extra = $this->taskExtras($x))) {
+            $text .= "\n".implode("\n", $extra);
+        }
         $kb = [];
         if ($e === 'task') {
             if (!in_array($x->status, ['completed', 'cancelled'], true)) {
                 $kb[] = [$this->btn($this->t('btn.done'), 'done:'.$id), $this->btn($this->t('btn.defer'), 'defer:'.$id), $this->btn($this->t('btn.cancel_task'), 'tcancel:'.$id)];
+                $kb[] = $this->taskExtraButtons($id);
             }
             $kb[] = [$this->btn($this->t('btn.log_work'), 'texec:'.$id), $this->btn($this->t('btn.schedule'), 'tsched:'.$id)];
             $kb[] = [$this->btn($this->t('btn.deps'), 'deps:'.$id), $this->btn($this->t('btn.remind'), 'trem:'.$id), $this->btn($this->t('btn.slipped'), 'fail:'.$id)];

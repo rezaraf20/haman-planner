@@ -21,7 +21,8 @@ final class TelegramBotLocalizationTest extends TestCase
     private const SCREENS = ['home', 'today', 'tasks', 'tomorrow', 'inbox', 'structure', 'ls:area:0', 'ls:goal:0', 'ls:project:0', 'ls:milestone:0',
         'ls:task:0', 'execution', 'daily', 'calendar', 'xlogs', 'dependencies', 'ls:reminder:0', 'failures',
         'analysis', 'reviews', 'analytics', 'report', 'rday', 'rweek', 'rmonth',
-        'knowledge', 'ls:note:0', 'ls:decision:0', 'aiinteractions', 'pending', 'activity', 'new:task', 'search'];
+        'knowledge', 'ls:note:0', 'ls:decision:0', 'aiinteractions', 'pending', 'activity', 'new:task', 'search',
+        'hb', 'fc', 'rit', 'rm', 're', 'sl', 'slv:overdue:0', 'slv:quick:0'];
 
     protected function setUp(): void
     {
@@ -65,7 +66,7 @@ final class TelegramBotLocalizationTest extends TestCase
         $u = User::create(['name' => 'E', 'email' => 'e@example.com', 'password' => 'secret-pass-123', 'is_active' => true, 'telegram_chat_id' => '4004', 'locale' => 'en', 'timezone' => 'Europe/London']);
         $task = $this->seedPlanner($u);
 
-        foreach (array_merge(self::SCREENS, ['v:task:'.$task->id, 'v:goal:'.$task->goal_id]) as $screen) {
+        foreach (array_merge(self::SCREENS, ['v:task:'.$task->id, 'v:goal:'.$task->goal_id, 'bd:'.$task->id, 'est:'.$task->id, 'fcs:'.$task->id.':25', 'fc']) as $screen) {
             $this->bot()->handleCallback('4004', 'e', 'cb-'.$screen, 10, $screen);
         }
         $this->bot()->handleText('4004', 'e', '/start');
@@ -74,7 +75,7 @@ final class TelegramBotLocalizationTest extends TestCase
         $this->assertNotEmpty($outputs);
         foreach ($outputs as $text) {
             $this->assertDoesNotMatchRegularExpression('/[\x{0600}-\x{06FF}]/u', $text, 'Persian text leaked: '.$text);
-            $this->assertDoesNotMatchRegularExpression('/\b(bot|planner|common)\.[a-z_]+/', $text, 'Raw translation key: '.$text);
+            $this->assertDoesNotMatchRegularExpression('/\b(bot|botx|planner|common|rituals|breakdown|filters|focus)\.[a-z_]+/', $text, 'Raw translation key: '.$text);
         }
         $joined = implode("\n", $outputs);
         $this->assertStringContainsString('Write docs', $joined);

@@ -118,6 +118,7 @@ final class TagsAndFiltersTest extends TestCase
         $this->assertSame(['Tagged'], $this->titles($this->api('GET', '/tasks?filter='.urlencode(json_encode($saved->json('definition'))))));
         $this->assertSame(['Tagged'], $this->titles($this->api('GET', '/tasks?tag='.$tag->id)));
 
+        $this->api('POST', '/filters', ['name' => ' high-priority WORK this week ', 'definition' => $def])->assertStatus(422)->assertJsonValidationErrors('name');
         $this->api('POST', '/filters', ['name' => 'Bad', 'definition' => ['sql' => 'drop table']])->assertStatus(422);
         $this->api('POST', '/filters', ['name' => 'Bad', 'definition' => ['due' => 'yesterday']])->assertStatus(422);
         $this->api('GET', '/tasks?filter=not-json')->assertStatus(422);

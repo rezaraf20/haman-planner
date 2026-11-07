@@ -40,6 +40,16 @@ Task creation/update supports title, description, hierarchy IDs, status, priorit
 - `POST /api/reminders/{reminder}/cancel`
 - `DELETE /api/reminders/{reminder}`
 
+## Focus, habits, rituals, tags, breakdown
+
+- Focus: `GET /api/focus`, `POST /api/focus/start`, `POST /api/focus/{session}/pause|resume|finish|cancel`, `POST /api/focus/settings`, `GET /api/focus/sessions`, `GET /api/focus/stats` — see docs/focus-and-habits.md
+- Habits: `GET/POST /api/habits`, `GET/PUT/DELETE /api/habits/{habit}`, `POST /api/habits/{habit}/check`, `POST /api/habits/{habit}/{action}`
+- Today page: `GET /api/planning/today`, `POST /api/planning/layout`
+- Rituals: `GET /api/rituals`, `GET|POST /api/rituals/morning`, `GET|POST /api/rituals/evening`, `POST /api/rituals/{morning|evening}/skip` — see docs/daily-rituals.md
+- Tags and filters: `GET/POST /api/tags`, `PUT/DELETE /api/tags/{tag}`, `GET/POST /api/filters`, `PUT/DELETE /api/filters/{id}`, `POST /api/filters/parse`; `GET /api/tasks?smart=…|filter=…|tag=…` — see docs/tags-and-filters.md
+- Breakdown and estimates: `GET|POST /api/tasks/{task}/breakdown`, `POST /api/tasks/{task}/subtasks`, `POST /api/estimate` — see docs/breakdown-estimates-calendar.md
+- Calendar: `GET /api/schedule?from&to[&deadlines=1]` (max 42 days)
+
 ## Commands and reviews
 
 - `POST /api/commands`

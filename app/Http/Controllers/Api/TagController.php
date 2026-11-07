@@ -65,6 +65,10 @@ final class TagController extends Controller
         $data = $request->validate(['name' => 'required|string|max:60', 'icon' => 'nullable|string|max:16', 'definition' => 'required|array']);
         $data['definition'] = $filter->validate($data['definition'], $request->user());
         abort_if(SavedFilter::query()->count() >= 50, 422, __('filters.too_many'));
+        $data['name'] = trim($data['name']);
+        if (SavedFilter::query()->whereRaw('lower(name) = ?', [mb_strtolower($data['name'])])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['name' => __('filters.filter_exists')]);
+        }
         return response()->json(SavedFilter::create($data), 201);
     }
 
@@ -72,6 +76,12 @@ final class TagController extends Controller
     {
         $data = $request->validate(['name' => 'sometimes|string|max:60', 'icon' => 'nullable|string|max:16', 'definition' => 'sometimes|array', 'sort_order' => 'nullable|integer']);
         if (isset($data['definition'])) $data['definition'] = $filter->validate($data['definition'], $request->user());
+        if (isset($data['name'])) {
+            $data['name'] = trim($data['name']);
+            if (SavedFilter::query()->whereKeyNot($savedFilter->id)->whereRaw('lower(name) = ?', [mb_strtolower($data['name'])])->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['name' => __('filters.filter_exists')]);
+            }
+        }
         $savedFilter->update($data);
         return response()->json($savedFilter->refresh());
     }

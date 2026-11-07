@@ -10,6 +10,10 @@ Schedule::command('planner:recurring')
     ->hourly()
     ->withoutOverlapping();
 
+Schedule::command('planner:bot-nudges')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 Schedule::command('planner:focus-cleanup')
     ->hourly()
     ->withoutOverlapping();

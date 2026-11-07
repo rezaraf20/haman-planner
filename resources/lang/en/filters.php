@@ -7,6 +7,7 @@ return [
     'invalid' => 'The filter is not valid.',
     'ai_unclear' => 'I couldn’t understand that; try being a bit more specific.',
     'ai_unavailable' => 'Text-to-filter is not available right now. Use the ready-made lists.',
+    'filter_exists' => 'You already have a filter with this name; choose another name.',
     'tag_exists' => 'A tag with this name already exists.',
     'too_many' => 'You can save up to 50 filters.',
     'title' => 'Filters',

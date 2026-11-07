@@ -70,6 +70,7 @@ return [
     'planning_buffer_percent' => 'Planning buffer (%)',
     'planning_buffer_help' => 'This share of your working time is kept free for the unexpected (20% by default).',
     'rituals_enabled' => 'Suggest morning planning and evening shutdown on the Today page',
+    'ritual_bot_nudges' => 'Also send these reminders to Telegram (when the bot is linked)',
     'calendar_blocks_planning' => 'Connected calendar events reduce available time',
     'save_planning' => 'Save planning settings',
     'planning_saved' => 'Planning settings saved.',
