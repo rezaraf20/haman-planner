@@ -175,7 +175,32 @@ final class PlanningController extends Controller
             'goals' => $goals,
             'insight' => $insight,
             'layout' => self::dashboardLayout($user),
+            'ritual' => $this->ritualState($user, $now),
         ]);
+    }
+
+    /** The day's rituals for the home page: which one to offer, and the user's own top 3 if chosen. */
+    private function ritualState(\App\Models\User $user, CarbonImmutable $now): array
+    {
+        $svc = app(\App\Services\Planner\RitualService::class);
+        $day = $now->startOfDay();
+        $morning = $svc->find($user, $day, 'morning');
+        $evening = $svc->find($user, $day, 'evening');
+        $top = [];
+        if ($morning && $morning->top_task_ids) {
+            $tasks = \App\Models\Task::query()->ownedBy($user->id)->whereIn('id', (array) $morning->top_task_ids)->get(['id', 'title', 'status', 'priority', 'deadline', 'estimated_minutes', 'project_id']);
+            $projects = \App\Models\Project::query()->ownedBy($user->id)->whereIn('id', $tasks->pluck('project_id')->filter()->all())->pluck('title', 'id');
+            $pos = array_flip((array) $morning->top_task_ids);
+            $top = $tasks->sortBy(fn ($t) => $pos[$t->id] ?? 99)->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'status' => $t->status, 'priority' => $t->priority,
+                'deadline' => $t->deadline?->toIso8601String(), 'estimated_minutes' => (int) $t->estimated_minutes, 'project_title' => $projects[$t->project_id] ?? null])->values()->all();
+        }
+        return [
+            'enabled' => $user->preference('rituals_enabled') !== false,
+            'prompt' => $svc->prompt($user),
+            'morning' => $morning?->status, 'evening' => $evening?->status,
+            'intention' => $morning?->intention,
+            'top' => $top,
+        ];
     }
 
     public const WIDGETS = ['now', 'progress', 'schedule', 'priorities', 'focus', 'habits', 'goals', 'week', 'insight'];

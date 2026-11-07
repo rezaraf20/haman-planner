@@ -140,6 +140,7 @@ final class AccountController extends Controller
             'break_minutes' => (int) $data['break_minutes'],
             'planning_buffer_percent' => (int) $data['planning_buffer_percent'],
             'calendar_blocks_planning' => $request->boolean('calendar_blocks_planning'),
+            'rituals_enabled' => $request->boolean('rituals_enabled'),
         ])])->save();
         return redirect()->to(route('account.settings').'#planning')->with('status', __('settings.planning_saved'));
     }

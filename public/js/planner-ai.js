@@ -122,13 +122,14 @@
     const layout = (td && td.layout) || { order: Object.keys(WIDGET_COL), hidden: [] };
     window.TODAY_LAYOUT = layout;
     const W = {};
+    const rw = window.ritualWidgets || {}, rt = td && td.ritual;
 
     // hero
     $('title').textContent = greeting().replace(':name', USER_NAME);
     const hero = '<div class=home-hero><div><p>'
       + esc(ranked.length ? T('home_line', { n: num(important || ranked.length) }) : H('nothing_open'))
       + (day && day.working ? ' ' + esc(free > 0 ? T('home_free', { time: dur(free) }) : day.overload_minutes > 0 ? T('home_over', { time: dur(day.overload_minutes) }) : T('home_full')) : ' ' + esc(H('day_off')))
-      + '</p></div><div class=actions><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button>'
+      + '</p></div><div class=actions>' + (rw.button ? rw.button(rt) : '') + '<button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button>'
       + '<button class="btn ghost icon" onclick="customizeToday()" title="' + esc(H('customize')) + '" aria-label="' + esc(H('customize')) + '">' + ic('settings') + '</button></div></div>';
 
     // now
@@ -175,9 +176,10 @@
     }
     W.schedule = S + '</section>';
 
-    // top 3 priorities
+    // top 3 priorities — the user's own morning picks win over the ranking
     const rest = ranked.slice(cur ? 0 : 1, cur ? 3 : 4);
-    W.priorities = '<section class=card aria-labelledby=nexth><div class=head><h2 id=nexth>' + esc(H('top3')) + '</h2><button class="btn ghost small" onclick="loadView(\'tasks\')">' + esc(H('all_tasks')) + ic('chev', 'sm flip') + '</button></div>'
+    const mine = rw.top ? rw.top(rt) : '';
+    if (mine) W.priorities = mine; else W.priorities = '<section class=card aria-labelledby=nexth><div class=head><h2 id=nexth>' + esc(H('top3')) + '</h2><button class="btn ghost small" onclick="loadView(\'tasks\')">' + esc(H('all_tasks')) + ic('chev', 'sm flip') + '</button></div>'
       + (rest.length ? '<div class=list>' + rest.map(x => '<div class="row task"><button class=check aria-pressed=false aria-label="' + esc(I18N.row.complete) + '" onclick="toggleDone(' + x.id + ',false,this)"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><div class=rowmain><div class=rowtitle>'
           + (['p0', 'p1'].includes(x.priority) ? '<span class="prio ' + x.priority + '" title="' + esc(label(x.priority)) + '">' + esc(String(label(x.priority)).split('—').pop().trim()) + '</span> ' : '') + esc(x.title) + '</div><div class=meta>' + dueMeta(x.deadline, false)
           + (x.project_title ? '<span>' + ic('project', 'sm') + esc(x.project_title) + '</span>' : '') + (x.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(x.estimated_minutes)) + '</span>' : '') + '</div></div>'
@@ -234,7 +236,7 @@
       if (WIDGET_COL[k] === 'side') side += W[k]; else main += W[k];
     });
     if (!ranked.length && !all.length && !main) main = '<section class=card>' + empty('today') + '</section>';
-    $('content').innerHTML = hero + '<div class=home-grid><div class=home-col>' + main + '</div><div class=home-col>' + side + '</div></div>';
+    $('content').innerHTML = hero + (rw.prompt ? rw.prompt(rt) : '') + '<div class=home-grid><div class=home-col>' + main + '</div><div class=home-col>' + side + '</div></div>';
   };
 
   // Hide / reorder the Today widgets; saved per user.
@@ -282,6 +284,7 @@
     return '<div class=card><div class=head><h2>' + esc(T('weekly_title')) + '</h2><span class=muted>' + esc(t('range', { from: fmt(w.period_start + 'T12:00:00Z'), to: fmt(w.period_end + 'T12:00:00Z') })) + '</span></div>'
       + '<div class=statgrid>' + cell('weekly_completed', num(m.completed)) + cell('weekly_missed', num(m.missed)) + cell('weekly_rescheduled', num(m.rescheduled))
       + cell('weekly_planned', w.metrics_text.planned) + cell('weekly_actual', w.metrics_text.actual) + cell('weekly_skipped', num(m.skipped_occurrences)) + '</div>'
+      + (window.ritualWidgets ? ritualWidgets.weekly(m) : '')
       + '<div class=grid2><div><h3>' + esc(T('weekly_blockers')) + '</h3>' + (w.blockers_text.length ? '<ul>' + w.blockers_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '<p class=muted>' + esc(T('weekly_no_blockers')) + '</p>')
       + '<h3>' + esc(T('weekly_projects')) + '</h3>' + ((m.projects_attention || []).length ? '<ul>' + m.projects_attention.map(p => '<li>' + esc(p.title) + ' — ' + esc(T('weekly_project_line', { overdue: num(p.overdue), missed: num(p.missed) })) + '</li>').join('') + '</ul>' : '<p class=muted>—</p>') + '</div>'
       + '<div><h3>' + esc(T('weekly_recs')) + '</h3><ul>' + w.recommendations_text.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'

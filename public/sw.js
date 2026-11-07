@@ -3,8 +3,8 @@
  * Private data is never cached: API responses, dashboard HTML, account, billing and admin pages
  * always go to the network. Logging out clears these caches (Clear-Site-Data: "cache").
  */
-const VERSION = 'hp-shell-v3';
-const SHELL = ['/offline', '/js/planner-calendar.js', '/js/planner-ai.js', '/js/planner-growth.js', '/js/planner-filters.js', '/fonts/vazirmatn/Vazirmatn-wght.woff2',
+const VERSION = 'hp-shell-v4';
+const SHELL = ['/offline', '/js/planner-calendar.js', '/js/planner-ai.js', '/js/planner-growth.js', '/js/planner-filters.js', '/js/planner-rituals.js', '/fonts/vazirmatn/Vazirmatn-wght.woff2',
   '/fonts/poppins/poppins-latin-400-normal.woff2', '/fonts/poppins/poppins-latin-700-normal.woff2', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {

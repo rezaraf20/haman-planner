@@ -68,6 +68,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{color:va
 <div class="field"><label>{{ __('settings.planning_buffer_percent') }}</label><input type="number" name="planning_buffer_percent" min="0" max="60" value="{{ $prefs['planning_buffer_percent'] }}" required><div class="help">{{ __('settings.planning_buffer_help') }}</div></div>
 </div>
 <label class="check"><input type="checkbox" name="calendar_blocks_planning" value="1" @checked($prefs['calendar_blocks_planning'])> {{ __('settings.calendar_blocks_planning') }}</label>
+<label class="check"><input type="checkbox" name="rituals_enabled" value="1" @checked($prefs['rituals_enabled'])> {{ __('settings.rituals_enabled') }}</label>
 <button class="btn primary">{{ __('settings.save_planning') }}</button>
 </form>
 </div>

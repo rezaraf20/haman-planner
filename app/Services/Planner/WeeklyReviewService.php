@@ -74,6 +74,7 @@ final class WeeklyReviewService
             'blockers' => $patterns['top_reasons'], 'blockers_enough_data' => $patterns['enough_data'],
             'most_common_missed_reason' => $patterns['missed']['most_common'],
             'projects_attention' => $projects,
+            'rituals' => app(RitualService::class)->weekStats($user, $start, $end),
         ];
     }
 
@@ -101,6 +102,10 @@ final class WeeklyReviewService
                 $out[] = ['key' => 'pad_estimates', 'params' => ['low' => $i['params']['low'], 'high' => $i['params']['high']]];
                 break;
             }
+        }
+        $r = $m['rituals'] ?? null;
+        if ($r && $r['top3_picked'] >= 6 && $r['top3_rate'] !== null && $r['top3_rate'] < 50) {
+            $out[] = ['key' => 'smaller_top3', 'params' => ['percent' => $r['top3_rate']]];
         }
         if ($out === []) {
             $out[] = ['key' => 'keep_going', 'params' => []];
@@ -148,7 +153,7 @@ final class WeeklyReviewService
         try {
             $r = AIProviderFactory::make()->chat([
                 ['role' => 'system', 'content' => 'You are Haman AI. Summarise the user\'s week in at most 90 words using ONLY these metrics and recommendation codes. Do not invent numbers, tasks or causes; if a metric is zero or missing, do not speculate. Return JSON {"summary": string}. Write in '.AIPlannerService::responseLanguage($user).'.'],
-                ['role' => 'user', 'content' => json_encode(['metrics' => $m, 'recommendations' => array_column($recs, 'key')], JSON_UNESCAPED_UNICODE)],
+                ['role' => 'user', 'content' => json_encode(['metrics' => $this->forAi($m), 'recommendations' => array_column($recs, 'key')], JSON_UNESCAPED_UNICODE)],
             ], ['temperature' => 0.2, 'response_format' => ['type' => 'json_object'], '_feature' => 'weekly_review']);
             $out = json_decode((string) ($r['choices'][0]['message']['content'] ?? ''), true);
             AiInteraction::create(['user_id' => $user->id, 'provider' => AIProviderFactory::lastUsed()['provider'], 'model' => AIProviderFactory::lastUsed()['model'],
@@ -161,6 +166,16 @@ final class WeeklyReviewService
             Log::warning('Weekly review AI summary failed', ['request_id' => $requestId, 'error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /** Metrics without the user's free-text reflections (only counts go to the AI). */
+    private function forAi(array $m): array
+    {
+        if (isset($m['rituals']['wins'])) {
+            $m['rituals']['wins_count'] = count($m['rituals']['wins']);
+            unset($m['rituals']['wins']);
+        }
+        return $m;
     }
 
     /** Localized, display-ready review (metrics always included). */

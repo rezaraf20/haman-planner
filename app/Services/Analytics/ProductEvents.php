@@ -35,12 +35,14 @@ final class ProductEvents
     public const FIRST_HABIT = 'first_habit';
     public const FIRST_HABIT_CHECKIN = 'first_habit_checkin';
     public const FIRST_FOCUS_SESSION = 'first_focus_session';
+    public const FIRST_MORNING_PLAN = 'first_morning_plan';
+    public const FIRST_SHUTDOWN = 'first_shutdown';
 
     /** Activation / conversion funnel in order (shown in Admin → Overview). */
     public const FUNNEL = [
         self::REGISTERED, self::ONBOARDING_STARTED, self::ONBOARDING_COMPLETED, self::FIRST_GOAL, self::FIRST_PROJECT, self::FIRST_TASK,
         self::FIRST_TASK_COMPLETED, self::FIRST_AI_REQUEST, self::FIRST_PLAN_GENERATED, self::FIRST_PLAN_APPLIED,
-        self::FIRST_HABIT, self::FIRST_HABIT_CHECKIN, self::FIRST_FOCUS_SESSION,
+        self::FIRST_HABIT, self::FIRST_HABIT_CHECKIN, self::FIRST_FOCUS_SESSION, self::FIRST_MORNING_PLAN, self::FIRST_SHUTDOWN,
         self::TELEGRAM_CONNECTED, self::CALENDAR_CONNECTED, self::TRIAL_STARTED, self::CHECKOUT_STARTED,
         self::SUBSCRIPTION_STARTED, self::SUBSCRIPTION_UPGRADED, self::SUBSCRIPTION_CANCELED,
     ];

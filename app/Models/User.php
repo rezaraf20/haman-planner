@@ -33,6 +33,7 @@ final class User extends Authenticatable
         'email_product_updates' => true,   // onboarding tips and inactivity reminders
         'theme' => 'system',               // system | light | dark
         'dashboard_layout' => null,        // {order: [...], hidden: [...]} — Today widgets
+        'rituals_enabled' => true,         // morning planning / evening shutdown prompts on Today
         // Focus Mode (Pomodoro)
         'focus_minutes' => 25,
         'focus_break_minutes' => 5,

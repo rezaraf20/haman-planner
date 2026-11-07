@@ -8,6 +8,7 @@ return [
         'address_blocker' => 'The most common blocker was “:reason” — define one preventive step for it.',
         'project_attention' => 'Project “:project” has overdue work — review it.',
         'pad_estimates' => 'Estimates are usually :low–:high% too short — size new tasks accordingly.',
+        'smaller_top3' => 'You finished only :percent% of your morning top-3 picks — choose fewer or smaller tasks each morning.',
         'keep_going' => 'Keep your current routine and keep logging actual time.',
     ],
 ];

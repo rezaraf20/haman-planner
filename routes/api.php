@@ -125,6 +125,12 @@ Route::middleware([
     Route::get('/planning/week', [\App\Http\Controllers\Api\PlanningController::class, 'week']);
     Route::get('/planning/today', [\App\Http\Controllers\Api\PlanningController::class, 'today']);
     Route::post('/planning/layout', [\App\Http\Controllers\Api\PlanningController::class, 'saveLayout']);
+    Route::get('/rituals', [\App\Http\Controllers\Api\RitualController::class, 'index']);
+    Route::get('/rituals/morning', [\App\Http\Controllers\Api\RitualController::class, 'morning']);
+    Route::post('/rituals/morning', [\App\Http\Controllers\Api\RitualController::class, 'saveMorning']);
+    Route::get('/rituals/evening', [\App\Http\Controllers\Api\RitualController::class, 'evening']);
+    Route::post('/rituals/evening', [\App\Http\Controllers\Api\RitualController::class, 'saveEvening']);
+    Route::post('/rituals/{kind}/skip', [\App\Http\Controllers\Api\RitualController::class, 'skip']);
     Route::get('/planning/insights', [\App\Http\Controllers\Api\PlanningController::class, 'insights']);
     Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1,a-reviews-weekly');
     Route::get('/reviews/{review}/details', [\App\Http\Controllers\Api\PlanningController::class, 'showReview']);
