@@ -67,6 +67,16 @@ Route::middleware([
         ->whereIn('action', ['complete', 'reopen', 'cancel', 'archive', 'unarchive']);
     Route::get('/{kind}/{id}/open-tasks', [\App\Http\Controllers\Api\LifecycleController::class, 'openTasks'])
         ->whereIn('kind', ['goals', 'projects', 'milestones', 'areas'])->whereNumber('id');
+    // Tags & saved filters
+    Route::get('/tags', [\App\Http\Controllers\Api\TagController::class, 'index']);
+    Route::post('/tags', [\App\Http\Controllers\Api\TagController::class, 'store']);
+    Route::put('/tags/{tag}', [\App\Http\Controllers\Api\TagController::class, 'update'])->whereNumber('tag');
+    Route::delete('/tags/{tag}', [\App\Http\Controllers\Api\TagController::class, 'destroy'])->whereNumber('tag');
+    Route::get('/filters', [\App\Http\Controllers\Api\TagController::class, 'filters']);
+    Route::post('/filters', [\App\Http\Controllers\Api\TagController::class, 'storeFilter']);
+    Route::post('/filters/parse', [\App\Http\Controllers\Api\TagController::class, 'parse'])->middleware('throttle:20,1');
+    Route::put('/filters/{savedFilter}', [\App\Http\Controllers\Api\TagController::class, 'updateFilter'])->whereNumber('savedFilter');
+    Route::delete('/filters/{savedFilter}', [\App\Http\Controllers\Api\TagController::class, 'destroyFilter'])->whereNumber('savedFilter');
     // Focus Mode
     Route::get('/focus', [\App\Http\Controllers\Api\FocusController::class, 'state']);
     Route::post('/focus/start', [\App\Http\Controllers\Api\FocusController::class, 'start'])->middleware('throttle:30,1');
@@ -113,6 +123,8 @@ Route::middleware([
     Route::post('/planning/proposals/{planProposal}/dismiss', [\App\Http\Controllers\Api\PlanningController::class, 'dismiss']);
     Route::get('/planning/what-now', [\App\Http\Controllers\Api\PlanningController::class, 'whatNow']);
     Route::get('/planning/week', [\App\Http\Controllers\Api\PlanningController::class, 'week']);
+    Route::get('/planning/today', [\App\Http\Controllers\Api\PlanningController::class, 'today']);
+    Route::post('/planning/layout', [\App\Http\Controllers\Api\PlanningController::class, 'saveLayout']);
     Route::get('/planning/insights', [\App\Http\Controllers\Api\PlanningController::class, 'insights']);
     Route::post('/reviews/weekly', [\App\Http\Controllers\Api\PlanningController::class, 'weeklyReview'])->middleware('throttle:10,1,a-reviews-weekly');
     Route::get('/reviews/{review}/details', [\App\Http\Controllers\Api\PlanningController::class, 'showReview']);

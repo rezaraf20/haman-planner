@@ -27,3 +27,20 @@ Accessibility: visible `:focus-visible` ring, skip link, `aria-current` on navig
 closes dialogs and the mobile drawer, `prefers-reduced-motion` disables animation.
 
 Dark mode: tokens are prepared under `:root[data-theme="dark"]` but not switched on yet.
+
+## Themes (light / dark / system)
+
+- The mode is a user preference (`preferences.theme`: `system` | `light` | `dark`, default `system`), saved by `POST /settings/theme` and read with `App\Support\Theme::current()`.
+- Every layout (`planner/dashboard`, `layouts/page`, `auth/layout`) renders `<html data-theme="…">` plus `<meta name="color-scheme">`, so the right palette is applied on first paint without a flash.
+- `:root` holds the light tokens; `:root[data-theme="dark"]` and `@media (prefers-color-scheme: dark) { :root[data-theme="system"] }` override them. Components use tokens only, never raw colours.
+- Tokens added for dark mode: `--primary-bg` / `--on-primary` (primary buttons, brand mark), `--toast-bg`, `--scrim`, `--side-bg`, `--habit`, `--focus`, `--goal`, `--heat-0..4`, `--chart-*`.
+- Primary is indigo (`--accent`), used for the main action and the active state; teal/green is used for success and habits. Avoid large tinted surfaces.
+
+## Home dashboard widgets
+
+`GET /api/planning/today` returns the day summary (completed / remaining / overdue, percent — `null` when there is nothing to measure — estimated vs. logged minutes, open goals, an over-planning insight that appears only with at least 3 comparable days) and the user's layout.
+Widgets: `now, progress, schedule, priorities, focus, habits, goals, week, insight`. The user can hide and reorder them (`POST /api/planning/layout`); widgets added in later versions are appended automatically.
+
+## Sidebar
+
+Groups: overview, planning, growth, analysis, system, plus a collapsible "more" section. The sidebar can be collapsed to icons (remembered in the browser). `/` focuses search.

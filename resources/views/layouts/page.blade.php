@@ -1,10 +1,11 @@
 @php($brand = \App\Support\AppSettings::all())
 <!doctype html>
-<html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}" data-theme="{{ \App\Support\Theme::current() }}">
 <head>
 @include('partials.fonts')
 @include('partials.pwa')
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
@@ -14,7 +15,7 @@
 .top .in{max-width:1440px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .top .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink-900);text-decoration:none}
 .top .brand img{height:28px;max-width:120px;object-fit:contain}
-.top .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:14px}
+.top .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--primary-bg);color:var(--on-primary);display:grid;place-items:center;font-size:14px}
 .top nav{display:flex;gap:2px;flex-wrap:wrap;margin-inline-start:auto;align-items:center}
 .top nav a,.top nav button{color:var(--text-2);padding:7px 11px;border-radius:var(--r);background:none;border:0;font-weight:var(--w-medium);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 .top nav a:hover,.top nav button:hover{background:var(--surface-3);color:var(--text);text-decoration:none}

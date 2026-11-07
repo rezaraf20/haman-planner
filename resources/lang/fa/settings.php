@@ -80,4 +80,9 @@ return [
     'verification_sent' => 'لینک تأیید به :email ارسال شد.',
     'email_verified' => 'آدرس ایمیل شما تأیید شد. سپاس!',
     'email_already_verified' => 'آدرس ایمیل شما قبلاً تأیید شده است.',
+    'appearance' => 'ظاهر',
+    'theme_system' => 'مثل دستگاه',
+    'theme_light' => 'روشن',
+    'theme_dark' => 'تیره',
+    'appearance_help' => '«مثل دستگاه» خودکار با تنظیم روشن/تیره‌ی گوشی یا کامپیوتر شما عوض می‌شود.',
 ];

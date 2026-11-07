@@ -27,6 +27,7 @@ return [
         'review' => 'Review',
     ],
     'fields' => [
+        'tags' => 'Tags',
         'name' => 'Name',
         'title' => 'Title',
         'type' => 'Type',

@@ -31,6 +31,8 @@ final class User extends Authenticatable
         // Non-essential email (transactional/security email is always sent)
         'email_weekly_review' => false,
         'email_product_updates' => true,   // onboarding tips and inactivity reminders
+        'theme' => 'system',               // system | light | dark
+        'dashboard_layout' => null,        // {order: [...], hidden: [...]} — Today widgets
         // Focus Mode (Pomodoro)
         'focus_minutes' => 25,
         'focus_break_minutes' => 5,

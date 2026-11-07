@@ -159,7 +159,7 @@
     const s = FS.stats || { days: [] }, max = Math.max(1, ...s.days.map(d => d.minutes));
     const wd = d => new Date(d + 'T12:00:00Z').toLocaleDateString(INTL, { weekday: 'short', timeZone: 'UTC' });
     return '<section class="card"><div class="head"><h2>' + esc(F('week')) + '</h2></div>'
-      + '<div class="statgrid"><div><span class="muted small">' + esc(F('today')) + '</span><b>' + esc(mins(s.today_minutes || 0)) + '</b><span class="muted small">' + esc(num(s.today_sessions || 0) + ' ' + F('sessions')) + '</span></div>'
+      + '<div class="fstats"><div><span class="muted small">' + esc(F('today')) + '</span><b>' + esc(mins(s.today_minutes || 0)) + '</b><span class="muted small">' + esc(num(s.today_sessions || 0) + ' ' + F('sessions')) + '</span></div>'
       + '<div><span class="muted small">' + esc(F('deep_work')) + '</span><b>' + esc(mins(s.total_minutes || 0)) + '</b><span class="muted small">' + esc(num(s.sessions || 0) + ' ' + F('sessions')) + '</span></div>'
       + '<div><span class="muted small">' + esc(F('average')) + '</span><b>' + esc(s.average_minutes ? mins(s.average_minutes) : '—') + '</b></div></div>'
       + '<div class="fbars" role="img" aria-label="' + esc(F('week')) + '">' + s.days.map(d => '<div class="fbar" title="' + esc(fmt(d.date + 'T12:00:00Z') + ' · ' + mins(d.minutes)) + '"><i style="height:' + Math.round(d.minutes / max * 100) + '%"></i><span>' + esc(wd(d.date)) + '</span></div>').join('') + '</div></section>';
@@ -402,7 +402,7 @@
       : '<p class="muted small" style="margin:4px 0 0">' + esc(HB('no_missed')) + '</p>';
     const notes = (hist.entries || []).slice(-5).reverse().map(e => '<li><span class="muted">' + esc(fmt(e.entry_date + 'T12:00:00Z')) + '</span> — ' + esc(e.note) + '</li>').join('');
     modal((h.icon ? h.icon + ' ' : '') + h.title,
-      '<div class="statgrid"><div><span class="muted small">' + esc(HB('streak')) + '</span><b>' + esc(HB(h.streak_unit === 'weeks' ? 'weeks' : 'days', { n: num(h.current_streak) })) + '</b></div>'
+      '<div class="fstats"><div><span class="muted small">' + esc(HB('streak')) + '</span><b>' + esc(HB(h.streak_unit === 'weeks' ? 'weeks' : 'days', { n: num(h.current_streak) })) + '</b></div>'
       + '<div><span class="muted small">' + esc(HB('longest')) + '</span><b>' + esc(HB(h.streak_unit === 'weeks' ? 'weeks' : 'days', { n: num(h.longest_streak) })) + '</b></div>'
       + '<div><span class="muted small">' + esc(HB('month_rate')) + '</span><b>' + esc(h.month_rate == null ? '—' : num(h.month_rate) + '%') + '</b></div></div>'
       + '<h3 class="small muted" style="margin:14px 0 6px">' + esc(HB('history')) + '</h3>' + heatmap(hist.days, { label: HB('history') })
@@ -488,17 +488,6 @@
       + '<button class="btn primary small" onclick="loadView(\'focus\')">' + ic('play') + esc(F('start')) + '</button></section>';
   }
 
-  // Add the widgets to the "Today" page after it renders.
-  const baseToday = window.today;
-  if (typeof baseToday === 'function') {
-    window.today = async function () {
-      const widgets = Promise.all([habitWidget(), focusWidget()]);
-      await baseToday.apply(this, arguments);
-      const [hw, fw] = await widgets;
-      if (view !== 'today') return;
-      const cols = document.querySelectorAll('#content .home-grid > div');
-      if (cols.length === 2) { cols[1].insertAdjacentHTML('afterbegin', fw + hw); }
-      else { $('content').insertAdjacentHTML('beforeend', '<div class="home-grid"><div style="display:grid;gap:16px">' + hw + '</div><div>' + fw + '</div></div>'); }
-    };
-  }
+  // Widgets for the "Today" page (assembled by planner-ai.js, which handles order/visibility).
+  window.growthWidgets = { habits: habitWidget, focus: focusWidget };
 })();

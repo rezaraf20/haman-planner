@@ -109,6 +109,15 @@ final class AccountController extends Controller
     }
 
     /** Working days/hours, default durations and the planning buffer used by time blocking. */
+    /** Appearance: system / light / dark. Works from a form (redirect) or fetch (JSON). */
+    public function theme(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $mode = $request->validate(['theme' => ['required', \Illuminate\Validation\Rule::in(\App\Support\Theme::MODES)]])['theme'];
+        $user = $request->user();
+        $user->update(['preferences' => array_merge((array) $user->preferences, ['theme' => $mode])]);
+        return $request->expectsJson() ? response()->json(['theme' => $mode]) : back()->with('status', __('settings.preferences_saved'));
+    }
+
     public function planning(Request $request): RedirectResponse
     {
         $data = $request->validate([

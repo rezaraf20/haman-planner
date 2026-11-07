@@ -23,6 +23,17 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{color:va
 
 @unless ($user->email_verified_at)<form id="verify-email-form" method="post" action="{{ route('email.verification.send') }}" hidden>@csrf</form>@endunless
 
+<form class="card" method="post" action="{{ route('account.theme') }}">@csrf
+<h2>{{ __('settings.appearance') }}</h2>
+<div class="theme-pick" role="radiogroup" aria-label="{{ __('settings.appearance') }}">
+@foreach(\App\Support\Theme::MODES as $mode)
+<label class="theme-opt t-{{ $mode }}"><input type="radio" name="theme" value="{{ $mode }}" @checked(\App\Support\Theme::current() === $mode) onchange="this.form.submit()"><span class="swatch" aria-hidden="true"></span><span>{{ __('settings.theme_'.$mode) }}</span></label>
+@endforeach
+</div>
+<div class="help">{{ __('settings.appearance_help') }}</div>
+<noscript><button class="btn primary">{{ __('common.save') }}</button></noscript>
+</form>
+
 <form class="card" method="post" action="{{ route('account.preferences') }}">@csrf
 <h2>{{ __('settings.preferences') }}</h2>
 <div class="field"><label>{{ __('settings.language') }}</label>

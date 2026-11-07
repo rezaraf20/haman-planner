@@ -1,10 +1,11 @@
 @php($brand = \App\Support\AppSettings::all())
 <!doctype html>
-<html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ \App\Support\Locales::dir() }}" data-theme="{{ \App\Support\Theme::current() }}">
 <head>
 @include('partials.fonts')
 @include('partials.pwa')
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>@yield('title') | {{ $brand['app_name'] }}</title>
 <link rel="stylesheet" href="{{ asset('css/haman.css') }}?v={{ @filemtime(public_path('css/haman.css')) }}">
@@ -14,7 +15,7 @@ body{min-height:100vh;display:grid;place-items:center;padding:32px 16px;backgrou
 .auth .card{padding:32px;box-shadow:var(--shadow-1)}
 .auth .head{align-items:flex-start;margin-bottom:0}
 .logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--ink-900)}
-.logo .mark{width:32px;height:32px;border-radius:9px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:15px}
+.logo .mark{width:32px;height:32px;border-radius:9px;background:var(--primary-bg);color:var(--on-primary);display:grid;place-items:center;font-size:15px}
 .sub{color:var(--text-3);margin:10px 0 22px;line-height:1.8}
 .auth .field{margin:0 0 14px}
 .auth .btn{width:100%;min-height:42px}

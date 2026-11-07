@@ -67,8 +67,10 @@ final class PlanningController extends Controller
         $r = $ranker->whatNow($user);
         $loc = $user->preferredLocale();
         $tz = $user->preferredTimezone();
+        $projects = \App\Models\Project::query()->whereIn('id', array_filter(array_column($r['ranked'], 'project_id')))->pluck('title', 'id');
         foreach ($r['ranked'] as &$t) {
             $t['reasons_text'] = array_map(fn ($x) => $this->assistant->reasonText($x, $loc, $tz), $t['reasons']);
+            $t['project_title'] = isset($t['project_id']) ? ($projects[$t['project_id']] ?? null) : null;
         }
         unset($t);
         $r['remaining_text'] = \App\Services\Planner\SchedulingService::duration($r['remaining_work_minutes_today'], $loc);
@@ -117,6 +119,84 @@ final class PlanningController extends Controller
             'actual_text' => \App\Services\Planner\SchedulingService::duration($actual, $loc),
             'overdue' => $overdue, 'overdue_count' => $overdueCount, 'due_soon_unscheduled' => $soon,
         ]);
+    }
+
+    /**
+     * Numbers for the "Today" dashboard, all in the user's timezone and all from real records:
+     * tasks done/remaining today, estimated vs logged minutes, active goal progress, and at most
+     * one planning insight — only when there are enough days of data to be meaningful.
+     */
+    public function today(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $loc = $user->preferredLocale();
+        $now = CarbonImmutable::now($user->preferredTimezone());
+        [$s, $e] = [LocalDate::db($now->startOfDay()), LocalDate::db($now->endOfDay())];
+        $tasks = fn () => \App\Models\Task::query()->ownedBy($user->id);
+
+        $doneToday = $tasks()->where('status', 'completed')->whereBetween('completed_at', [$s, $e]);
+        $remaining = $tasks()->whereNotIn('status', ['completed', 'cancelled'])
+            ->where(fn ($q) => $q->whereBetween('deadline', [$s, $e])->orWhereBetween('planned_start', [$s, $e])
+                ->orWhereIn('id', \App\Models\ScheduleBlock::query()->ownedBy($user->id)->whereNotNull('task_id')->whereBetween('starts_at', [$s, $e])->select('task_id')));
+        $done = (clone $doneToday)->count();
+        $left = (clone $remaining)->count();
+        $estimated = (int) (clone $remaining)->sum('estimated_minutes') + (int) (clone $doneToday)->sum('estimated_minutes');
+        $logged = (int) \App\Models\ExecutionLog::query()->ownedBy($user->id)->whereBetween('started_at', [$s, $e])->sum('duration_minutes');
+        $overdue = $tasks()->whereNotIn('status', ['completed', 'cancelled'])->whereNotNull('deadline')->where('deadline', '<', $s)->count();
+
+        $goals = \App\Models\Goal::query()->ownedBy($user->id)->open()
+            ->orderByRaw('target_date asc nulls last')->orderByDesc('importance')->limit(4)
+            ->get(['id', 'title', 'progress', 'target_date', 'status']);
+
+        // Planning insight: last 7 full days, only days that had scheduled work and logged work.
+        // Past days do not change, so the result is cached per user and day.
+        $insight = \Illuminate\Support\Facades\Cache::remember('dash-insight:'.$user->id.':'.$now->toDateString(), 3600, function () use ($user, $now, $loc) {
+            $scheduling = app(\App\Services\Planner\SchedulingService::class);
+            $days = 0; $plannedSum = 0; $loggedSum = 0;
+            for ($d = $now->startOfDay()->subDays(7); $d->lt($now->startOfDay()); $d = $d->addDay()) {
+                $p = $scheduling->dayCapacity($user, $d)['scheduled_minutes'];
+                $l = (int) \App\Models\ExecutionLog::query()->ownedBy($user->id)->whereBetween('started_at', [LocalDate::db($d), LocalDate::db($d->endOfDay())])->sum('duration_minutes');
+                if ($p > 0 && $l > 0) { $days++; $plannedSum += $p; $loggedSum += $l; }
+            }
+            if ($days >= 3 && $plannedSum > $loggedSum * 1.25) {
+                return ['type' => 'overplanning', 'days' => $days,
+                    'planned_text' => \App\Services\Planner\SchedulingService::duration((int) round($plannedSum / $days), $loc),
+                    'actual_text' => \App\Services\Planner\SchedulingService::duration((int) round($loggedSum / $days), $loc)];
+            }
+            return null;
+        });
+
+        return response()->json([
+            'completed' => $done, 'remaining' => $left, 'overdue' => $overdue,
+            'percent' => $done + $left > 0 ? (int) round($done / ($done + $left) * 100) : null,
+            'estimated_minutes' => $estimated, 'logged_minutes' => $logged,
+            'estimated_text' => \App\Services\Planner\SchedulingService::duration($estimated, $loc),
+            'logged_text' => \App\Services\Planner\SchedulingService::duration($logged, $loc),
+            'goals' => $goals,
+            'insight' => $insight,
+            'layout' => self::dashboardLayout($user),
+        ]);
+    }
+
+    public const WIDGETS = ['now', 'progress', 'schedule', 'priorities', 'focus', 'habits', 'goals', 'week', 'insight'];
+
+    public static function dashboardLayout(\App\Models\User $user): array
+    {
+        $saved = (array) ($user->preference('dashboard_layout') ?? []);
+        $order = array_values(array_filter((array) ($saved['order'] ?? []), fn ($w) => in_array($w, self::WIDGETS, true)));
+        foreach (self::WIDGETS as $w) if (!in_array($w, $order, true)) $order[] = $w; // new widgets appear automatically
+        return ['order' => $order, 'hidden' => array_values(array_intersect((array) ($saved['hidden'] ?? []), self::WIDGETS))];
+    }
+
+    public function saveLayout(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order' => 'required|array|max:20', 'order.*' => ['string', \Illuminate\Validation\Rule::in(self::WIDGETS)],
+            'hidden' => 'present|array|max:20', 'hidden.*' => ['string', \Illuminate\Validation\Rule::in(self::WIDGETS)],
+        ]);
+        $user = $request->user();
+        $user->update(['preferences' => array_merge((array) $user->preferences, ['dashboard_layout' => ['order' => array_values(array_unique($data['order'])), 'hidden' => array_values(array_unique($data['hidden']))]])]);
+        return response()->json(self::dashboardLayout($user->refresh()));
     }
 
     public function insights(Request $request, PlanInsightsService $insights): JsonResponse

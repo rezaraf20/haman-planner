@@ -82,6 +82,7 @@ Route::middleware(['auth', TrackLastSeen::class])->group(function (): void {
     Route::post('/settings/preferences', [AccountController::class, 'preferences'])->name('account.preferences');
     Route::post('/settings/security/password', [AccountController::class, 'password'])->name('account.password');
     Route::post('/settings/planning', [AccountController::class, 'planning'])->name('account.planning');
+    Route::post('/settings/theme', [AccountController::class, 'theme'])->name('account.theme');
     Route::post('/settings/email/verification', [\App\Http\Controllers\EmailVerificationController::class, 'send'])->middleware('throttle:3,10,w-email-verification-send')->name('email.verification.send');
     Route::get('/settings/calendar/{provider}/connect', [\App\Http\Controllers\CalendarController::class, 'connect'])->whereIn('provider', ['google'])->name('calendar.connect');
     Route::get('/settings/calendar/{provider}/callback', [\App\Http\Controllers\CalendarController::class, 'callback'])->whereIn('provider', ['google'])->name('calendar.callback');

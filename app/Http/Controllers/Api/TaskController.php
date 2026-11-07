@@ -36,7 +36,21 @@ final class TaskController extends Controller
             'state' => 'nullable|in:open,closed,all',
             'failed' => 'nullable|boolean',
             'hide_future' => 'nullable|boolean',
+            'smart' => ['nullable', \Illuminate\Validation\Rule::in(array_keys(\App\Services\Planner\TaskFilter::PRESETS))],
+            'filter' => 'nullable|string|max:2000',
+            'tag' => 'nullable|integer',
         ]);
+        // Smart list / saved or custom filter (validated definition, applied with the query builder).
+        $filters = app(\App\Services\Planner\TaskFilter::class);
+        $definition = null;
+        if (!empty($data['smart']) || !empty($data['filter']) || !empty($data['tag'])) {
+            $raw = !empty($data['filter']) ? json_decode($data['filter'], true) : [];
+            if (!is_array($raw)) throw \Illuminate\Validation\ValidationException::withMessages(['filter' => __('filters.invalid')]);
+            if (!empty($data['smart'])) $raw = array_merge(\App\Services\Planner\TaskFilter::PRESETS[$data['smart']], $raw);
+            if (!empty($data['tag'])) $raw['tags'] = array_values(array_unique(array_merge((array) ($raw['tags'] ?? []), [(int) $data['tag']])));
+            if (isset($data['state']) && !isset($raw['state'])) $raw['state'] = $data['state'];
+            $definition = $filters->validate($raw, $request->user());
+        }
 
         // Recurring occurrences further ahead than tomorrow clutter the list; they appear when due.
         $horizon = now($request->user()?->timezone ?: config('app.timezone'))->addDay()->endOfDay()->utc();
@@ -44,7 +58,8 @@ final class TaskController extends Controller
             ->whereRaw('COALESCE(planned_start, deadline) > ?', [$horizon]);
         $hideFuture = (bool) ($data['hide_future'] ?? false);
 
-        $tasks = Task::query()->with(['goal', 'project', 'milestone'])
+        $tasks = Task::query()->with(['goal', 'project', 'milestone', 'tags:id,name,color'])
+            ->when($definition !== null, fn ($q) => $filters->apply($q, $definition, $request->user()))
             ->when(($data['state'] ?? null) === 'open', fn ($q) => $q->whereNotIn('status', ['completed', 'cancelled']))
             ->when(($data['state'] ?? null) === 'closed', fn ($q) => $q->whereIn('status', ['completed', 'cancelled']))
             ->when($hideFuture, fn ($q) => $q->whereNot(fn ($w) => $future($w)))
@@ -102,14 +117,36 @@ final class TaskController extends Controller
         ]);
 
         $task = $this->planner->createTask($data);
+        $this->syncTags($request, $task);
         $this->progressPropagation->recalculateFromTask($task);
 
-        return response()->json($task->refresh(), 201);
+        return response()->json($task->refresh()->load('tags:id,name,color'), 201);
     }
 
     public function show(Task $task): JsonResponse
     {
-        return response()->json($task->load(['goal', 'project', 'milestone', 'children']));
+        return response()->json($task->load(['goal', 'project', 'milestone', 'children', 'tags:id,name,color']));
+    }
+
+    /** tag_ids: existing tags (must be the user's); new_tags: names to create (or reuse, case-insensitive). */
+    private function syncTags(Request $request, Task $task): void
+    {
+        if (!$request->has('tag_ids') && !$request->has('new_tags')) return;
+        $data = $request->validate([
+            'tag_ids' => 'nullable|array|max:20', 'tag_ids.*' => 'integer',
+            'new_tags' => 'nullable|array|max:10', 'new_tags.*' => ['string', 'max:40', 'regex:/^[^,#<>]+$/u'],
+        ]);
+        $ids = array_map('intval', $data['tag_ids'] ?? []);
+        if ($ids && \App\Models\Tag::query()->whereIn('id', $ids)->count() !== count(array_unique($ids))) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['tag_ids' => __('filters.not_found')]);
+        }
+        foreach ($data['new_tags'] ?? [] as $name) {
+            $name = trim(preg_replace('/\s+/u', ' ', $name));
+            if ($name === '') continue;
+            $tag = \App\Models\Tag::query()->whereRaw('lower(name) = ?', [mb_strtolower($name)])->first() ?? \App\Models\Tag::create(['name' => $name]);
+            $ids[] = $tag->id;
+        }
+        $task->tags()->sync(array_values(array_unique($ids)));
     }
 
     /** Why a task slipped: reason (catalog code) + optional note. The task's description is left alone. */
@@ -189,6 +226,7 @@ final class TaskController extends Controller
             $this->planner->recalculatePriority($task);
         }
 
+        $this->syncTags($request, $task);
         $this->progressPropagation->recalculateFromTask($task);
 
         if ($oldMilestoneId && $oldMilestoneId !== $task->milestone_id) {
@@ -204,7 +242,7 @@ final class TaskController extends Controller
             if ($old) $this->progressPropagation->goal($old);
         }
 
-        return response()->json($task->refresh());
+        return response()->json($task->refresh()->load('tags:id,name,color'));
     }
 
     public function destroy(Task $task): JsonResponse

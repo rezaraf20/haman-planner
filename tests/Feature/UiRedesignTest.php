@@ -36,7 +36,7 @@ final class UiRedesignTest extends TestCase
             $this->assertStringContainsString('id="i-today"', $html, 'icon sprite');
             $this->assertStringContainsString('class="skip-link"', $html);
             $this->assertStringContainsString('class="tabbar"', $html, 'mobile navigation');
-            foreach (['group_today', 'group_planning', 'group_execution', 'group_analysis'] as $g) {
+            foreach (['group_overview', 'group_planning', 'group_growth', 'group_analysis', 'group_system'] as $g) {
                 $this->assertStringContainsString(e(__('app.nav.'.$g, [], $loc)), $html);
             }
             // every screen keeps its entry point

@@ -38,6 +38,7 @@ class Task extends Model
         });
     }
 
+    public function tags(): \Illuminate\Database\Eloquent\Relations\BelongsToMany { return $this->belongsToMany(Tag::class, 'task_tag'); }
     public function area(): BelongsTo { return $this->belongsTo(Area::class); }
     public function goal(): BelongsTo { return $this->belongsTo(Goal::class); }
     public function project(): BelongsTo { return $this->belongsTo(Project::class); }

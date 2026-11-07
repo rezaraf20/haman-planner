@@ -98,12 +98,19 @@
   const hm = iso => new Date(iso).toLocaleTimeString(INTL, { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
   function greeting() { const h = +tzParts(new Date()).hour; return h < 12 ? H('morning') : h < 17 ? H('afternoon') : H('evening'); }
 
+  // Widgets of the "Today" page. Users can hide and reorder them (saved per user).
+  const WIDGET_COL = { now: 'main', progress: 'main', schedule: 'main', priorities: 'main', focus: 'side', habits: 'side', goals: 'side', week: 'side', insight: 'side' };
+
   window.today = async function () {
     const p = tzParts(new Date()), d = p.year + '-' + p.month + '-' + p.day;
-    const [sch, wn, wk] = await Promise.all([
+    const growth = window.growthWidgets || {};
+    const [sch, wn, wk, td, hw, fw] = await Promise.all([
       api('/schedule?from=' + d + '&to=' + d).catch(() => null),
       api('/planning/what-now').catch(() => null),
       api('/planning/week').catch(() => null),
+      api('/planning/today').catch(() => null),
+      growth.habits ? growth.habits().catch(() => '') : '',
+      growth.focus ? growth.focus().catch(() => '') : '',
     ]);
     if (view !== 'today') return;
     const day = sch && sch.days && sch.days[0], items = (sch ? sch.items : []).slice().sort((a, b) => a.starts_at < b.starts_at ? -1 : 1);
@@ -112,33 +119,51 @@
     const ranked = wn ? wn.ranked : [], now = Date.now();
     const important = ranked.filter(x => ['p0', 'p1'].includes(x.priority) || (x.deadline && new Date(x.deadline) - now < 864e5)).length;
     const free = day && day.working ? Math.max(0, day.usable_minutes - day.scheduled_minutes) : null;
+    const layout = (td && td.layout) || { order: Object.keys(WIDGET_COL), hidden: [] };
+    window.TODAY_LAYOUT = layout;
+    const W = {};
 
     // hero
     $('title').textContent = greeting().replace(':name', USER_NAME);
-    let h = '<div class=home-hero><div><p>'
+    const hero = '<div class=home-hero><div><p>'
       + esc(ranked.length ? T('home_line', { n: num(important || ranked.length) }) : H('nothing_open'))
       + (day && day.working ? ' ' + esc(free > 0 ? T('home_free', { time: dur(free) }) : day.overload_minutes > 0 ? T('home_over', { time: dur(day.overload_minutes) }) : T('home_full')) : ' ' + esc(H('day_off')))
-      + '</p></div><div class=actions><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button></div></div>';
+      + '</p></div><div class=actions><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button>'
+      + '<button class="btn ghost icon" onclick="customizeToday()" title="' + esc(H('customize')) + '" aria-label="' + esc(H('customize')) + '">' + ic('settings') + '</button></div></div>';
 
-    // left column
-    let L = '';
+    // now
     const cur = wn && wn.now_scheduled, top = cur ? null : ranked[0];
     if (cur || top) {
-      const x = cur || top;
-      L += '<section class="card now-card" aria-labelledby=nowh><div class=eyebrow id=nowh>' + esc(cur ? H('now_scheduled') : H('now_next')) + '</div>'
+      const x = cur || top, id = cur ? cur.task_id : top.id;
+      W.now = '<section class="card now-card" aria-labelledby=nowh><div class=eyebrow id=nowh>' + esc(cur ? H('now_scheduled') : H('now_next')) + '</div>'
         + '<div class=now-title>' + esc(x.title || '') + '</div><div class=meta>'
         + (cur ? '<span>' + ic('clock', 'sm') + esc(hm(cur.starts_at) + '–' + hm(cur.ends_at)) + '</span>' : '')
         + (!cur && top.deadline ? dueMeta(top.deadline, false) : '') + (!cur && top.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(top.estimated_minutes)) + '</span>' : '')
         + (!cur && top.reasons_text && top.reasons_text.length ? '<span>' + esc(top.reasons_text[0]) + '</span>' : '') + '</div>'
-        + '<div class=actions style="margin-top:12px">' + ((cur ? cur.task_id : top.id) ? '<button class="btn primary" onclick="homeDone(' + (cur ? cur.task_id : top.id) + ',this)">' + ic('check') + esc(H('mark_done')) + '</button><button class=btn onclick="executionForm()">' + ic('timer') + esc(t('log_work')) + '</button>' : '')
-        + ((cur ? cur.task_id : top.id) && window.startFocusOn ? '<button class="btn" onclick="startFocusOn(' + (cur ? cur.task_id : top.id) + ')">' + ic('focus') + esc((I18N.focus || {}).start || 'Focus') + '</button>' : '')
+        + '<div class=actions style="margin-top:12px">' + (id ? '<button class="btn primary" onclick="homeDone(' + id + ',this)">' + ic('check') + esc(H('mark_done')) + '</button>' : '')
+        + (id && window.startFocusOn ? '<button class="btn" onclick="startFocusOn(' + id + ')">' + ic('focus') + esc((I18N.focus || {}).start || 'Focus') + '</button>' : '')
+        + (id ? '<button class=btn onclick="executionForm()">' + ic('timer') + esc(t('log_work')) + '</button>' : '')
         + '<button class="btn ghost" onclick="openPlanner(\'now\')">' + esc(H('why_this')) + '</button></div></section>';
     }
+
+    // daily progress
+    if (td) {
+      const pct = td.percent, cap = day && day.working && day.usable_minutes ? Math.min(100, Math.round(day.scheduled_minutes / day.usable_minutes * 100)) : null;
+      const stat = (k, v, cls) => '<div class="dp-stat' + (cls ? ' ' + cls : '') + '"><span>' + esc(H(k)) + '</span><b>' + esc(v) + '</b></div>';
+      W.progress = '<section class="card dp-card" aria-labelledby=dph><div class=head><h2 id=dph>' + esc(H('progress_title')) + '</h2>' + (td.overdue ? '<button class="btn ghost small late" onclick="loadView(\'tasks\')">' + ic('alert', 'sm') + esc(H('overdue_short') + ' ' + num(td.overdue)) + '</button>' : '') + '</div>'
+        + (td.completed + td.remaining ? '<div class=dp-top><div class=ring style="--p:' + (pct || 0) + '" data-label="' + esc(pct == null ? '—' : num(pct) + '%') + '" role=img aria-label="' + esc(H('progress_title') + ' ' + (pct || 0) + '%') + '"></div>'
+          + '<div class=dp-grid>' + stat('completed_today', num(td.completed), 'done') + stat('remaining_today', num(td.remaining)) + stat('estimated', td.estimated_text) + stat('logged', td.logged_text) + '</div></div>'
+          : '<p class="muted" style="margin:0 0 8px">' + esc(H('progress_empty')) + '</p><div class=dp-grid>' + stat('logged', td.logged_text) + '</div>')
+        + (cap != null ? '<div class=cap-line><span>' + esc(H('capacity_used')) + '</span><span class=num>' + esc(T('home_cap', { used: dur(day.scheduled_minutes), total: dur(day.usable_minutes) })) + '</span></div>'
+          + '<div class=progress role=progressbar aria-valuenow="' + cap + '" aria-valuemin=0 aria-valuemax=100 aria-label="' + esc(H('capacity_used')) + '"><i class="' + (day.overload_minutes > 0 ? 'danger' : cap > 90 ? 'warn' : '') + '" style="width:' + cap + '%"></i></div>' : '')
+        + '</section>';
+    }
+
     // schedule
     const all = items.map(i => ({ ...i, src: 'plan' })).concat(busy.map(b => ({ ...b, src: 'busy', kind: 'busy' }))).sort((a, b) => a.starts_at < b.starts_at ? -1 : 1);
-    L += '<section class=card aria-labelledby=schh><div class=head><h2 id=schh>' + esc(H('schedule')) + '</h2><button class="btn ghost small" data-go2=calendar onclick="loadView(\'calendar\')">' + esc(H('open_calendar')) + ic('chev', 'sm flip') + '</button></div>';
+    let S = '<section class=card aria-labelledby=schh><div class=head><h2 id=schh>' + esc(H('schedule')) + '</h2><button class="btn ghost small" data-go2=calendar onclick="loadView(\'calendar\')">' + esc(H('open_calendar')) + ic('chev', 'sm flip') + '</button></div>';
     if (all.length) {
-      L += '<div class=tl>' + all.map(i => {
+      S += '<div class=tl>' + all.map(i => {
         const doneI = i.status === 'completed', isNow = new Date(i.starts_at) <= now && new Date(i.ends_at) > now, conf = conflicts.has(keyOf(i));
         return '<div class="tl-item' + (doneI ? ' done' : '') + (isNow ? ' now' : '') + (conf ? ' conflict' : '') + '"><div class=tl-time>' + esc(hm(i.starts_at)) + '</div>'
           + '<div class="tl-bar k-' + esc(i.kind || 'task') + (i.src === 'busy' ? ' busy' : '') + '"><div class=rowtitle>' + esc(i.title || (i.src === 'busy' ? H('busy') : t('focus'))) + '</div><div class=meta><span>' + esc(hm(i.starts_at) + '–' + hm(i.ends_at)) + '</span>'
@@ -146,54 +171,86 @@
           + '<div>' + (doneI ? '<span class="pill ok">' + esc(label('completed')) + '</span>' : isNow ? '<span class="pill accent">' + esc(H('now')) + '</span>' : '') + '</div></div>';
       }).join('') + '</div>';
     } else {
-      L += '<div class=empty style="padding:20px"><p class=empty-text>' + esc(H('schedule_empty')) + '</p><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button></div>';
+      S += '<div class=empty style="padding:20px"><p class=empty-text>' + esc(H('schedule_empty')) + '</p><button class="btn" onclick="openPlanner(\'day\')">' + ic('haman') + esc(T('ai_plan_day')) + '</button></div>';
     }
-    if (day && day.working) {
-      const pct = day.usable_minutes ? Math.min(100, Math.round(day.scheduled_minutes / day.usable_minutes * 100)) : 0;
-      L += '<div class=cap-line><span>' + esc(H('capacity')) + '</span><span class=num>' + esc(T('home_cap', { used: dur(day.scheduled_minutes), total: dur(day.usable_minutes) })) + '</span></div>'
-        + '<div class=progress role=progressbar aria-valuenow="' + pct + '" aria-valuemin=0 aria-valuemax=100 aria-label="' + esc(H('capacity')) + '"><i class="' + (day.overload_minutes > 0 ? 'danger' : pct > 90 ? 'warn' : '') + '" style="width:' + pct + '%"></i></div>';
-    }
-    L += '</section>';
-    // next up
-    const rest = ranked.slice(cur ? 0 : 1, cur ? 4 : 5);
-    if (rest.length) {
-      L += '<section class=card aria-labelledby=nexth><div class=head><h2 id=nexth>' + esc(H('next_up')) + '</h2><button class="btn ghost small" onclick="loadView(\'tasks\')">' + esc(H('all_tasks')) + ic('chev', 'sm flip') + '</button></div><div class=list>'
-        + rest.map(x => '<div class="row task"><button class=check aria-pressed=false aria-label="' + esc(I18N.row.complete) + '" onclick="toggleDone(' + x.id + ',false,this)"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><div class=rowmain><div class=rowtitle>'
+    W.schedule = S + '</section>';
+
+    // top 3 priorities
+    const rest = ranked.slice(cur ? 0 : 1, cur ? 3 : 4);
+    W.priorities = '<section class=card aria-labelledby=nexth><div class=head><h2 id=nexth>' + esc(H('top3')) + '</h2><button class="btn ghost small" onclick="loadView(\'tasks\')">' + esc(H('all_tasks')) + ic('chev', 'sm flip') + '</button></div>'
+      + (rest.length ? '<div class=list>' + rest.map(x => '<div class="row task"><button class=check aria-pressed=false aria-label="' + esc(I18N.row.complete) + '" onclick="toggleDone(' + x.id + ',false,this)"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><div class=rowmain><div class=rowtitle>'
           + (['p0', 'p1'].includes(x.priority) ? '<span class="prio ' + x.priority + '" title="' + esc(label(x.priority)) + '">' + esc(String(label(x.priority)).split('—').pop().trim()) + '</span> ' : '') + esc(x.title) + '</div><div class=meta>' + dueMeta(x.deadline, false)
-          + (x.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(x.estimated_minutes)) + '</span>' : '') + '</div></div>'
-          + '<div class=rowactions>' + rowMenu([mi('edit', t('edit'), "editItem(" + x.id + ",'task')")]) + '</div></div>').join('') + '</div></section>';
+          + (x.project_title ? '<span>' + ic('project', 'sm') + esc(x.project_title) + '</span>' : '') + (x.estimated_minutes ? '<span>' + ic('timer', 'sm') + esc(dur(x.estimated_minutes)) + '</span>' : '') + '</div></div>'
+          + '<div class=rowactions>' + rowMenu([window.startFocusOn ? mi('focus', (I18N.focus || {}).start_on_task || 'Focus', 'startFocusOn(' + x.id + ')') : '', mi('edit', t('edit'), "editItem(" + x.id + ",'task')")]) + '</div></div>').join('') + '</div>'
+        : '<p class="muted" style="margin:0">' + esc(H('top3_empty')) + '</p>') + '</section>';
+
+    // goals
+    if (td) {
+      W.goals = '<section class=card aria-labelledby=goalh><div class=head><h2 id=goalh>' + ic('goal', 'sm') + ' ' + esc(H('goals_title')) + '</h2><button class="btn ghost small" onclick="loadView(\'goals\')">' + esc(H('all_goals')) + ic('chev', 'sm flip') + '</button></div>'
+        + (td.goals.length ? '<div class=goal-list>' + td.goals.map(g => {
+          const pg = Math.round(+g.progress || 0);
+          return '<div class=goal-item><div class=goal-line><b>' + esc(g.title) + '</b><span class=num>' + esc(num(pg) + '%') + '</span></div><div class="progress goal" role=progressbar aria-valuenow="' + pg + '" aria-valuemin=0 aria-valuemax=100 aria-label="' + esc(g.title) + '"><i style="width:' + pg + '%"></i></div>'
+            + (g.target_date ? '<div class="muted small">' + esc(H('due_on').replace(':date', fmt(g.target_date))) + '</div>' : '') + '</div>';
+        }).join('') + '</div>'
+          : '<p class="muted small" style="margin:0 0 10px">' + esc(H('no_goals')) + '</p><button class="btn small" onclick="openCreate(\'goal\')">' + ic('plus') + esc(H('add_goal')) + '</button>') + '</section>';
     }
 
-    // right column
-    let R = '';
+    // week
     if (wk) {
       const pct = wk.percent;
-      R += '<section class=card aria-labelledby=wkh><div class=head><h2 id=wkh>' + esc(H('week')) + '</h2><span class="muted small">' + esc(fmt(wk.week_start + 'T12:00:00Z')) + ' – ' + esc(fmt(wk.week_end + 'T12:00:00Z')) + '</span></div>'
+      W.week = '<section class=card aria-labelledby=wkh><div class=head><h2 id=wkh>' + esc(H('week')) + '</h2><span class="muted small">' + esc(fmt(wk.week_start + 'T12:00:00Z')) + ' – ' + esc(fmt(wk.week_end + 'T12:00:00Z')) + '</span></div>'
         + '<div class=week-top><div class=ring style="--p:' + (pct || 0) + '" data-label="' + esc(pct == null ? '—' : num(pct) + '%') + '" role=img aria-label="' + esc(H('week') + ' ' + (pct == null ? '—' : pct + '%')) + '"></div><div><b>' + esc(T('home_week_done', { done: num(wk.tasks_completed), total: num(wk.tasks_total) })) + '</b><div class="muted small">' + esc(pct == null ? H('week_empty') : H('week_hint')) + '</div></div></div>'
         + '<dl class=kv><dt>' + esc(H('planned')) + '</dt><dd>' + esc(wk.planned_text) + '</dd><dt>' + esc(H('actual')) + '</dt><dd>' + esc(wk.actual_text) + '</dd>'
         + '<dt>' + esc(H('overdue')) + '</dt><dd' + (wk.overdue_count ? ' style="color:var(--danger)"' : '') + '>' + esc(num(wk.overdue_count)) + '</dd></dl></section>';
     }
-    // Haman recommends: only concrete, data-backed observations
+
+    // insight / recommendation — only concrete, data-backed observations
     const recs = [];
     if (day && day.overload_minutes > 0) recs.push({ text: T('rec_over', { time: dur(day.overload_minutes) }), act: 'fix', label: H('review_suggestion') });
     if (pairs.length) recs.push({ text: T('rec_conflicts', { n: num(pairs.length) }), act: 'fix', label: H('review_suggestion') });
     if (wk && wk.due_soon_unscheduled.length) recs.push({ text: T('rec_due_soon', { n: num(wk.due_soon_unscheduled.length), title: wk.due_soon_unscheduled[0].title }), act: 'day', label: T('ai_plan_day') });
     if (wk && wk.overdue_count) recs.push({ text: T('rec_overdue', { n: num(wk.overdue_count) }), act: 'week', label: T('ai_plan_week') });
+    if (td && td.insight && td.insight.type === 'overplanning') recs.push({ text: H('insight_overplanning').replace(':days', num(td.insight.days)).replace(':planned', td.insight.planned_text).replace(':actual', td.insight.actual_text), act: 'day', label: T('ai_plan_day') });
     if (!recs.length && day && day.working && free > 60 && ranked.length) recs.push({ text: T('rec_free', { time: dur(free) }), act: 'day', label: T('ai_plan_day') });
+    let I = '';
     if (recs.length) {
       const r = recs[0];
-      R += '<section class="card suggest" aria-labelledby=sugh><div class=suggest-label id=sugh>' + ic('haman', 'sm') + esc(H('recommends')) + '</div><p style="margin:0 0 10px">' + esc(r.text) + '</p>'
+      I += '<section class="card suggest" aria-labelledby=sugh><div class=suggest-label id=sugh>' + ic('haman', 'sm') + esc(H('recommends')) + '</div><p style="margin:0 0 10px">' + esc(r.text) + '</p>'
         + (recs.length > 1 ? '<ul class="muted small" style="margin:0 0 10px">' + recs.slice(1).map(x => '<li>' + esc(x.text) + '</li>').join('') + '</ul>' : '')
         + '<button class="btn small" onclick="openPlanner(\'' + r.act + '\')">' + esc(r.label) + ic('chev', 'sm flip') + '</button><p class="muted small" style="margin:8px 0 0">' + esc(H('recommends_note')) + '</p></section>';
     }
     if (wk && wk.overdue.length) {
-      R += '<section class=card aria-labelledby=atth><div class=head><h2 id=atth>' + esc(H('attention')) + '</h2></div><div class=list>'
+      I += '<section class=card aria-labelledby=atth><div class=head><h2 id=atth>' + esc(H('attention')) + '</h2></div><div class=list>'
         + wk.overdue.map(x => '<div class=row><div class=rowmain><div class=rowtitle>' + esc(x.title) + '</div><div class=meta>' + dueMeta(x.deadline, false) + '</div></div><button class="btn ghost small" onclick="editItem(' + x.id + ',\'task\')">' + esc(t('edit')) + '</button></div>').join('') + '</div></section>';
     }
-    if (!ranked.length && !all.length) {
-      L = '<section class=card>' + empty('today') + '</section>';
-    }
-    $('content').innerHTML = h + '<div class=home-grid><div style="display:grid;gap:16px">' + L + '</div><div style="display:grid;gap:16px">' + R + '</div></div>';
+    if (I) W.insight = I;
+    if (hw) W.habits = hw;
+    if (fw) W.focus = fw;
+
+    // assemble
+    let main = '', side = '';
+    layout.order.forEach(k => {
+      if (layout.hidden.includes(k) || !W[k]) return;
+      if (WIDGET_COL[k] === 'side') side += W[k]; else main += W[k];
+    });
+    if (!ranked.length && !all.length && !main) main = '<section class=card>' + empty('today') + '</section>';
+    $('content').innerHTML = hero + '<div class=home-grid><div class=home-col>' + main + '</div><div class=home-col>' + side + '</div></div>';
+  };
+
+  // Hide / reorder the Today widgets; saved per user.
+  window.customizeToday = function () {
+    const L = window.TODAY_LAYOUT || { order: Object.keys(WIDGET_COL), hidden: [] };
+    let order = L.order.slice(), hidden = new Set(L.hidden);
+    const draw = () => '<p class="muted small">' + esc(H('customize_help')) + '</p><div class=list id=wlist>' + order.map((k, i) =>
+      '<div class=row><label class=check style="margin:0;flex:1"><input type=checkbox data-w="' + k + '"' + (hidden.has(k) ? '' : ' checked') + '> ' + esc(H('w_' + k)) + '</label>'
+      + '<button type=button class="btn ghost small icon" aria-label="' + esc(H('move_up')) + '" ' + (i ? '' : 'disabled') + ' onclick="moveWidget(' + i + ',-1)">↑</button>'
+      + '<button type=button class="btn ghost small icon" aria-label="' + esc(H('move_down')) + '" ' + (i < order.length - 1 ? '' : 'disabled') + ' onclick="moveWidget(' + i + ',1)">↓</button></div>').join('') + '</div>'
+      + '<div class=modalactions><button type=button class="btn ghost" onclick="resetTodayLayout()">' + esc(H('reset')) + '</button><button type=button class="btn primary" onclick="saveTodayLayout()">' + esc(t('save')) + '</button></div>';
+    const sync = () => document.querySelectorAll('#wlist [data-w]').forEach(c => c.checked ? hidden.delete(c.dataset.w) : hidden.add(c.dataset.w));
+    window.moveWidget = (i, dir) => { sync(); const j = i + dir; [order[i], order[j]] = [order[j], order[i]]; $('mbody').innerHTML = draw(); };
+    window.resetTodayLayout = () => { order = Object.keys(WIDGET_COL); hidden = new Set(); $('mbody').innerHTML = draw(); };
+    window.saveTodayLayout = async () => { sync(); try { await api('/planning/layout', { method: 'POST', body: JSON.stringify({ order, hidden: [...hidden] }) }); closeModal(); toast(t('saved')); window.today(); } catch (e) { fail(e); } };
+    modal(H('customize_title'), draw());
   };
 
   window.homeDone = async function (id, btn) {

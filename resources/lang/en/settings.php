@@ -80,4 +80,9 @@ return [
     'verification_sent' => 'We sent a verification link to :email.',
     'email_verified' => 'Your email address is verified. Thank you!',
     'email_already_verified' => 'Your email address is already verified.',
+    'appearance' => 'Appearance',
+    'theme_system' => 'Match device',
+    'theme_light' => 'Light',
+    'theme_dark' => 'Dark',
+    'appearance_help' => '“Match device” follows your phone or computer’s light/dark setting automatically.',
 ];
